@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Bumpline">
+  <title>Bumpline</title>
+  <circle cx="64" cy="64" r="64" fill="#00ADB8"/>
+  <g fill="none" stroke="#FBFBFB" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="32.6,63.7 64,32.3 95.4,63.7"/>
+    <polyline points="32.6,98.2 64,66.9 95.4,98.2"/>
+  </g>
+</svg>

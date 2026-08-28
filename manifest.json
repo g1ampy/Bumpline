@@ -1,0 +1,90 @@
+{
+  "manifest_version": 3,
+  "name": "Bumpline - Relist for Vinted",
+  "version": "0.3.0",
+  "description": "One-click relist for your own Vinted listings. The copy is saved as a draft before the old one is deleted, so nothing is lost",
+  "icons": {
+    "16": "icons/icon16.png",
+    "24": "icons/icon24.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "https://www.vinted.at/*",
+    "https://www.vinted.be/*",
+    "https://www.vinted.bg/*",
+    "https://www.vinted.ch/*",
+    "https://www.vinted.co.uk/*",
+    "https://www.vinted.com/*",
+    "https://www.vinted.cz/*",
+    "https://www.vinted.de/*",
+    "https://www.vinted.dk/*",
+    "https://www.vinted.ee/*",
+    "https://www.vinted.es/*",
+    "https://www.vinted.fi/*",
+    "https://www.vinted.fr/*",
+    "https://www.vinted.gr/*",
+    "https://www.vinted.hr/*",
+    "https://www.vinted.hu/*",
+    "https://www.vinted.ie/*",
+    "https://www.vinted.it/*",
+    "https://www.vinted.lt/*",
+    "https://www.vinted.lv/*",
+    "https://www.vinted.nl/*",
+    "https://www.vinted.no/*",
+    "https://www.vinted.pl/*",
+    "https://www.vinted.pt/*",
+    "https://www.vinted.ro/*",
+    "https://www.vinted.se/*",
+    "https://www.vinted.si/*",
+    "https://www.vinted.sk/*",
+    "https://*.vinted.com/*",
+    "https://*.vinted.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.vinted.at/member/*",
+        "https://www.vinted.be/member/*",
+        "https://www.vinted.bg/member/*",
+        "https://www.vinted.ch/member/*",
+        "https://www.vinted.co.uk/member/*",
+        "https://www.vinted.com/member/*",
+        "https://www.vinted.cz/member/*",
+        "https://www.vinted.de/member/*",
+        "https://www.vinted.dk/member/*",
+        "https://www.vinted.ee/member/*",
+        "https://www.vinted.es/member/*",
+        "https://www.vinted.fi/member/*",
+        "https://www.vinted.fr/member/*",
+        "https://www.vinted.gr/member/*",
+        "https://www.vinted.hr/member/*",
+        "https://www.vinted.hu/member/*",
+        "https://www.vinted.ie/member/*",
+        "https://www.vinted.it/member/*",
+        "https://www.vinted.lt/member/*",
+        "https://www.vinted.lv/member/*",
+        "https://www.vinted.nl/member/*",
+        "https://www.vinted.no/member/*",
+        "https://www.vinted.pl/member/*",
+        "https://www.vinted.pt/member/*",
+        "https://www.vinted.ro/member/*",
+        "https://www.vinted.se/member/*",
+        "https://www.vinted.si/member/*",
+        "https://www.vinted.sk/member/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
