@@ -34,6 +34,20 @@ closes the last gap between installing it and finding it.
   button — reopen the stuck relist's profile page, or open your profile when you
   are somewhere else entirely — and shows none at all when the current tab is
   already the right one.
+- **A welcome page after the install.** Installed from the store the extension
+  draws nothing anywhere until you are on your own wardrobe, so the toolbar
+  looks empty and the obvious conclusion is that nothing happened. A page now
+  opens once, on the install only, and answers the two questions that stand
+  between the install and the first relist: how to pin the icon so it stops
+  hiding behind the puzzle piece, and where the Relist buttons appear. It
+  carries the popup's palette and drawings instead of screenshots, so it needs
+  no assets and follows the browser's light or dark setting.
+- **A stuck relist now says why.** Vinted's refusal was written to the console
+  and nowhere else, so the person it happened to could see that publishing
+  failed but never the reason, and could not report it. The banner and the
+  toolbar popup now show Vinted's own words, and **Download data** saves the
+  whole case — the refusal, the number of attempts, the payload that was sent
+  and the listing snapshot — instead of the snapshot alone.
 
 ### Changed
 
@@ -41,6 +55,46 @@ closes the last gap between installing it and finding it.
   content script remembers the last profile page it ran on, so the popup can
   link straight back to it from any tab. Records written by earlier versions
   fall back to the country domain.
+
+### Fixed
+
+- **Publishing failed for every relist, on every item.** Vinted answers
+  `POST /item_upload/drafts` with a stub — an id and little else — and the
+  publish step handed that stub straight back to the completion endpoint, which
+  validates the draft in the request body rather than the one already stored.
+  Vinted therefore refused every publish with all nine required fields reported
+  empty (`title: Compila il campo "titolo"…`, category, price, package size,
+  condition, size, brand, colour), even though the draft sitting in the seller's
+  account was complete and published fine by hand from Vinted's own form. The
+  full payload is now sent again at completion, wearing the id the draft was
+  given. There is no reading the draft back to check — `GET` and `PUT` on
+  `/item_upload/drafts/<id>` both answer with the same 62-byte stub — so the
+  payload that built it is the only full copy there is. The original was already
+  deleted by then, so the item survived only because it was saved as a draft
+  first.
+- **The photos were named for the wrong endpoint.** `assigned_photos` is what
+  creates a draft; completion refuses it with `photos: Error uploading photo`.
+  Measured against a scratch draft: the creation spelling drew that error every
+  time, the completion spelling drew none. Vinted attaches the photos held by
+  the draft rather than the ones named in the request, so if a published copy
+  ever comes back with none, the toast now says so instead of reporting success.
+- **A failed publish left a pile of drafts behind.** When a retry replaced the
+  draft it abandoned the previous one, so five attempts on one item left six
+  copies in the seller's drafts. The superseded draft is now deleted — but only
+  once its replacement exists, never before: after the original listing is gone
+  the draft is the single remaining copy, and removing it first would leave the
+  item nowhere at all.
+- **Every relist stopped to ask for a size the item already had, and refused to
+  publish once one was given.** Vinted has moved the size the way it once moved
+  the condition — out of the top-level `size_id`, which no longer comes back at
+  all, and into `item_attributes` as `{ code: 'size', ids: [n] }` — but it still
+  takes the size back in `size_id` alone. Reading only the old field made every
+  listing in a sized category look sizeless; sending only the new one had
+  completion answer `size: Fill in size to continue`. Measured against a scratch
+  draft: `size_id` alone passes, the attribute alone does not, both together
+  pass. Both are now read and both are sent, and a relist left stuck by the
+  earlier shape repairs its own stored payload on the next retry instead of
+  asking the seller to start over.
 
 [1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
 

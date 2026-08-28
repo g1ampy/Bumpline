@@ -251,13 +251,36 @@
     return draft;
   }
 
-  async function publishDraft(csrf, draft, sessionId) {
+  // The two endpoints name the photos differently, and the wrong name is not
+  // ignored: `assigned_photos` is what creates a draft, `photos` is what
+  // completes one. Measured against a scratch draft, the creation spelling drew
+  // `photos: Error uploading photo` every time and this one drew nothing.
+  function forCompletion(item, draftId) {
+    const { assigned_photos: attached, ...rest } = item;
+    return {
+      ...rest,
+      id: draftId,
+      photos: (attached || []).map(photo => ({ id: photo.id, orientation: photo.orientation || 0 })),
+    };
+  }
+
+  // Completion validates the draft in the request body, not the one already
+  // stored, and the object POST /drafts answers with is a stub: an id and
+  // nothing else, 62 bytes of it. Echoing that back made Vinted refuse the
+  // publish with every required field reported empty — title, category, price,
+  // size, brand — while the same draft published by hand from Vinted's own
+  // form. Nor can the draft be read back to check: GET /item_upload/drafts/<id>
+  // is a 404. So the payload that built the draft is the only full copy there
+  // is, and it goes out again wearing the id the draft was given.
+  async function publishDraft(csrf, draft, sessionId, item) {
+    const full = item ? forCompletion(item, draft.id) : draft;
+
     const reply = await fetch(`${SITE}/api/v2/item_upload/drafts/${draft.id}/completion`, {
       method: 'POST',
       credentials: 'include',
       headers: await writeHeaders(csrf),
       body: JSON.stringify({
-        draft,
+        draft: full,
         push_up: false,
         parcel: null,
         upload_session_id: sessionId,
@@ -267,6 +290,9 @@
     if (!reply.ok) {
       const failure = new Error(`Could not publish the draft: ${explainFailure(reply.status, body)}`);
       failure.status = reply.status;
+      // Field names only, never values: enough to see which shape was sent
+      // when a refusal has to be reported, and nothing of the listing itself.
+      failure.sentKeys = Object.keys(full);
       throw failure;
     }
     let parsed = null;
@@ -388,6 +414,12 @@
         z-index: 2147483647;
         max-width: 380px;
         box-shadow: 0 4px 16px rgba(0,0,0,.18);
+      }
+      .bumpline-banner__why {
+        margin-top: 8px;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+        opacity: .85;
       }
       .bumpline-banner__actions {
         display: flex;
@@ -768,6 +800,16 @@
       'Publishing is retried every time you open a Vinted page.';
     box.appendChild(message);
 
+    // Vinted's own words for the refusal. They used to reach the console only,
+    // which meant a stuck relist could not be reported by the person it
+    // happened to: they could see that it failed, never why.
+    if (record.lastError) {
+      const reason = document.createElement('div');
+      reason.className = 'bumpline-banner__why';
+      reason.textContent = `Vinted refused it: ${record.lastError}`;
+      box.appendChild(reason);
+    }
+
     const actions = document.createElement('div');
     actions.className = 'bumpline-banner__actions';
 
@@ -785,7 +827,21 @@
     save.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      const file = new Blob([JSON.stringify(record.snapshot, null, 2)], { type: 'application/json' });
+      // Two readers: the seller, who may have to rebuild the listing by hand,
+      // and whoever gets the bug report, who needs the payload and the refusal.
+      const report = {
+        itemId,
+        site: record.site || SITE,
+        version: chrome.runtime.getManifest().version,
+        startedAt: record.startedAt || null,
+        attempts: record.attempts || 0,
+        lastError: record.lastError || null,
+        lastShape: record.lastShape || null,
+        draftId: (record.draft && record.draft.id) || null,
+        sent: record.item || null,
+        snapshot: record.snapshot || null,
+      };
+      const file = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
       const href = URL.createObjectURL(file);
       const link = document.createElement('a');
       link.href = href;
@@ -835,6 +891,17 @@
   async function attemptPublish(itemId, record, onAttempt) {
     let lastError = null;
 
+    // A relist stuck from before the size fix carries the size as an attribute
+    // and no size_id, which completion refuses. Repairing the stored payload
+    // costs one line and saves the seller from rebuilding the listing by hand.
+    if (record.item && record.item.size_id == null) {
+      const known = sizeOf(record.item);
+      if (known != null) {
+        record.item = { ...record.item, size_id: known };
+        await savePending(itemId, record);
+      }
+    }
+
     for (let attempt = 1; attempt <= PUBLISH_ATTEMPTS; attempt++) {
       if (onAttempt) onAttempt(attempt, PUBLISH_ATTEMPTS);
 
@@ -850,9 +917,18 @@
           if (!record.draft) {
             record.draft = await openDraft(csrf, record.item, record.sessionId);
             await savePending(itemId, record);
+            // Now, and only now, is the superseded draft safe to remove: the
+            // copy it was standing in for exists again. Otherwise five retries
+            // would leave six copies of the same listing in the seller's
+            // drafts, which is untidy but never dangerous.
+            if (record.staleDraft) {
+              await discardDraft(csrf, record.staleDraft);
+              record.staleDraft = null;
+              await savePending(itemId, record);
+            }
           }
-          const published = await publishDraft(csrf, record.draft, record.sessionId);
-          if (published && published.id) return published.id;
+          const published = await publishDraft(csrf, record.draft, record.sessionId, record.item);
+          if (published && published.id) return published;
           lastError = new Error('Vinted published the draft but returned no id.');
         } catch (err) {
           lastError = err;
@@ -871,6 +947,11 @@
                   assigned_photos: fresh.assigned,
                 };
                 record.sessionId = fresh.sessionId;
+                // The draft is the only copy left: the original was deleted
+                // before it was made. It is noted for deletion but not deleted
+                // here — its replacement has to exist first, or a failure in
+                // between would leave the listing nowhere at all.
+                if (record.draft) record.staleDraft = record.draft.id;
                 record.draft = null;
                 await savePending(itemId, record);
               }
@@ -892,15 +973,32 @@
   async function advancePending(itemId, record, onAttempt) {
     if (!record) return false;
     try {
-      const newId = await attemptPublish(itemId, record, onAttempt);
+      const published = await attemptPublish(itemId, record, onAttempt);
+      const newId = published.id;
       await forgetPending(itemId);
       hideBanner(itemId);
-      toast(`Relisted. The new listing is ${newId}.`);
+      // Completion answers with the published item. Vinted attaches the photos
+      // from the draft rather than from the request, so if the copy came out
+      // without any, say so at once: the listing is live and the seller is the
+      // only one who can fix it.
+      const photos = published.photos;
+      if (Array.isArray(photos) && !photos.length) {
+        toast(
+          `Relisted as ${newId}, but the copy has no photos. Open it on Vinted ` +
+            'and add them before anyone sees it.',
+          'bad'
+        );
+      } else {
+        toast(`Relisted. The new listing is ${newId}.`);
+      }
       return newId;
     } catch (err) {
       console.error('[Bumpline] relist still pending for item', itemId, err);
       record.attempts = (record.attempts || 0) + 1;
       record.lastError = (err && err.message) || String(err);
+      // Field names of what went out and what Vinted had stored. No values, so
+      // nothing of the listing travels with a bug report.
+      record.lastShape = err && err.sentKeys ? { sent: err.sentKeys } : null;
       await savePending(itemId, record);
       showBanner(itemId, record);
       return false;
@@ -937,6 +1035,26 @@
   // A catalog can offer several parallel size groups (S/M/L, EU, IT, UK, US,
   // FR). Every size id is unique across all of them, so a copied id is valid as
   // long as it appears somewhere in the union.
+  // Vinted moved the size the same way it moved the condition: out of the
+  // top-level size_id and into item_attributes. Reading only the old field made
+  // every listing look sizeless, so every relist stopped to ask for a size the
+  // item already had. Listings that predate the move still carry size_id.
+  function sizeOf(item) {
+    for (const attribute of item.item_attributes || []) {
+      if (attribute && attribute.code === 'size' && attribute.ids && attribute.ids.length) {
+        return attribute.ids[0];
+      }
+    }
+    return item.size_id != null ? item.size_id : null;
+  }
+
+  // The size the copy will carry has to be written where Vinted now reads it,
+  // not only where it used to.
+  function withSize(attributes, sizeId) {
+    const rest = (attributes || []).filter(attribute => !attribute || attribute.code !== 'size');
+    return [...rest, { code: 'size', ids: [sizeId] }];
+  }
+
   async function inspectSize(item, csrf) {
     if (!item.catalog_id) return { ok: true };
 
@@ -951,7 +1069,8 @@
 
     if (!groups.length) return { ok: true, required: false };
 
-    if (item.size_id == null) {
+    const current = sizeOf(item);
+    if (current == null) {
       // Listings predating a catalog that has since made the size mandatory.
       // Publishing them unchanged fails with "Fill in size to continue".
       return { ok: false, groups, why: 'this category now requires a size and the listing has none' };
@@ -962,8 +1081,8 @@
       for (const size of group.sizes || []) accepted.add(size.id);
       for (const id of group.size_ids || []) accepted.add(id);
     }
-    if (!accepted.has(item.size_id)) {
-      return { ok: false, groups, why: `size ${item.size_id} is no longer valid for this category` };
+    if (!accepted.has(current)) {
+      return { ok: false, groups, why: `size ${current} is no longer valid for this category` };
     }
     return { ok: true, required: true };
   }
@@ -1052,6 +1171,7 @@
   }
 
   function copyOf(source, sessionId, photos, conditionId) {
+    const sizeId = sizeOf(source);
     const priceBox = source.price || {};
     const amount = source.price_numeric || parseFloat(priceBox.amount || '0') || 0;
     const currency = source.price_currency || priceBox.currency_code || source.currency || 'EUR';
@@ -1070,12 +1190,20 @@
       currency,
       brand_id: source.brand_id || null,
       brand: brandName && String(brandName).trim() ? brandName : null,
-      size_id: source.size_id || null,
+      // Vinted reads the size out of item_attributes and writes it back in
+      // size_id: an editor payload arrives with the attribute and no size_id,
+      // and a completion carrying only the attribute is refused with
+      // "size: Fill in size to continue". Both are sent; measured against a
+      // scratch draft, size_id alone passes and the attribute alone does not.
+      size_id: sizeId,
       catalog_id: source.catalog_id || null,
       status_id: conditionId,
       is_unisex: Boolean(source.is_unisex),
       color_ids: colours || [],
-      item_attributes: source.item_attributes || [],
+      // A listing old enough to keep its size in size_id would otherwise be
+      // copied without one, since that is not where Vinted reads it any more.
+      item_attributes:
+        sizeId != null ? withSize(source.item_attributes, sizeId) : source.item_attributes || [],
       assigned_photos: photos,
       package_size_id: source.package_size_id || 1,
       shipment_prices: { domestic: null, international: null },
@@ -1241,6 +1369,7 @@
         const chosen = await askForSize(size.groups, item.title, size.why);
         if (!chosen) throw new Error('Cancelled. Nothing was deleted.');
         item.size_id = chosen;
+        item.item_attributes = withSize(item.item_attributes, chosen);
         snapshot.size_id = chosen;
       }
 

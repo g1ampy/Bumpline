@@ -143,6 +143,14 @@ function renderPending(records) {
   for (const record of records.slice(0, 4)) {
     const row = document.createElement('li');
     row.textContent = nameOf(record);
+    // The refusal is the only part of a stuck relist a person can act on, or
+    // pass to a bug report, so it belongs next to the name and not in a log.
+    if (record.lastError) {
+      const why = document.createElement('span');
+      why.className = 'card__why';
+      why.textContent = record.lastError;
+      row.appendChild(why);
+    }
     list.appendChild(row);
   }
   if (records.length > 4) {
@@ -182,7 +190,10 @@ function wireReloadToggle(on) {
 }
 
 async function main() {
-  document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
+  // version_name is what a hand-built debug package sets; without one this is
+  // the plain version, exactly as before.
+  const build = chrome.runtime.getManifest();
+  document.getElementById('version').textContent = `v${build.version_name || build.version}`;
 
   let tab = null;
   try {
