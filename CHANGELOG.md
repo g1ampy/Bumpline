@@ -16,8 +16,9 @@ closes the last gap between installing it and finding it.
 - **Toolbar popup.** Until now the extension gave no sign of itself outside the
   Vinted page: installing it from the store showed nothing anywhere, and the
   obvious conclusion was that it did not work. Clicking the toolbar icon now
-  says whether the current tab is a Vinted profile page — where the buttons
-  live — or where to go instead.
+  says whether the buttons are on the page you are looking at, and how many
+  items they are on. It asks the page rather than reading the address bar,
+  because somebody else's wardrobe has the same URL shape as your own.
 - **Unfinished relists are visible from the toolbar.** If publishing failed, the
   popup names the items still waiting and opens the exact profile page the
   retry runs on. Previously this was only discoverable by returning to that page

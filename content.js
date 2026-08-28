@@ -1326,17 +1326,34 @@
     }
 
     paintAgeLabels();
+    rememberProfile();
     if (added) trace('added buttons to', added, 'item(s)');
   }
 
-  // The toolbar popup has no way of knowing which country site the seller uses,
-  // or their member id. Leaving a note here means it can always offer to open
-  // the right profile page, whatever tab it is opened from.
-  chrome.storage.local
-    .set({ [LAST_PROFILE_KEY]: `${SITE}${location.pathname}` })
-    .catch(() => {
-      // Only costs the popup a shortcut; nothing else depends on it.
+  // The URL of somebody else's wardrobe looks exactly like the URL of your own,
+  // so the popup cannot tell them apart and must not try. It asks the page
+  // instead, and the page answers with what it actually put on screen.
+  chrome.runtime.onMessage.addListener((message, _sender, respond) => {
+    if (!message || message.type !== 'bumpline:pageState') return false;
+    respond({
+      profileUrl: `${SITE}${location.pathname}`,
+      relistable: document.querySelectorAll(SELECTOR.ourButton).length,
     });
+    return false; // answered on the spot
+  });
+
+  // The popup also has no way of knowing which country site the seller uses, or
+  // their member id. Leaving a note here means it can offer to open the right
+  // profile page from any tab. Only a wardrobe of your own is worth recording:
+  // that is the only page where buttons appear.
+  function rememberProfile() {
+    if (!document.querySelector(SELECTOR.ourButton)) return;
+    chrome.storage.local
+      .set({ [LAST_PROFILE_KEY]: `${SITE}${location.pathname}` })
+      .catch(() => {
+        // Only costs the popup a shortcut; nothing else depends on it.
+      });
+  }
 
   new MutationObserver(() => attachButtons()).observe(document.documentElement, {
     childList: true,

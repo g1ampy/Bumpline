@@ -40,19 +40,44 @@ function currentUrl(tab) {
   }
 }
 
-const isProfilePage = url =>
-  !!url && VINTED_HOST.test(url.hostname) && url.pathname.startsWith('/member/');
+const onVinted = url => !!url && VINTED_HOST.test(url.hostname);
 
-function describeTab(url) {
-  if (isProfilePage(url)) {
+// Asks the page what it actually rendered. Somebody else's wardrobe has the
+// same URL shape as your own, so the URL alone can never answer this; only the
+// content script knows whether it managed to attach any buttons. No reply means
+// no content script, which is an answer too.
+async function askPage(tab) {
+  if (!tab || tab.id == null) return null;
+  try {
+    return await chrome.tabs.sendMessage(tab.id, { type: 'bumpline:pageState' });
+  } catch (_) {
+    return null;
+  }
+}
+
+function describePage(page, url) {
+  if (page) {
+    if (page.relistable > 0) {
+      return {
+        tone: 'ok',
+        glyph: GLYPH.ready,
+        title: 'Ready on this page',
+        detail:
+          page.relistable === 1
+            ? 'One item can be relisted, under its Bump button.'
+            : `${page.relistable} items can be relisted, under their Bump buttons.`,
+      };
+    }
     return {
-      tone: 'ok',
-      glyph: GLYPH.ready,
-      title: 'Ready on this page',
-      detail: 'Relist and Relist as draft sit under each item’s Bump button.',
+      tone: 'plain',
+      glyph: GLYPH.elsewhere,
+      title: 'Nothing to relist here',
+      detail:
+        'Buttons appear only on your own items that are still on sale — not on ' +
+        'someone else’s wardrobe, and not on sold or reserved items.',
     };
   }
-  if (url && VINTED_HOST.test(url.hostname)) {
+  if (onVinted(url)) {
     return {
       tone: 'plain',
       glyph: GLYPH.elsewhere,
@@ -126,12 +151,13 @@ function renderPending(records) {
 
 // One action at most, and only when it does something the current tab does not
 // already do. A button that leads nowhere is worse than no button.
-function chooseAction({ pending, lastProfile }, url) {
+function chooseAction({ pending, lastProfile }, page, here) {
   const stuck = pending.length ? profileOf(pending[0]) : null;
-  if (stuck && stuck !== `${url ? url.origin + url.pathname : ''}`) {
+  if (stuck && stuck !== here) {
     return { label: 'Open the profile page', url: stuck };
   }
-  if (!isProfilePage(url) && lastProfile) {
+  // A wardrobe with buttons on it is already the destination.
+  if (!(page && page.relistable > 0) && lastProfile && lastProfile !== here) {
     return { label: 'Open your Vinted profile', url: lastProfile };
   }
   return null;
@@ -149,9 +175,10 @@ async function main() {
   }
 
   const url = currentUrl(tab);
-  const stored = await readStored();
+  const [page, stored] = await Promise.all([askPage(tab), readStored()]);
+  const here = url ? `${url.origin}${url.pathname}` : null;
 
-  const state = describeTab(url);
+  const state = describePage(page, url);
   draw(document.getElementById('status-icon'), state.glyph);
   document.getElementById('status-title').textContent = state.title;
   document.getElementById('status-detail').textContent = state.detail;
@@ -161,7 +188,7 @@ async function main() {
 
   renderPending(stored.pending);
 
-  const action = chooseAction(stored, url);
+  const action = chooseAction(stored, page, here);
   if (action) {
     const button = document.getElementById('action');
     button.textContent = action.label;
