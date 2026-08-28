@@ -25,6 +25,8 @@
     card: '[data-testid^="product-item-id-"]',
     bump: 'button[data-testid="bump-button"]',
     ourButton: '.bumpline-btn',
+    // Every item gets two buttons, so counting ourButton counts items twice.
+    ourItem: '.bumpline-btn:not(.bumpline-btn--draft)',
     gap: '.bumpline-gap',
   };
 
@@ -1337,7 +1339,7 @@
     if (!message || message.type !== 'bumpline:pageState') return false;
     respond({
       profileUrl: `${SITE}${location.pathname}`,
-      relistable: document.querySelectorAll(SELECTOR.ourButton).length,
+      relistable: document.querySelectorAll(SELECTOR.ourItem).length,
     });
     return false; // answered on the spot
   });
