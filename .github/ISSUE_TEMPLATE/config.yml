@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting first
+    url: https://github.com/g1ampy/Bumpline#troubleshooting
+    about: Blocked by anti-bot, buttons missing, photos not uploading, a size being asked for — the common ones are answered here.
+  - name: How relisting works
+    url: https://github.com/g1ampy/Bumpline#why-your-item-cannot-get-lost
+    about: What happens in which order, and why the copy is saved as a draft before anything is deleted.

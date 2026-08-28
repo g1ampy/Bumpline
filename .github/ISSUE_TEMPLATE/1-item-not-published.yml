@@ -1,0 +1,101 @@
+name: An item was deleted but never published
+description: The old listing is gone and the copy is not online. Report this one first.
+title: "[stuck] "
+labels: ["bug", "item at risk"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before anything else, your item is very likely recoverable.**
+
+        Bumpline saves the copy as a draft on Vinted *before* it deletes the
+        original, so open your Vinted drafts and look for it. If it is there,
+        you can publish it by hand right now — you do not have to wait for this
+        issue to be answered.
+
+        Publishing is also retried automatically every time you open your own
+        Vinted profile page.
+
+  - type: dropdown
+    id: drafts
+    attributes:
+      label: Did you look in your Vinted drafts?
+      options:
+        - Yes, and the item is there
+        - Yes, and the item is not there
+        - I have already published it by hand
+        - Not yet
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you clicked, what you saw, and what the item looks like now.
+      placeholder: |
+        I clicked Relist on a pair of shoes. The button reached "Publishing…"
+        and then a red box appeared saying …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: label
+    attributes:
+      label: What did the button say when it stopped?
+      description: The label tells us which step failed, which is the single most useful thing in this report.
+      options:
+        - "Relisting…"
+        - "Checking size…"
+        - "Waiting for size…"
+        - "Checking…"
+        - "Saving draft…"
+        - "Deleting…"
+        - "Publishing…"
+        - "Retrying 2/5…, 3/5… and so on"
+        - I did not see / the page reloaded first
+    validations:
+      required: true
+
+  - type: textarea
+    id: box
+    attributes:
+      label: The recovery box
+      description: If a red box appeared at the bottom of the page, copy its text here.
+      render: text
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: |
+        Press F12, open the **Console** tab, reload the profile page, and copy
+        anything starting with `[Bumpline]`. Remove your email address or any
+        personal detail before pasting.
+      render: text
+
+  - type: input
+    id: site
+    attributes:
+      label: Which Vinted site
+      placeholder: vinted.it
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Bumpline version
+      description: Shown in the top right of the popup when you click the toolbar icon.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: Chrome, Edge, Brave… Find it under Settings → About.
+      placeholder: Chrome 141
+    validations:
+      required: true

@@ -1,0 +1,32 @@
+name: Idea or request
+description: Something Bumpline should do, or should stop doing.
+title: "[idea] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is annoying today
+      description: Describe the situation, not the solution. It is the part that cannot be guessed.
+      placeholder: |
+        Relisting twenty items means twenty page reloads, and each one loses
+        my place in the list.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+      description: Optional. A rough idea is fine.
+
+  - type: markdown
+    attributes:
+      value: |
+        Two things Bumpline will not do, so you know before writing:
+
+        - **Relist everything at once.** Deleting listings in bulk is exactly
+          what gets an account flagged, and one failure would leave several
+          items in the air instead of one.
+        - **Relist on a schedule, unattended.** The same reason, plus nobody is
+          watching when it goes wrong.

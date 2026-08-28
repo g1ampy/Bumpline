@@ -1,0 +1,94 @@
+name: Bug report
+description: Something misbehaves, but no item was lost.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If a listing was deleted and never published, use the
+        **An item was deleted but never published** template instead — it is
+        handled first.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open my profile page on vinted.it
+        2. Click Relist as draft on an item with 5 photos
+        3. …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - The Relist button
+        - The Relist as draft button
+        - The toolbar popup
+        - The recovery box
+        - The size picker
+        - Somewhere else
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: |
+        Press F12, open the **Console** tab, reproduce the problem, and copy
+        anything starting with `[Bumpline]`. Remove any personal detail first.
+      render: text
+
+  - type: input
+    id: site
+    attributes:
+      label: Which Vinted site
+      placeholder: vinted.it
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Bumpline version
+      description: Shown in the top right of the popup.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 141
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Ruled out
+      description: The three things that explain most reports.
+      options:
+        - label: I was on my **own** profile page, not someone else's
+        - label: The item is not sold or reserved
+        - label: I reloaded the page and it still happens
