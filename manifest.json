@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Bumpline - Relist for Vinted",
   "version": "1.0.0",
-  "description": "One-click relist for your own Vinted listings. The copy is saved as a draft before the old one is deleted, so nothing is lost",
+  "description": "Relist your own Vinted items in one click. Every field and photo is copied over, and the item goes back to the top of the results.",
   "icons": {
     "16": "icons/icon16.png",
     "24": "icons/icon24.png",

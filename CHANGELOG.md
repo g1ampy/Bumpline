@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Vinted's tokens — was rewritten as a promise, which is the only shape Firefox
   offers.
 
+- **The description says what the extension does.** It used to spend its second
+  half on the draft-first safety, which is the reason Bumpline is safe to use
+  rather than the reason anyone installs it. Only about 45 characters survive
+  truncation in store search, so the action now takes the visible half and the
+  rest carries the two reasons to install: nothing is retyped, and the item
+  moves back to the top.
+
 [Unreleased]: https://github.com/g1ampy/Bumpline/compare/v1.0.0...HEAD
 
 ## [1.0.0] - 2026-08-28
