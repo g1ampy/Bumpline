@@ -6,6 +6,11 @@
 // "does it work on this tab?" and "did a relist get stuck?" — and always offers
 // the one action that follows from the answer.
 
+// Firefox answers to `browser` and only that namespace returns promises there;
+// Chrome answers to `chrome`. One alias, and the rest of the file is written
+// once for both.
+const ext = globalThis.browser ?? globalThis.chrome;
+
 const STORE_PREFIX = 'bumpline:pending:';
 const LAST_PROFILE_KEY = 'bumpline:lastProfile';
 const RELOAD_KEY = 'bumpline:reloadAfterRelist';
@@ -50,7 +55,7 @@ const onVinted = url => !!url && VINTED_HOST.test(url.hostname);
 async function askPage(tab) {
   if (!tab || tab.id == null) return null;
   try {
-    return await chrome.tabs.sendMessage(tab.id, { type: 'bumpline:pageState' });
+    return await ext.tabs.sendMessage(tab.id, { type: 'bumpline:pageState' });
   } catch (_) {
     return null;
   }
@@ -97,7 +102,7 @@ function describePage(page, url) {
 async function readStored() {
   let bag;
   try {
-    bag = await chrome.storage.local.get(null);
+    bag = await ext.storage.local.get(null);
   } catch (_) {
     return { pending: [], lastProfile: null, reload: true };
   }
@@ -182,7 +187,7 @@ function wireReloadToggle(on) {
   const box = document.getElementById('reload-toggle');
   box.checked = on;
   box.addEventListener('change', () => {
-    chrome.storage.local.set({ [RELOAD_KEY]: box.checked }).catch(() => {
+    ext.storage.local.set({ [RELOAD_KEY]: box.checked }).catch(() => {
       // Put the control back where it was rather than lying about the state.
       box.checked = !box.checked;
     });
@@ -192,12 +197,12 @@ function wireReloadToggle(on) {
 async function main() {
   // version_name is what a hand-built debug package sets; without one this is
   // the plain version, exactly as before.
-  const build = chrome.runtime.getManifest();
+  const build = ext.runtime.getManifest();
   document.getElementById('version').textContent = `v${build.version_name || build.version}`;
 
   let tab = null;
   try {
-    [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    [tab] = await ext.tabs.query({ active: true, currentWindow: true });
   } catch (_) {
     // Leave tab null: the popup falls back to the generic advice, which is
     // never wrong, only less specific.
@@ -224,7 +229,7 @@ async function main() {
     button.textContent = action.label;
     button.hidden = false;
     button.addEventListener('click', () => {
-      chrome.tabs.create({ url: action.url });
+      ext.tabs.create({ url: action.url });
       window.close();
     });
   }

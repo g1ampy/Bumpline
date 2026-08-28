@@ -17,6 +17,11 @@
 (() => {
   'use strict';
 
+  // Firefox answers to `browser` and only that namespace returns promises there;
+  // Chrome answers to `chrome`. One alias, and the rest of the file is written
+  // once for both.
+  const ext = globalThis.browser ?? globalThis.chrome;
+
   // Every request is derived from the page we are on, which is what makes the
   // extension work unchanged across all of Vinted's country domains.
   const SITE = location.origin;
@@ -85,15 +90,19 @@
     return found;
   }
 
+  // Asked as a promise, not with a callback: Firefox only offers the promise
+  // shape, and Chrome has offered both since MV3. A worker that is gone, or one
+  // that never answers, is not an error worth propagating — the page can still
+  // read the token out of the markup — so every failure collapses to an empty
+  // reply.
   function askWorker(message) {
-    return new Promise(done => {
-      try {
-        chrome.runtime.sendMessage(message, reply => done(reply || {}));
-      } catch (err) {
+    return Promise.resolve()
+      .then(() => ext.runtime.sendMessage(message))
+      .then(reply => reply || {})
+      .catch(err => {
         trace('worker unreachable', err);
-        done({});
-      }
-    });
+        return {};
+      });
   }
 
   const workerTokens = () => askWorker({ type: 'bumpline:tokens' });
@@ -754,16 +763,16 @@
   const dropPhotos = itemId => withStore('readwrite', s => s.delete(pendingKey(itemId)));
 
   const savePending = (itemId, record) =>
-    chrome.storage.local.set({ [pendingKey(itemId)]: record });
+    ext.storage.local.set({ [pendingKey(itemId)]: record });
 
   async function readPending(itemId) {
-    const bag = await chrome.storage.local.get(pendingKey(itemId));
+    const bag = await ext.storage.local.get(pendingKey(itemId));
     return bag[pendingKey(itemId)] || null;
   }
 
   async function forgetPending(itemId) {
     try {
-      await chrome.storage.local.remove(pendingKey(itemId));
+      await ext.storage.local.remove(pendingKey(itemId));
     } catch (err) {
       trace('could not clear pending record', err);
     }
@@ -832,7 +841,7 @@
       const report = {
         itemId,
         site: record.site || SITE,
-        version: chrome.runtime.getManifest().version,
+        version: ext.runtime.getManifest().version,
         startedAt: record.startedAt || null,
         attempts: record.attempts || 0,
         lastError: record.lastError || null,
@@ -1013,7 +1022,7 @@
 
     let bag;
     try {
-      bag = await chrome.storage.local.get(null);
+      bag = await ext.storage.local.get(null);
     } catch (err) {
       trace('could not read pending records', err);
       return;
@@ -1257,7 +1266,7 @@
   // off — at the cost of a list that is knowingly out of date.
   async function reloadWanted() {
     try {
-      const bag = await chrome.storage.local.get(RELOAD_KEY);
+      const bag = await ext.storage.local.get(RELOAD_KEY);
       return bag[RELOAD_KEY] !== false;
     } catch (_) {
       return true; // the default, and the safer of the two
@@ -1494,7 +1503,7 @@
   // The URL of somebody else's wardrobe looks exactly like the URL of your own,
   // so the popup cannot tell them apart and must not try. It asks the page
   // instead, and the page answers with what it actually put on screen.
-  chrome.runtime.onMessage.addListener((message, _sender, respond) => {
+  ext.runtime.onMessage.addListener((message, _sender, respond) => {
     if (!message || message.type !== 'bumpline:pageState') return false;
     respond({
       profileUrl: `${SITE}${location.pathname}`,
@@ -1509,7 +1518,7 @@
   // that is the only page where buttons appear.
   function rememberProfile() {
     if (!document.querySelector(SELECTOR.ourButton)) return;
-    chrome.storage.local
+    ext.storage.local
       .set({ [LAST_PROFILE_KEY]: `${SITE}${location.pathname}` })
       .catch(() => {
         // Only costs the popup a shortcut; nothing else depends on it.

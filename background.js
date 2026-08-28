@@ -14,12 +14,18 @@
 // You should have received a copy of the GNU General Public License along
 // with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// The service worker exists for two jobs the page cannot do on its own:
+// The background — a service worker on Chrome, an event page on Firefox —
+// exists for two jobs the page cannot do on its own:
 //
 //   1. Watch the requests Vinted's own site makes and note the security tokens
 //      it attaches, so the extension can send requests Vinted will accept.
 //   2. Fetch image bytes from the CDN when a cross-origin read from the page is
 //      refused.
+
+// Firefox answers to `browser` and only that namespace returns promises there;
+// Chrome answers to `chrome`. One alias, and the rest of the file is written
+// once for both.
+const ext = globalThis.browser ?? globalThis.chrome;
 
 const TOKEN_KEYS = { csrf: 'bumpline.csrf', anon: 'bumpline.anon' };
 
@@ -60,7 +66,7 @@ function noteTokens(headers) {
   }
   if (!changed) return;
 
-  chrome.storage.local
+  ext.storage.local
     .set({ [TOKEN_KEYS.csrf]: seen.csrf, [TOKEN_KEYS.anon]: seen.anon })
     .catch(() => {
       // Losing the cached copy is survivable: the page can still parse the
@@ -68,7 +74,7 @@ function noteTokens(headers) {
     });
 }
 
-chrome.webRequest.onBeforeSendHeaders.addListener(
+ext.webRequest.onBeforeSendHeaders.addListener(
   details => {
     try {
       noteTokens(details.requestHeaders);
@@ -83,7 +89,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 async function tokensForPage() {
   if (seen.csrf || seen.anon) return { csrf: seen.csrf, anonId: seen.anon };
   try {
-    const stored = await chrome.storage.local.get([TOKEN_KEYS.csrf, TOKEN_KEYS.anon]);
+    const stored = await ext.storage.local.get([TOKEN_KEYS.csrf, TOKEN_KEYS.anon]);
     return { csrf: stored[TOKEN_KEYS.csrf] || null, anonId: stored[TOKEN_KEYS.anon] || null };
   } catch (_) {
     return { csrf: null, anonId: null };
@@ -104,7 +110,7 @@ async function fetchBinary(url) {
   }
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, respond) => {
+ext.runtime.onMessage.addListener((message, _sender, respond) => {
   if (!message || !message.type) return false;
 
   if (message.type === 'bumpline:tokens') {
@@ -124,7 +130,7 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
 // on your own Vinted wardrobe, so a new user sees an empty toolbar and assumes
 // it is broken. Opening the welcome page once answers where the icon went and
 // where the buttons appear. An update is not a first impression, so it passes.
-chrome.runtime.onInstalled.addListener(details => {
+ext.runtime.onInstalled.addListener(details => {
   if (details.reason !== 'install') return;
-  chrome.tabs.create({ url: chrome.runtime.getURL('welcome/index.html') });
+  ext.tabs.create({ url: ext.runtime.getURL('welcome/index.html') });
 });

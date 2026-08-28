@@ -17,7 +17,7 @@ Bumpline
 | :-----: | ---------------- | ------ |
 | <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg" height="50" alt="Get Bumpline for Chrome"> | <a href="https://chromewebstore.google.com/detail/bumpline/bckdngndomabedcpciejiojhjfheolkn">Chrome&nbsp;Web&nbsp;Store</a> | Published. Installs in one click and updates itself. |
 | <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/Microsoft_Edge_logo_%282019%29.svg" height="50" alt="Get Bumpline for Edge"> | <a href="https://chromewebstore.google.com/detail/bumpline/bckdngndomabedcpciejiojhjfheolkn">Chrome&nbsp;Web&nbsp;Store</a> | Edge runs Chromium and can install from the Chrome Web Store. No separate Edge Add-ons listing. |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Firefox_logo%2C_2019.svg" height="50" alt="Bumpline is not available for Firefox"> | — | Not supported. The code targets Chromium's Manifest V3 service worker. |
+| <img src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Firefox_logo%2C_2019.svg" height="50" alt="Build Bumpline for Firefox"> | <a href="#firefox">Build&nbsp;from&nbsp;source</a> | Supported from 140. `node build.mjs firefox` writes the package; an Add-ons listing is not up yet. |
 | <img src="https://upload.wikimedia.org/wikipedia/commons/c/c2/GitHub_Invertocat_Logo.svg" height="50" alt="Get Bumpline from GitHub Releases"> | <a href="https://github.com/g1ampy/Bumpline/releases">GitHub&nbsp;-&nbsp;Releases</a> | The packaged build. Must be unzipped and loaded by hand; it will not auto-update. |
 
 ***
@@ -52,6 +52,8 @@ so that you can review it first.
 * [Installation](#installation)
   * [Chrome Web Store](#chrome-web-store)
   * [From source](#from-source)
+  * [Firefox](#firefox)
+  * [Packaging](#packaging)
   * [Requirements](#requirements)
 * [Usage](#usage)
 * [Why your item cannot get lost](#why-your-item-cannot-get-lost)
@@ -113,6 +115,21 @@ colours and every photo, in order.
 [Install Bumpline](https://chromewebstore.google.com/detail/bumpline/bckdngndomabedcpciejiojhjfheolkn) — one click, and it keeps itself up to date. On Edge,
 open the same link and allow extensions from other stores when prompted.
 
+#### Firefox
+
+Firefox needs a manifest of its own — it runs the background as an event page
+rather than a service worker, and every add-on it installs must carry an id. The
+build script writes that manifest; the code is the same code.
+
+```bash
+node build.mjs firefox
+```
+
+1. Open `about:debugging#/runtime/this-firefox`.
+2. Click **Load Temporary Add-on** and pick `build/bumpline-<version>-firefox/manifest.json`.
+
+A temporary add-on lasts until Firefox closes. Firefox 140 or newer.
+
 #### From source
 
 Use this to run an unreleased change, or to read what you are running. Take the
@@ -131,10 +148,24 @@ After changing any file, click **Reload** on the extension card.
 Loaded this way the extension does not auto-update: to move to a newer version,
 replace the folder and press **Reload** again.
 
+#### Packaging
+
+One command writes both a folder to load unpacked and a zip to upload, for
+either browser:
+
+```bash
+node build.mjs            # chrome and firefox
+node build.mjs firefox    # just one
+```
+
+It needs Node and nothing else — no package.json, no dependencies. The Firefox
+package can be checked against the store's own validator with
+`npx web-ext lint --source-dir build/bumpline-<version>-firefox`.
+
 #### Requirements
 
-Chrome or Edge, and a Vinted account you are logged into. No API key, no build
-step, no dependencies, and no network calls to anything except Vinted itself.
+Chrome, Edge or Firefox, and a Vinted account you are logged into. No API key,
+no dependencies, and no network calls to anything except Vinted itself.
 
 ## Usage
 
@@ -319,6 +350,6 @@ extension works on.
 
 [Badge Store]: https://img.shields.io/badge/chrome%20web%20store-available-%2328A745?labelColor=%23282f37
 [Badge Manifest]: https://img.shields.io/badge/manifest-v3-%234285F4?labelColor=%23282f37
-[Badge Browsers]: https://img.shields.io/badge/chrome%20%7C%20edge-supported-%2328A745?labelColor=%23282f37
+[Badge Browsers]: https://img.shields.io/badge/chrome%20%7C%20edge%20%7C%20firefox-supported-%2328A745?labelColor=%23282f37
 [Badge Dependencies]: https://img.shields.io/badge/dependencies-0-%236B7280?labelColor=%23282f37
 [Badge License]: https://img.shields.io/badge/license-GPL--3.0-%23A31F34?labelColor=%23282f37

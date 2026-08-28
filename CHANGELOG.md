@@ -5,6 +5,26 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Firefox support.** The extension now builds for Firefox 140 and newer.
+  Firefox runs the background as an event page rather than a service worker and
+  requires an add-on id, so `node build.mjs` writes a manifest per browser and
+  packages both from the same source. Nothing about the relist changed.
+
+### Changed
+
+- **The browser APIs are reached through one alias.** Firefox returns promises
+  only from the `browser` namespace, and the code was written against Chrome's
+  `chrome`. Both are now taken from a single alias per file, and the one
+  callback-style call left — the content script asking the background for
+  Vinted's tokens — was rewritten as a promise, which is the only shape Firefox
+  offers.
+
+[Unreleased]: https://github.com/g1ampy/Bumpline/compare/v1.0.0...HEAD
+
 ## [1.0.0] - 2026-08-28
 
 Bumpline leaves `0.x`. Nothing about the relist changed — the version number
