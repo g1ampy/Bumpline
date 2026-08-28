@@ -24,6 +24,12 @@ closes the last gap between installing it and finding it.
   retry runs on. Previously this was only discoverable by returning to that page
   by chance.
 
+- **A switch for the reload after a relist.** The page reloads when a relist
+  finishes, because it is otherwise showing an item that no longer exists and
+  hiding the copy that replaced it. That costs you your scroll position and any
+  filter you had set, so the popup can now turn it off. With it off the card of
+  the deleted listing is removed on the spot and the toast says the rest of the
+  page is stale. On by default, as before.
 - **One action, and only when it leads somewhere.** The popup offers a single
   button — reopen the stuck relist's profile page, or open your profile when you
   are somewhere else entirely — and shows none at all when the current tab is

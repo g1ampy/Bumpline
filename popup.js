@@ -8,6 +8,7 @@
 
 const STORE_PREFIX = 'bumpline:pending:';
 const LAST_PROFILE_KEY = 'bumpline:lastProfile';
+const RELOAD_KEY = 'bumpline:reloadAfterRelist';
 
 // vinted.it, vinted.com, vinted.co.uk … one domain per country.
 const VINTED_HOST = /(^|\.)vinted\.[a-z]{2,3}(\.[a-z]{2})?$/i;
@@ -98,7 +99,7 @@ async function readStored() {
   try {
     bag = await chrome.storage.local.get(null);
   } catch (_) {
-    return { pending: [], lastProfile: null };
+    return { pending: [], lastProfile: null, reload: true };
   }
 
   const pending = [];
@@ -109,7 +110,11 @@ async function readStored() {
   }
   pending.sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
 
-  return { pending, lastProfile: bag[LAST_PROFILE_KEY] || null };
+  return {
+    pending,
+    lastProfile: bag[LAST_PROFILE_KEY] || null,
+    reload: bag[RELOAD_KEY] !== false, // absent means on, as it always was
+  };
 }
 
 const nameOf = record =>
@@ -163,6 +168,19 @@ function chooseAction({ pending, lastProfile }, page, here) {
   return null;
 }
 
+// The page reads this fresh on every relist, so writing it here is all the
+// wiring the setting needs.
+function wireReloadToggle(on) {
+  const box = document.getElementById('reload-toggle');
+  box.checked = on;
+  box.addEventListener('change', () => {
+    chrome.storage.local.set({ [RELOAD_KEY]: box.checked }).catch(() => {
+      // Put the control back where it was rather than lying about the state.
+      box.checked = !box.checked;
+    });
+  });
+}
+
 async function main() {
   document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
 
@@ -187,6 +205,7 @@ async function main() {
   }
 
   renderPending(stored.pending);
+  wireReloadToggle(stored.reload);
 
   const action = chooseAction(stored, page, here);
   if (action) {

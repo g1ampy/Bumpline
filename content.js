@@ -42,6 +42,7 @@
   const PUBLISH_ATTEMPTS = 5;
   const STORE_PREFIX = 'bumpline:pending:';
   const LAST_PROFILE_KEY = 'bumpline:lastProfile';
+  const RELOAD_KEY = 'bumpline:reloadAfterRelist';
   const DB_NAME = 'bumpline';
   const DB_STORE = 'photos';
 
@@ -777,7 +778,7 @@
       retry.disabled = true;
       const done = await advancePending(itemId, await readPending(itemId));
       retry.disabled = false;
-      if (done) setTimeout(() => location.reload(), 1200);
+      if (done) await settle(itemId, 'Published.');
     });
 
     const save = buildButton('Download data');
@@ -1122,6 +1123,38 @@
     };
   }
 
+  // Reloading is the honest way to show the result: the page still lists an
+  // item that no longer exists, and does not list the copy. Some people would
+  // rather keep their scroll position and their filters, so it can be turned
+  // off — at the cost of a list that is knowingly out of date.
+  async function reloadWanted() {
+    try {
+      const bag = await chrome.storage.local.get(RELOAD_KEY);
+      return bag[RELOAD_KEY] !== false;
+    } catch (_) {
+      return true; // the default, and the safer of the two
+    }
+  }
+
+  function dropCard(itemId) {
+    for (const card of document.querySelectorAll(SELECTOR.card)) {
+      const hit = (card.getAttribute('data-testid') || '').match(ID_IN_TESTID);
+      if (hit && hit[1] === String(itemId)) card.remove();
+    }
+  }
+
+  // Ends a finished relist: reload, or take away the card of the listing that
+  // no longer exists and say plainly that the rest of the page is stale.
+  async function settle(itemId, message) {
+    if (await reloadWanted()) {
+      toast(`${message} Reloading…`);
+      setTimeout(() => location.reload(), 1200);
+      return;
+    }
+    dropCard(itemId);
+    toast(`${message} The page is out of date until you reload it.`);
+  }
+
   // ===========================================================================
   // The relist itself
   // ===========================================================================
@@ -1253,11 +1286,11 @@
       if (draftOnly) {
         // The draft is the finished result, not something still pending.
         await forgetPending(itemId);
-        toast(
-          'Original deleted. The copy is waiting in your Vinted drafts — publish it ' +
-            'when you are ready. Reloading…'
+        await settle(
+          itemId,
+          'Original deleted. The copy is waiting in your Vinted drafts — publish ' +
+            'it when you are ready.'
         );
-        setTimeout(() => location.reload(), 1800);
         return;
       }
 
@@ -1265,10 +1298,7 @@
       const newId = await advancePending(itemId, record, (attempt, total) => {
         setButtonLabel(button, attempt === 1 ? 'Publishing…' : `Retrying ${attempt}/${total}…`);
       });
-      if (newId) {
-        toast('Relisted. Reloading…');
-        setTimeout(() => location.reload(), 1200);
-      }
+      if (newId) await settle(itemId, 'Relisted.');
       // On failure advancePending has already stored the record and raised the
       // banner, and the next page load will try again.
     } catch (err) {

@@ -158,9 +158,16 @@ can still back out:
 
 Close the tab at any point before `Deleting…` and your listing is untouched.
 
-Clicking the Bumpline icon in the toolbar tells you whether the tab you are on
-is a profile page, and lists any relist that has not finished publishing yet —
-with a button that reopens the page the retry runs on.
+Clicking the Bumpline icon in the toolbar tells you whether the buttons are on
+the page you are looking at and how many items they are on, lists any relist
+that has not finished publishing yet — with a button that reopens the page the
+retry runs on — and carries the one setting there is:
+
+**Reload the page after a relist.** On by default. The page has to be refreshed
+to stop showing the listing that was just deleted and to start showing the copy.
+Turn it off if you would rather keep your scroll position and your filters; the
+deleted item's card is removed straight away, and the rest of the page stays out
+of date until you reload it yourself.
 
 If the category now requires a size your old listing never had, a window shows
 the real size list pulled from Vinted and asks you to pick one. Nothing is
