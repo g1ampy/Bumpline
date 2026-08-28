@@ -1,0 +1,267 @@
+/* Bumpline — the page the service worker opens once, right after install.
+ *
+ * It carries the popup's palette on purpose: the same teal, the same ink, the
+ * same cards. The first thing a new user sees here is the thing they will
+ * recognise when they later click the toolbar icon.
+ *
+ * Colour rule inherited from the popup: the brand teal #00ADB8 is 2.7:1
+ * against both white and its own white text, so it never carries text, a
+ * filled button or a focus ring. Those use --accent-ink, darkened in light
+ * mode and lightened in dark mode, which clears 4.5:1 both ways. The teal
+ * survives in the logo.
+ */
+
+:root {
+  --ink: #1f2328;          /* 15.8:1 on --surface */
+  --ink-soft: #57606a;     /*  6.4:1 on --surface */
+  --line: #d0d7de;
+  --surface: #ffffff;
+  --surface-sunken: #f6f8fa;
+
+  --accent-ink: #00727b;   /*  5.7:1 both ways */
+
+  --radius: 8px;
+  --radius-lg: 14px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 40px;
+  --space-7: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e6edf3;        /* 13.7:1 on --surface */
+    --ink-soft: #9198a1;   /*  5.6:1 on --surface */
+    --line: #3d444d;
+    --surface: #1c2128;
+    --surface-sunken: #22272e;
+
+    --accent-ink: #3ad1da; /*  8.7:1 on --surface */
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-5) var(--space-6);
+  background: var(--surface);
+  color: var(--ink);
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --- hero --------------------------------------------------------------- */
+
+.hero { text-align: center; }
+
+.hero__logo { display: block; margin: 0 auto var(--space-4); }
+
+.hero__title {
+  margin: 0;
+  font-size: clamp(26px, 4.5vw, 34px);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.hero__lead {
+  max-width: 46ch;
+  margin: var(--space-3) auto 0;
+  color: var(--ink-soft);
+  font-size: 16px;
+}
+
+.hero__version {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- steps -------------------------------------------------------------- */
+
+.steps {
+  margin: var(--space-7) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  align-items: start;
+}
+
+.step + .step {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+/* The number is decorative: the <ol> already carries the order for a screen
+   reader, and repeating it out loud would only say "one one". */
+.step__number {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.step__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.step__text { margin: var(--space-2) 0 0; }
+
+.step__note {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.step b { font-weight: 600; }
+
+/* --- illustrations ------------------------------------------------------ */
+
+.shot {
+  grid-column: 2;
+  margin: var(--space-4) 0 0;
+}
+
+.shot__art {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+  background: var(--surface-sunken);
+}
+
+.art-panel   { fill: var(--surface); stroke: var(--line); }
+.art-field   { fill: var(--surface-sunken); stroke: var(--line); }
+.art-row     { fill: var(--surface-sunken); stroke: none; }
+.art-bar     { fill: var(--line); }
+.art-tile    { fill: var(--line); }
+.art-dot     { fill: var(--line); }
+.art-bar--faint { opacity: 0.6; }
+
+/* Browser chrome sits on --surface and the page it frames on the sunken tone,
+   the same separation Chrome itself draws. */
+.art-strip   { fill: var(--surface-sunken); stroke: none; }
+.art-page    { fill: var(--surface-sunken); stroke: none; }
+.art-tab     { fill: var(--surface); stroke: var(--line); }
+.art-menu    { fill: var(--surface); stroke: var(--line); }
+.art-divider { fill: none; stroke: var(--line); }
+
+.art-ring {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 2;
+}
+
+.art-glyph {
+  color: var(--ink-soft);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.art-glyph--accent { color: var(--accent-ink); }
+.art-glyph--faint  { opacity: 0.55; }
+
+.art-cta { fill: var(--accent-ink); stroke: none; }
+.art-cta--ghost { fill: none; stroke: var(--accent-ink); stroke-width: 1.5; }
+
+.art-label {
+  fill: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.art-label--muted { fill: var(--ink-soft); font-weight: 500; }
+
+/* The browser drawing is denser than the listing one, so it is set on a
+   smaller grid and its labels shrink with it. */
+.art-label--sm { font-size: 10px; }
+.art-label--xs { font-size: 9px; }
+.art-label--onCta { fill: var(--surface); }
+.art-label--accent { fill: var(--accent-ink); }
+
+/* The drawing is a caption for the words, so it only leaves the text column
+   once there is room to set it beside them. */
+@media (min-width: 880px) {
+  .step {
+    grid-template-columns: auto minmax(0, 1fr) 300px;
+    column-gap: var(--space-5);
+  }
+
+  .shot {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
+  }
+}
+
+/* --- footer ------------------------------------------------------------- */
+
+.foot {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.foot__link {
+  color: var(--accent-ink);
+  text-decoration: none;
+  border-radius: 3px;
+}
+
+.foot__link:hover { text-decoration: underline; }
+
+/* --- focus and motion --------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+/* One quiet entrance, so the page does not simply appear mid-blink after the
+   install. Nothing moves after that. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero, .step {
+    animation: rise 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .steps > .step:nth-child(1) { animation-delay: 80ms; }
+  .steps > .step:nth-child(2) { animation-delay: 160ms; }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}

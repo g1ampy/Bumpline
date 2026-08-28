@@ -119,3 +119,12 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
 
   return false;
 });
+
+// Installed from the store the extension draws nothing anywhere until you are
+// on your own Vinted wardrobe, so a new user sees an empty toolbar and assumes
+// it is broken. Opening the welcome page once answers where the icon went and
+// where the buttons appear. An update is not a first impression, so it passes.
+chrome.runtime.onInstalled.addListener(details => {
+  if (details.reason !== 'install') return;
+  chrome.tabs.create({ url: chrome.runtime.getURL('welcome/index.html') });
+});

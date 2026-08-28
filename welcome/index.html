@@ -1,0 +1,167 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bumpline is installed</title>
+<link rel="stylesheet" href="style.css">
+
+<!-- Opened once, by the service worker, right after the extension is installed.
+     Installed from the store Bumpline is invisible: it draws nothing anywhere
+     until you are on your own Vinted wardrobe, so a new user sees an empty
+     toolbar and assumes it is broken. This page answers the only two questions
+     that stand between the install and the first relist — where the icon went,
+     and where the buttons appear — and refuses to grow past them. -->
+
+<header class="hero">
+  <img class="hero__logo" src="../icons/logo.svg" alt="" width="56" height="56">
+  <h1 class="hero__title">Bumpline is installed</h1>
+  <p class="hero__lead">The buttons appear inside Vinted, not here. Two steps.</p>
+  <p class="hero__version" id="version"></p>
+</header>
+
+<main>
+  <ol class="steps">
+    <li class="step">
+      <span class="step__number" aria-hidden="true">1</span>
+      <div class="step__body">
+        <h2 class="step__title">Pin Bumpline to the toolbar</h2>
+        <p class="step__text">
+          Click the puzzle piece beside the address bar, then the pin next to
+          Bumpline. The icon then stays in view.
+        </p>
+      </div>
+
+      <figure class="shot">
+        <svg class="shot__art" viewBox="0 0 360 214" role="img"
+             aria-label="A Chrome window on a Vinted page. The puzzle piece to the right of the address bar is open, and the extensions menu lists Bumpline with a pin beside it.">
+          <!-- The window itself. Everything above the page area is browser
+               chrome, so it is drawn in the surface colour and the page in the
+               sunken one, the same way Chrome separates them. -->
+          <rect class="art-panel" x="4" y="4" width="352" height="206" rx="10"/>
+
+          <!-- tab strip -->
+          <path class="art-strip" d="M4 14a10 10 0 0 1 10-10h332a10 10 0 0 1 10 10v18H4z"/>
+          <rect class="art-tab" x="12" y="10" width="112" height="22" rx="6"/>
+          <circle class="art-dot" cx="26" cy="21" r="4"/>
+          <rect class="art-bar art-bar--faint" x="36" y="18" width="62" height="5" rx="2.5"/>
+          <rect class="art-bar art-bar--faint" x="136" y="18" width="58" height="5" rx="2.5"/>
+          <g class="art-glyph art-glyph--faint" transform="translate(204 13) scale(0.66)">
+            <path d="M5 12h14"/>
+            <path d="M12 5v14"/>
+          </g>
+
+          <!-- toolbar -->
+          <g class="art-glyph art-glyph--faint" transform="translate(14 39) scale(0.62)">
+            <path d="m12 19-7-7 7-7"/>
+            <path d="M19 12H5"/>
+          </g>
+          <g class="art-glyph art-glyph--faint" transform="translate(34 39) scale(0.62)">
+            <path d="m12 5 7 7-7 7"/>
+            <path d="M5 12h14"/>
+          </g>
+          <g class="art-glyph art-glyph--faint" transform="translate(54 39) scale(0.62)">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+            <path d="M21 3v5h-5"/>
+          </g>
+
+          <rect class="art-field" x="76" y="38" width="186" height="20" rx="10"/>
+          <g class="art-glyph art-glyph--faint" transform="translate(84 42) scale(0.5)">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </g>
+          <text class="art-label art-label--sm art-label--muted" x="100" y="52">vinted.it/member/…</text>
+
+          <!-- the puzzle piece, ringed because it is the thing to click -->
+          <circle class="art-ring" cx="282" cy="48" r="13"/>
+          <g class="art-glyph" transform="translate(275 41) scale(0.6)">
+            <path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/>
+          </g>
+          <circle class="art-tile" cx="330" cy="48" r="9"/>
+
+          <!-- the page underneath, kept vague: it is context, not the subject -->
+          <path class="art-page" d="M4 66h352v134a10 10 0 0 1-10 10H14a10 10 0 0 1-10-10z"/>
+          <rect class="art-bar art-bar--faint" x="20" y="80" width="96" height="6" rx="3"/>
+          <rect class="art-bar art-bar--faint" x="20" y="94" width="140" height="6" rx="3"/>
+          <rect class="art-field" x="20" y="112" width="80" height="64" rx="6"/>
+          <rect class="art-field" x="108" y="112" width="80" height="64" rx="6"/>
+
+          <!-- the menu the puzzle piece opens -->
+          <rect class="art-menu" x="180" y="70" width="168" height="126" rx="10"/>
+          <text class="art-label art-label--sm" x="192" y="90">Extensions</text>
+          <text class="art-label art-label--xs art-label--muted" x="192" y="106">Full access</text>
+
+          <rect class="art-row" x="186" y="112" width="156" height="26" rx="6"/>
+          <g transform="translate(194 117) scale(0.125)">
+            <circle cx="64" cy="64" r="64" fill="#00ADB8"/>
+            <g fill="none" stroke="#FBFBFB" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="32.6,63.7 64,32.3 95.4,63.7"/>
+              <polyline points="32.6,98.2 64,66.9 95.4,98.2"/>
+            </g>
+          </g>
+          <text class="art-label art-label--sm" x="216" y="129">Bumpline</text>
+          <g class="art-glyph art-glyph--accent" transform="translate(320 118) scale(0.58)">
+            <path d="M12 17v5"/>
+            <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
+          </g>
+
+          <circle class="art-tile" cx="202" cy="152" r="8"/>
+          <rect class="art-bar art-bar--faint" x="216" y="149" width="60" height="6" rx="3"/>
+          <g class="art-glyph art-glyph--faint" transform="translate(320 143) scale(0.58)">
+            <path d="M12 17v5"/>
+            <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
+          </g>
+
+          <path class="art-divider" d="M186 172h156"/>
+          <g class="art-glyph art-glyph--faint" transform="translate(194 178) scale(0.5)">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </g>
+          <text class="art-label art-label--xs art-label--muted" x="216" y="187">Manage extensions</text>
+        </svg>
+      </figure>
+    </li>
+
+    <li class="step">
+      <span class="step__number" aria-hidden="true">2</span>
+      <div class="step__body">
+        <h2 class="step__title">Open your own wardrobe</h2>
+        <p class="step__text">
+          Every item of yours still for sale gets a <b>Relist</b> and a
+          <b>Relist as draft</b> button. Nowhere else.
+        </p>
+        <p class="step__note">
+          The copy is saved as a draft <i>before</i> the old listing is deleted,
+          so the item always exists somewhere. Both buttons delete the original; the
+          draft one stops before publishing.
+        </p>
+      </div>
+
+      <figure class="shot">
+        <svg class="shot__art" viewBox="0 0 480 216" role="img"
+             aria-label="A listing on your own wardrobe, with a Relist button and a Relist as draft button below it.">
+          <rect class="art-panel" x="132" y="8" width="216" height="200" rx="12"/>
+          <rect class="art-field" x="144" y="20" width="192" height="84" rx="8"/>
+          <g class="art-glyph art-glyph--faint" transform="translate(228 50)">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="9" cy="9" r="2"/>
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+          </g>
+
+          <rect class="art-bar" x="144" y="116" width="120" height="7" rx="3.5"/>
+          <rect class="art-bar art-bar--faint" x="144" y="131" width="72" height="7" rx="3.5"/>
+
+          <rect class="art-cta" x="144" y="146" width="192" height="22" rx="6"/>
+          <text class="art-label art-label--onCta" x="240" y="161" text-anchor="middle">Relist</text>
+
+          <rect class="art-cta art-cta--ghost" x="144" y="174" width="192" height="22" rx="6"/>
+          <text class="art-label art-label--accent" x="240" y="189" text-anchor="middle">Relist as draft</text>
+        </svg>
+      </figure>
+    </li>
+  </ol>
+</main>
+
+<footer class="foot">
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer">How it works</a>
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer">Report a problem</a>
+</footer>
+
+<script src="script.js"></script>
