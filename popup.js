@@ -37,7 +37,7 @@ function describeTab(url) {
   }
   return {
     tone: 'ok',
-    text: 'Ready. On your own items the Relist and Relist as draft buttons sit under Vinted’s Booster button.',
+    text: 'Ready. On your own items the Relist and Relist as draft buttons sit under Vinted’s own Bump button.',
   };
 }
 

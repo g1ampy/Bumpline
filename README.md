@@ -81,7 +81,7 @@ so that you can review it first.
     </tbody>
 </table>
 
-Both buttons appear under Vinted's own **Booster** button, on every item you can
+Both buttons appear under Vinted's own **Bump** button, on every item you can
 still edit:
 
 ```
@@ -89,7 +89,7 @@ still edit:
 │   Nintendo Switch Lite    9,00 │
 │                                │
 │   ┌────────────────────────┐   │
-│   │        Booster         │   │  ← Vinted's own button
+│   │          Bump          │   │  ← Vinted's own button
 │   └────────────────────────┘   │
 │   ┌────────────────────────┐   │
 │   │        Relist          │   │  ← delete, then publish now
@@ -139,7 +139,7 @@ step, no dependencies, and no network calls to anything except Vinted itself.
 ## Usage
 
 Open your own Vinted profile — `https://www.vinted.it/member/123456` — find an
-item, and click one of the two buttons under **Booster**. When it finishes, the
+item, and click one of the two buttons under **Bump**. When it finishes, the
 page reloads.
 
 The button label tells you exactly where it is, so you always know whether you
