@@ -1,125 +1,201 @@
 /* Bumpline — toolbar popup.
-   The extension does its real work inside the Vinted page; this panel only
-   explains where the buttons are and surfaces a relist that never finished. */
+ *
+ * The extension does its real work inside the Vinted page; this panel only
+ * answers "does it work on this tab?" and "did a relist get stuck?".
+ *
+ * Colour rule worth keeping: the brand teal #00ADB8 is 2.7:1 against both
+ * white and its own white text, so it never carries text, a filled button or
+ * a focus ring. Those use --accent-ink, darkened in light mode and lightened
+ * in dark mode, which clears 4.5:1 both ways. The teal survives in the logo.
+ */
 
 :root {
-  --ink: #1f2328;
-  --ink-soft: #57606a;
-  --line: #d8dee4;
+  --ink: #1f2328;          /* 15.8:1 on --surface */
+  --ink-soft: #57606a;     /*  6.4:1 on --surface */
+  --line: #d0d7de;
   --surface: #ffffff;
-  --accent: #00adb8;
-  --warn-bg: #fdecea;
-  --warn-ink: #842029;
-  --warn-line: #f5c2c7;
+  --surface-sunken: #f6f8fa;
+
+  --accent-ink: #00727b;   /*  5.7:1 both ways */
+  --accent-ink-strong: #005c63;
+
+  --alert-bg: #fdecea;
+  --alert-ink: #842029;    /*  8.3:1 on --alert-bg */
+  --alert-line: #f5c2c7;
+
   --ok-bg: #e6f7ee;
-  --ok-ink: #0f5132;
+  --ok-ink: #0f5132;       /*  8.4:1 on --ok-bg */
   --ok-line: #a3e4c4;
+
+  --radius: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #e6edf3;
-    --ink-soft: #9198a1;
+    --ink: #e6edf3;        /* 13.7:1 on --surface */
+    --ink-soft: #9198a1;   /*  5.6:1 on --surface */
     --line: #3d444d;
     --surface: #1c2128;
-    --warn-bg: #3a1d1d;
-    --warn-ink: #ffb3ab;
-    --warn-line: #6b2b2b;
+    --surface-sunken: #22272e;
+
+    --accent-ink: #3ad1da; /*  8.7:1 on --surface */
+    --accent-ink-strong: #5fe0e8;
+
+    --alert-bg: #3a1d1d;
+    --alert-ink: #ffb3ab;  /*  9.0:1 on --alert-bg */
+    --alert-line: #6b2b2b;
+
     --ok-bg: #14301f;
-    --ok-ink: #7ee2b0;
+    --ok-ink: #7ee2b0;     /*  9.1:1 on --ok-bg */
     --ok-line: #2b5c3f;
   }
 }
 
+* { box-sizing: border-box; }
+
+/* .button sets display, which would otherwise beat the user-agent rule for the
+   hidden attribute and leave an empty button on screen. */
+[hidden] { display: none !important; }
+
 body {
-  width: 300px;
+  width: 304px;
   margin: 0;
-  padding: 14px;
+  padding: var(--space-3);
   background: var(--surface);
   color: var(--ink);
   font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* --- header ------------------------------------------------------------- */
+
 .head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-bottom: 10px;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--line);
 }
 
-.head__logo { display: block; }
+.head__logo { display: block; border-radius: 4px; }
 
 .head__name {
+  flex: 1;
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.status {
-  margin: 12px 0 0;
-  padding: 10px;
-  border-radius: 6px;
+.head__version {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- cards -------------------------------------------------------------- */
+
+.card {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
 }
 
-.status--ok   { background: var(--ok-bg);   color: var(--ok-ink);   border-color: var(--ok-line); }
-.status--todo { background: var(--warn-bg); color: var(--warn-ink); border-color: var(--warn-line); }
+/* The state is carried by the icon and the wording as well as the colour, so
+   it survives a colour-blind reader and a greyscale screen. */
+.card--ok    { background: var(--ok-bg);    border-color: var(--ok-line);    color: var(--ok-ink); }
+.card--alert { background: var(--alert-bg); border-color: var(--alert-line); color: var(--alert-ink); }
 
-.pending {
-  margin-top: 12px;
-  padding: 10px;
-  border-radius: 6px;
-  background: var(--warn-bg);
-  color: var(--warn-ink);
-  border: 1px solid var(--warn-line);
-}
-
-.pending__title {
-  margin: 0 0 6px;
+.card__title {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
   font-size: 13px;
   font-weight: 600;
 }
 
-.pending__list {
-  margin: 0 0 10px;
-  padding-left: 18px;
-}
-
-.pending__list li + li { margin-top: 2px; }
-
-.pending__note {
-  margin: 8px 0 0;
+.card__note {
+  margin: var(--space-2) 0 0;
   font-size: 12px;
   line-height: 1.45;
+  opacity: 0.9;
 }
 
+.card__list {
+  margin: var(--space-2) 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.card__list li + li { margin-top: var(--space-1); }
+
+.icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;         /* optical alignment with the cap height */
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* --- action ------------------------------------------------------------- */
+
 .button {
+  display: block;
   width: 100%;
-  padding: 7px 10px;
+  min-height: 36px;
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border: 0;
-  border-radius: 6px;
-  background: var(--accent);
-  color: #ffffff;
+  border-radius: var(--radius);
+  background: var(--accent-ink);
+  color: var(--surface);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color 160ms ease;
 }
 
-.button:hover { filter: brightness(1.06); }
-.button:disabled { opacity: 0.6; cursor: default; }
+.button:hover { background: var(--accent-ink-strong); }
+
+/* Pressing changes colour only: moving the button would shift the layout. */
+.button:active { background: var(--accent-ink-strong); }
+
+/* --- footer ------------------------------------------------------------- */
 
 .foot {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
-  padding-top: 10px;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--line);
-  color: var(--ink-soft);
   font-size: 12px;
 }
 
-.foot a { color: var(--accent); text-decoration: none; }
-.foot a:hover { text-decoration: underline; }
+.foot__link {
+  color: var(--accent-ink);
+  text-decoration: none;
+  border-radius: 3px;
+}
+
+.foot__link:hover { text-decoration: underline; }
+
+/* --- focus -------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0ms !important; }
+}

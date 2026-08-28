@@ -23,11 +23,17 @@ closes the last gap between installing it and finding it.
   retry runs on. Previously this was only discoverable by returning to that page
   by chance.
 
+- **One action, and only when it leads somewhere.** The popup offers a single
+  button — reopen the stuck relist's profile page, or open your profile when you
+  are somewhere else entirely — and shows none at all when the current tab is
+  already the right one.
+
 ### Changed
 
-- Pending relists now record the profile page they were started from, so the
-  popup can link straight back to it. Records written by earlier versions fall
-  back to the country domain.
+- Pending relists now record the profile page they were started from, and the
+  content script remembers the last profile page it ran on, so the popup can
+  link straight back to it from any tab. Records written by earlier versions
+  fall back to the country domain.
 
 [1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
 

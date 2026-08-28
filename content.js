@@ -39,6 +39,7 @@
 
   const PUBLISH_ATTEMPTS = 5;
   const STORE_PREFIX = 'bumpline:pending:';
+  const LAST_PROFILE_KEY = 'bumpline:lastProfile';
   const DB_NAME = 'bumpline';
   const DB_STORE = 'photos';
 
@@ -1327,6 +1328,15 @@
     paintAgeLabels();
     if (added) trace('added buttons to', added, 'item(s)');
   }
+
+  // The toolbar popup has no way of knowing which country site the seller uses,
+  // or their member id. Leaving a note here means it can always offer to open
+  // the right profile page, whatever tab it is opened from.
+  chrome.storage.local
+    .set({ [LAST_PROFILE_KEY]: `${SITE}${location.pathname}` })
+    .catch(() => {
+      // Only costs the popup a shortcut; nothing else depends on it.
+    });
 
   new MutationObserver(() => attachButtons()).observe(document.documentElement, {
     childList: true,

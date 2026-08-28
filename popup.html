@@ -3,26 +3,42 @@
 <link rel="stylesheet" href="popup.css">
 
 <header class="head">
-  <img class="head__logo" src="icons/icon32.png" alt="" width="24" height="24">
+  <img class="head__logo" src="icons/icon32.png" alt="" width="20" height="20">
   <h1 class="head__name">Bumpline</h1>
+  <span class="head__version" id="version"></span>
 </header>
 
-<p class="status" id="status">Checking the current tab…</p>
+<main>
+  <!-- An unfinished relist outranks everything else, so it is first in the
+       reading order as well as on screen. -->
+  <section class="card card--alert" id="pending" hidden>
+    <h2 class="card__title">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+      </svg>
+      <span id="pending-title"></span>
+    </h2>
+    <ul class="card__list" id="pending-list"></ul>
+    <p class="card__note">
+      Publishing is retried each time you open a Vinted profile page. The copy is
+      also in your Vinted drafts, ready to publish by hand.
+    </p>
+  </section>
 
-<section class="pending" id="pending" hidden>
-  <h2 class="pending__title" id="pending-title"></h2>
-  <ul class="pending__list" id="pending-list"></ul>
-  <button class="button" id="pending-open" type="button">Open the profile page</button>
-  <p class="pending__note">
-    Publishing is retried automatically every time you open a Vinted profile
-    page. The copy is also sitting in your Vinted drafts, ready to publish by
-    hand.
-  </p>
-</section>
+  <section class="card" id="status" role="status" aria-live="polite">
+    <h2 class="card__title">
+      <svg class="icon" id="status-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
+      <span id="status-title">Checking this tab</span>
+    </h2>
+    <p class="card__note" id="status-detail">One moment.</p>
+  </section>
+
+  <button class="button" id="action" type="button" hidden></button>
+</main>
 
 <footer class="foot">
-  <span id="version"></span>
-  <a href="https://github.com/g1ampy/Bumpline" target="_blank" rel="noreferrer">Help &amp; source</a>
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer">How it works</a>
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer">Report a problem</a>
 </footer>
 
 <script src="popup.js"></script>
