@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bumpline - Relist for Vinted",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "One-click relist for your own Vinted listings. The copy is saved as a draft before the old one is deleted, so nothing is lost",
   "icons": {
     "16": "icons/icon16.png",
@@ -9,6 +9,15 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Bumpline",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "24": "icons/icon24.png",
+      "32": "icons/icon32.png"
+    }
   },
   "permissions": [
     "storage",

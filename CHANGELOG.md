@@ -5,6 +5,32 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-08-28
+
+Bumpline leaves `0.x`. Nothing about the relist changed — the version number
+says the tool is finished and tested, not experimental, and the toolbar popup
+closes the last gap between installing it and finding it.
+
+### Added
+
+- **Toolbar popup.** Until now the extension gave no sign of itself outside the
+  Vinted page: installing it from the store showed nothing anywhere, and the
+  obvious conclusion was that it did not work. Clicking the toolbar icon now
+  says whether the current tab is a Vinted profile page — where the buttons
+  live — or where to go instead.
+- **Unfinished relists are visible from the toolbar.** If publishing failed, the
+  popup names the items still waiting and opens the exact profile page the
+  retry runs on. Previously this was only discoverable by returning to that page
+  by chance.
+
+### Changed
+
+- Pending relists now record the profile page they were started from, so the
+  popup can link straight back to it. Records written by earlier versions fall
+  back to the country domain.
+
+[1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
+
 ## [0.3.0] - 2026-08-28
 
 First public release, on the Chrome Web Store and here.

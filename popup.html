@@ -1,0 +1,28 @@
+<meta charset="utf-8">
+<title>Bumpline</title>
+<link rel="stylesheet" href="popup.css">
+
+<header class="head">
+  <img class="head__logo" src="icons/icon32.png" alt="" width="24" height="24">
+  <h1 class="head__name">Bumpline</h1>
+</header>
+
+<p class="status" id="status">Checking the current tab…</p>
+
+<section class="pending" id="pending" hidden>
+  <h2 class="pending__title" id="pending-title"></h2>
+  <ul class="pending__list" id="pending-list"></ul>
+  <button class="button" id="pending-open" type="button">Open the profile page</button>
+  <p class="pending__note">
+    Publishing is retried automatically every time you open a Vinted profile
+    page. The copy is also sitting in your Vinted drafts, ready to publish by
+    hand.
+  </p>
+</section>
+
+<footer class="foot">
+  <span id="version"></span>
+  <a href="https://github.com/g1ampy/Bumpline" target="_blank" rel="noreferrer">Help &amp; source</a>
+</footer>
+
+<script src="popup.js"></script>

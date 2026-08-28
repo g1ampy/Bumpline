@@ -158,6 +158,10 @@ can still back out:
 
 Close the tab at any point before `Deleting…` and your listing is untouched.
 
+Clicking the Bumpline icon in the toolbar tells you whether the tab you are on
+is a profile page, and lists any relist that has not finished publishing yet —
+with a button that reopens the page the retry runs on.
+
 If the category now requires a size your old listing never had, a window shows
 the real size list pulled from Vinted and asks you to pick one. Nothing is
 deleted until you choose.
@@ -213,8 +217,9 @@ clears it most reliably.
 
 #### The buttons do not appear
 
-Check that you are on **your own** profile page (`/member/...`) on a supported
-country site, and reload. If they are still missing, click **Reload** on the
+Click the Bumpline icon in the toolbar: it says whether the current tab is a
+page the buttons work on. Otherwise check that you are on **your own** profile
+page (`/member/...`) on a supported country site, and reload. If they are still missing, click **Reload** on the
 extension in `chrome://extensions`. Remember that sold and reserved items never
 get buttons.
 

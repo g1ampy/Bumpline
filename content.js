@@ -1217,6 +1217,10 @@
 
       const record = {
         site: SITE,
+        // The page the buttons live on is also the only page the retry runs on,
+        // so remember it: the toolbar popup uses it to send the user back here
+        // when publishing has failed.
+        profileUrl: `${SITE}${location.pathname}`,
         itemId,
         startedAt: Date.now(),
         attempts: 0,
