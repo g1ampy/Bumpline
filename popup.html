@@ -19,10 +19,21 @@
       <span id="pending-title"></span>
     </h2>
     <ul class="card__list" id="pending-list"></ul>
-    <p class="card__note">
-      Publishing is retried each time you open a Vinted profile page. The copy is
-      also in your Vinted drafts, ready to publish by hand.
-    </p>
+    <p class="card__note" id="pending-note"></p>
+  </section>
+
+  <!-- Vinted has refused something and the extension has stood down. That
+       outranks everything except an unfinished relist. -->
+  <section class="card card--alert" id="paused" role="alert" hidden>
+    <h2 class="card__title">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
+        <path d="M10 15V9M14 15V9"/>
+      </svg>
+      <span id="paused-title">Relisting is paused</span>
+    </h2>
+    <p class="card__note" id="paused-detail"></p>
+    <button class="button button--quiet" id="paused-lift" type="button">Lift the pause early</button>
   </section>
 
   <section class="card" id="status" role="status" aria-live="polite">
@@ -35,6 +46,19 @@
 
   <button class="button" id="action" type="button" hidden></button>
 
+  <!-- How much relisting has gone on lately, because that is the number Vinted
+       acts on and the one thing the seller cannot see from the page itself. -->
+  <section class="card" id="volume">
+    <h2 class="card__title">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 6v6l4 2"/>
+        <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
+      </svg>
+      <span id="volume-title">This hour</span>
+    </h2>
+    <p class="card__note" id="volume-detail"></p>
+  </section>
+
   <section class="setting">
     <label class="switch">
       <input type="checkbox" id="reload-toggle" checked>
@@ -46,6 +70,58 @@
         </span>
       </span>
     </label>
+
+    <label class="switch">
+      <input type="checkbox" id="cooldown-toggle" checked>
+      <span class="switch__label">
+        Wait 10 seconds between relists
+        <span class="switch__hint">
+          One relist straight after another is the pattern Vinted answers with a
+          block. This is the only hard stop between one deletion and the next.
+        </span>
+      </span>
+    </label>
+
+    <label class="switch">
+      <input type="checkbox" id="fast-toggle">
+      <span class="switch__label">
+        Relist faster
+        <span class="switch__hint">
+          Shortens the random pause the extension leaves between each request a
+          relist makes. Quicker, and much closer to the burst of traffic that
+          gets accounts blocked.
+        </span>
+      </span>
+    </label>
+
+    <label class="switch">
+      <input type="checkbox" id="local-drafts-toggle" checked>
+      <span class="switch__label">
+        Keep the copy on this device
+        <span class="switch__hint">
+          A plain relist holds the copy here and only creates a draft on Vinted
+          at the moment it publishes. Turn this off to park a draft in your
+          Vinted account first, as before, at the cost of extra writes on every
+          relist and every retry. “Relist as draft” is unaffected either way.
+        </span>
+      </span>
+    </label>
+  </section>
+
+  <!-- The guarded settings put their warning here rather than flipping quietly.
+       The checkbox stays where it was until the second, deliberate click. -->
+  <section class="card card--alert" id="risk" role="alert" hidden>
+    <h2 class="card__title">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+      </svg>
+      <span id="risk-title"></span>
+    </h2>
+    <p class="card__note" id="risk-detail"></p>
+    <div class="risk__actions">
+      <button class="button button--quiet" id="risk-cancel" type="button">Leave it alone</button>
+      <button class="button" id="risk-accept" type="button">Change it anyway</button>
+    </div>
   </section>
 </main>
 

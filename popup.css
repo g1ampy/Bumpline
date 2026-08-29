@@ -214,6 +214,42 @@ body {
   color: var(--ink-soft);
 }
 
+/* The settings are a list now, not a single switch, and they need to read as
+   separate decisions rather than one paragraph of checkboxes. */
+.switch + .switch {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+/* --- the risk gate ------------------------------------------------------ */
+
+/* Two buttons side by side, and the safe one first: the reading order is the
+   tab order, so the answer reached by reflex is the one that changes nothing. */
+.risk__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.risk__actions .button {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Inside the alert card the accent fill would read as the recommended answer,
+   which it is not. The quiet button carries the card's own ink instead. */
+.button--quiet {
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+}
+
+.button--quiet:hover,
+.button--quiet:active {
+  background: transparent;
+  opacity: 0.8;
+}
+
 /* --- footer ------------------------------------------------------------- */
 
 .foot {

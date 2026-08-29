@@ -5,6 +5,108 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-08-29
+
+Vinted answers traffic that looks automated with a temporary block on editing
+and publishing. Nothing a relist produced was wrong; the shape of its traffic
+was. Every request went out the instant the one before it came back, a stuck
+publish was retried five times in fifteen seconds, and nothing anywhere counted
+how many relists had gone through in a row. This release slows the extension
+down, gives it somewhere to stop, and drops the writes it was making against
+Vinted that it did not need to make.
+
+The relist itself is unchanged: the same fields, the same photos, the same two
+buttons, and the same rule that nothing is deleted until the copy exists.
+
+### Added
+
+- **Requests are spaced out.** A random pause of roughly 0.9 to 2.4 seconds now
+  sits between every call a relist makes. A full photo set was up to twenty
+  uploads fired back to back, which is the densest run of writes the extension
+  produced and the one least like a person using the site. The pause is random
+  rather than fixed so that a relist is not simply a slower metronome.
+- **Ten seconds between one relist and the next.** Measured from the deletion,
+  which is the moment Vinted counts, and kept on disk — the page reloads after
+  every relist, so a counter in memory would reset each time. The button counts
+  the wait down instead of ignoring the click.
+- **A warning past eight relists in an hour.** The ninth stops before it sends
+  anything and asks whether you mean it, saying what the volume looks like from
+  Vinted's side and what it does about it. Nothing has been deleted at that
+  point, so stopping costs nothing. Eight is not Vinted's number — Vinted does
+  not publish one — it is a deliberately cautious guess.
+- **A daily budget as well as an hourly one.** Forty in twenty-four hours, next
+  to the eight in an hour. An hourly limit on its own has an obvious hole —
+  seven an hour, all day, never trips it and is unmistakably a bulk operation —
+  and the day window closes it. Both numbers are guesses, and cautious ones;
+  Vinted publishes neither.
+- **Vinted saying stop is now acted on.** A `429`, or a `403` carrying a bot
+  challenge, used to reach the seller as a failed relist and an enabled button,
+  and pressing that button again is how a rate limit that would have passed in
+  fifteen minutes becomes a day-long block on the account. The refusal is
+  written down instead: every open Vinted tab greys out its buttons and says
+  until when, the pending relists stop retrying themselves, and everything comes
+  back on its own. Fifteen minutes for a `429`, thirty for a challenge, doubling
+  for each further refusal that day up to six hours, and Vinted's own
+  `Retry-After` wins whenever it asks for longer. Nothing is lost in the
+  meantime — an unfinished relist keeps its copy and resumes afterwards — and
+  the popup can lift the pause early behind the same confirmation as the risky
+  settings, for the times it was really a logged-out session or one bad network
+  moment.
+- **The popup reports the hour and the day.** How many items have been relisted
+  in the last sixty minutes and the last twenty-four, how long the next one has
+  to wait, and any pause that is standing. These are the numbers the ban turns
+  on and the only ones a seller could not see from the page.
+- **Three new settings, two of which ask first.** The cooldown and the pacing
+  can both be turned towards *faster*, and both make a block more likely, so the
+  checkbox springs back and the change is only made by a second, deliberate
+  click in a panel that says what the risk is. Cancelling leaves the setting
+  exactly as it was.
+- **API calls go through the page's own fetch.** Every request Bumpline makes
+  now runs through the main-world `window.fetch`, which is the fetch DataDome
+  and similar SDKs have instrumented. The content script's isolated-world fetch
+  bypassed all of that, so every call left without the tracking headers a real
+  user's requests carry — an invisible but consistent tell. A small bridge
+  script (`bridge.js`) runs in the main world and proxies each call; the
+  content script falls back to direct fetch when the bridge cannot load.
+- **A page visit before any API call.** Before touching the Vinted API, the
+  extension visits the item's own page through the bridge, creating a page-view
+  event in Vinted's analytics. A real user would navigate to the item before
+  editing or deleting it; a script that goes straight to the API without ever
+  viewing the page is a different session shape.
+- **The item card is scrolled into view.** Before the relist starts, the card
+  is scrolled to the centre of the viewport with a smooth scroll — the same
+  `scrollIntoView` the browser uses for anchor navigation. Scroll events have
+  no `isTrusted` flag, so they are indistinguishable from a person scrolling.
+- **Pauses between logical phases, not just between requests.** On top of the
+  per-request spacing, the relist now waits after reading the item (2–5 s,
+  simulating a person looking at the listing), after the page visit (1.5–4 s),
+  and before deleting (1–2.5 s, simulating the moment of deciding). The delays
+  are random and non-uniform, so the session fingerprint is that of someone
+  stepping through a form rather than a script walking a list.
+
+### Changed
+
+- **Publishing retries twice, not five times.** The old ladder — five attempts
+  with a doubling wait — spent fifteen seconds pressing a server that had
+  already refused. When the refusal is really an unstated rate limit, which is
+  the common case, every extra attempt makes it worse. Two attempts, with one
+  long random wait between them, and then the job waits for the next page load
+  as it always did. The lost retries protected against a listing stranded
+  between the delete and the publish; the copy held on the device covers that,
+  and covers it for days rather than fifteen seconds.
+- **A plain relist no longer parks a draft on Vinted before deleting.** The
+  draft was a staging post: one write to create it, another on every retry, and
+  a delete for each one superseded, all for a listing about to exist anyway. The
+  payload and the photo bytes are kept on this device instead — they already
+  were, as the second safety net — and the draft is opened at the moment of
+  publishing, which is the one point Vinted's API requires one. **Relist as
+  draft** is untouched, because there the draft on Vinted *is* the result. The
+  old order is a setting away for anyone who wants the copy sitting in their
+  Vinted account before the delete.
+- **The recovery banner and the popup say where the copy actually is.** Telling
+  someone to publish it by hand from their Vinted drafts is useless advice when
+  the copy is on their disk, so both now read the record and say which it is.
+
 ## [1.0.0] - 2026-08-28
 
 Bumpline leaves `0.x`. Nothing about the relist changed — the version number

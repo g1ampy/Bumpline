@@ -36,11 +36,18 @@ copy goes live. Every naive tool has the same fatal gap: it deletes first, and
 if the create call then fails on a network blip or a bot challenge, your item is
 gone for good.
 
-**This extension's primary goal is to close that gap.** The copy is saved as a
-private draft *before* anything is deleted. A draft is not a listing, so it does
-not count as a duplicate, and it sits on Vinted's own servers. By the time the
-delete happens, your item exists in two places at once. There is no moment at
-which it exists in none.
+**This extension's primary goal is to close that gap.** The whole copy — every
+field and every photo byte — is written to disk inside your browser *before*
+anything is deleted, and it stays there until the new listing is live. By the
+time the delete happens, your item exists in two places at once. There is no
+moment at which it exists in none.
+
+Until 1.0.1 that second place was a private draft on Vinted, created before the
+delete. It still is for **Relist as draft**, where the draft is the result, and
+for a plain relist if you turn *Keep the copy on this device* off in the popup.
+Otherwise the draft is now opened at the moment of publishing — the one point
+Vinted's API insists on one — and the copy on your disk is what carries the item
+across the delete.
 
 It is important to note that **Relist as draft is NOT a dry run**. Both buttons
 delete the original. The draft variant simply stops before publishing the copy,
@@ -56,6 +63,7 @@ so that you can review it first.
   * [Packaging](#packaging)
   * [Requirements](#requirements)
 * [Usage](#usage)
+  * [When Vinted says stop](#when-vinted-says-stop)
 * [Why your item cannot get lost](#why-your-item-cannot-get-lost)
 * [Troubleshooting](#troubleshooting)
 * [How it works](#how-it-works)
@@ -77,7 +85,7 @@ so that you can review it first.
             <td>Deletes the old listing and leaves the copy unpublished in your Vinted drafts. For when you want to change the price, drop a photo or fix the description before it goes live.</td>
         </tr>
         <tr>
-            <td align="center" valign="top"><code>Relisting… → Saving draft… → Deleting… → Publishing…</code></td>
+            <td align="center" valign="top"><code>Relisting… → Saving the copy… → Deleting… → Publishing…</code></td>
             <td align="center" valign="top"><code>Relisting… → Saving draft… → Deleting…</code></td>
         </tr>
     </tbody>
@@ -178,21 +186,41 @@ can still back out:
 
 | Label | What is happening | Can you still back out? |
 | ----- | ----------------- | :---------------------: |
+| `Cooling down 7s…` | Waiting out the gap since your last relist | Yes |
 | `Relisting…` | Reading the item, downloading and re-uploading photos | Yes |
 | `Checking size…` | Asking Vinted which sizes this category accepts | Yes |
 | `Waiting for size…` | Waiting for you to pick a size | Yes |
 | `Checking…` | Confirming you are logged in and not bot-blocked | Yes |
-| `Saving draft…` | Creating the private copy on Vinted | Yes |
-| `Deleting…` | Removing the old listing | No — but the draft already exists |
-| `Publishing…` | Turning the draft into the new listing | No — retried until it works |
-| `Retrying 3/5…` | Publishing failed, trying again | No — retried until it works |
+| `Saving draft…` | Creating the private copy on Vinted — draft relists only | Yes |
+| `Saving the copy…` | Writing the item and its photos to disk | Yes |
+| `Deleting…` | Removing the old listing | No — but the copy already exists |
+| `Publishing…` | Creating the draft and turning it into the new listing | No — retried until it works |
+| `Retrying 2/2…` | Publishing failed, trying once more | No — retried until it works |
+
+Greyed-out buttons mean Vinted has refused something and the extension has stood
+down until it is worth asking again; see [When Vinted says stop](#when-vinted-says-stop).
+
+The steps do not run back to back. A random pause of about one to two seconds
+sits between each request so a relist arrives as a person's traffic rather than
+as a burst, and a fresh relist waits ten seconds after the last one. Both are
+adjustable in the popup, and both are there because Vinted blocks accounts over
+exactly that shape of traffic.
+
+Before the first API call, the extension scrolls to the item card and visits the
+item's own page — the same navigation a person would have before editing or
+deleting something. Longer pauses sit between the logical phases of a relist
+(reading, uploading, deleting, publishing) to match the cadence of someone
+stepping through a form, not a script walking a list. Every Vinted API call goes
+through the page's own `window.fetch` rather than the content script's isolated
+copy, so it carries the same tracking headers a real user's requests carry.
 
 Close the tab at any point before `Deleting…` and your listing is untouched.
 
 Clicking the Bumpline icon in the toolbar tells you whether the buttons are on
 the page you are looking at and how many items they are on, lists any relist
 that has not finished publishing yet — with a button that reopens the page the
-retry runs on — and carries the one setting there is:
+retry runs on — says how many items you have relisted in the last hour and in
+the last day, shows any standing pause, and carries four settings:
 
 **Reload the page after a relist.** On by default. The page has to be refreshed
 to stop showing the listing that was just deleted and to start showing the copy.
@@ -200,6 +228,46 @@ Turn it off if you would rather keep your scroll position and your filters; the
 deleted item's card is removed straight away, and the rest of the page stays out
 of date until you reload it yourself.
 
+**Wait 10 seconds between relists.** On by default, and the only hard stop
+between one deletion and the next. Turning it off asks you to confirm first,
+because a run of relists then goes out as fast as the network allows, which is
+the pattern Vinted answers with a temporary block on editing and publishing.
+
+**Relist faster.** Off by default. Shortens the random pause between each
+request from roughly 0.9–2.4 seconds to 0.25–0.7. Turning it on asks you to
+confirm: it makes every relist quicker and makes the traffic look far more like
+a script.
+
+**Keep the copy on this device.** On by default, and the subject of the note
+further up: a plain relist holds the copy in your browser and only creates a
+draft on Vinted when it publishes. Turn it off to park a draft in your Vinted
+account before the delete, as versions before 1.0.1 did.
+
+Past eight relists in an hour, or forty in a day, the next one stops and asks
+whether you mean it. Two windows rather than one, because an hourly limit on its
+own has an obvious hole: seven an hour, all day, never trips it and is
+unmistakably a bulk operation. Neither number is Vinted's — Vinted publishes
+none — and both are deliberately cautious guesses at where tidying a wardrobe
+stops looking like tidying a wardrobe.
+
+### When Vinted says stop
+
+A `429`, or a `403` carrying a bot challenge, is Vinted asking for quiet. Until
+1.0.1 nothing acted on it: the button came back enabled, the obvious thing to do
+was press it again, and that is how a rate limit that would have passed in
+fifteen minutes becomes a day-long block on the account.
+
+The refusal is now written down. Every open Vinted tab disables its buttons and
+says so, the pending relists stop retrying themselves, and everything comes back
+on its own when the wait is over — fifteen minutes for a `429`, thirty for a
+challenge, doubling for each further refusal in the same day up to a ceiling of
+six hours. If Vinted sends a `Retry-After` asking for longer, that wins.
+
+Nothing is lost while the pause is on: an unfinished relist keeps its copy and
+its banner, and picks up where it left off afterwards. The popup can lift the
+pause early, behind the same confirmation as the risky settings, for the case
+where the refusal was really something else — being logged out, or one bad
+network moment.
 If the category now requires a size your old listing never had, a window shows
 the real size list pulled from Vinted and asks you to pick one. Nothing is
 deleted until you choose.
@@ -211,12 +279,11 @@ flowchart TD
     A([Click Relist]) --> B[Download and re-upload every photo]
     B --> C{Checks pass?<br/>photos · title · condition · size · login}
     C -->|No| STOP([Stops. Nothing deleted.<br/>Your listing is untouched.])
-    C -->|Yes| D[Create the private draft on Vinted]
-    D --> E[Save a local backup<br/>text and photo bytes]
-    E --> F[Delete the old listing]
-    F --> G[Publish the draft]
+    C -->|Yes| D[Save the copy on this device<br/>text and photo bytes]
+    D --> F[Delete the old listing]
+    F --> G[Create the draft and publish it]
     G -->|Works| OK([New listing online])
-    G -->|Fails| SAFE([Item waits as a draft in your account<br/>Retried on every page load<br/>Or publish it by hand, any time])
+    G -->|Fails| SAFE([Copy waits on this device<br/>Retried on every page load<br/>Or download it and rebuild by hand])
 
     classDef good fill:#28A745,stroke:#1c7430,color:#ffffff
     classDef warn fill:#F97316,stroke:#c2560f,color:#ffffff
@@ -230,28 +297,34 @@ read, that the size is valid for the category, and that you are logged in and
 not sitting behind a bot challenge. Any failure stops the run and deletes
 nothing.
 
-From the delete onwards, the item exists in two independent places:
+From the delete onwards the item is held in your browser: the full payload in
+extension storage, and the raw photo bytes in IndexedDB. Both survive closing
+the tab, closing the browser and restarting the machine, and neither depends on
+Vinted having kept anything.
 
-| Where | What is stored | Survives |
-| ----- | -------------- | -------- |
-| Vinted's servers | The full draft, ready to publish | Anything happening to your computer |
-| Your browser | The item text and the raw photo bytes | Vinted losing the draft |
+If publishing fails it waits several seconds and tries once more, then stops
+pressing and picks the job up again every time you open a Vinted page. A box
+offers three ways out: **Retry now**, **Download data** — the item as a file,
+which is also the copy to rebuild the listing from by hand — and **Discard**.
 
-If publishing fails, it retries five times with a growing delay, then keeps
-retrying every time you open a Vinted page. A box offers three ways out:
-**Retry now**, **Download data** — the item as a file — and **Discard**.
-
-Even in the worst case, with the browser closed and the extension uninstalled,
-the item is sitting in your Vinted drafts. Open the app and publish it by hand.
-This extension is never the only copy.
+**Relist as draft**, and a plain relist with *Keep the copy on this device*
+switched off, add a second independent copy: a private draft on Vinted's own
+servers, made before the delete. That one survives anything happening to your
+computer, and can be published by hand from the Vinted app. It is the stronger
+guarantee of the two, and it costs a pair of extra write calls per relist on an
+account Vinted is already counting calls on.
 
 ## Troubleshooting
 
-#### "Blocked by anti-bot"
+#### "Blocked by anti-bot", or the buttons have gone grey
 
-Vinted thinks you are a robot. Nothing was deleted. Reload the page, turn off ad
-and tracker blockers for Vinted, and wait a minute. Logging out and back in
-clears it most reliably.
+Vinted thinks you are a robot. Nothing was deleted. Since 1.0.1 the extension
+answers this by pausing itself — the buttons grey out in every Vinted tab and a
+note says when they come back. Wait it out: pressing on is what turns a fifteen
+minute pause into a 24-hour block on the account.
+
+If you are sure it was something else, turn off ad and tracker blockers for
+Vinted, log out and back in, and lift the pause from the toolbar popup.
 
 #### The buttons do not appear
 
@@ -300,14 +373,20 @@ The order of operations:
 1. GET    /api/v2/item_upload/items/<id>              read the item
 2. POST   /api/v2/photos                              re-upload each photo
 3.                                                    run every pre-flight check
-4. POST   /api/v2/item_upload/drafts                  create the draft
-5.                                                    save the local backup
-6. POST   /api/v2/items/<id>/delete                   delete the old listing
+4.                                                    save the copy on this device
+5. POST   /api/v2/items/<id>/delete                   delete the old listing
+6. POST   /api/v2/item_upload/drafts                  create the draft
 7. POST   /api/v2/item_upload/drafts/<id>/completion  publish the draft
 ```
 
-**Relist as draft** stops after step 6. If step 6 fails, the draft is removed
-with `DELETE /api/v2/item_upload/drafts/<id>` so nothing is left lying around.
+A random pause sits between every numbered call, and steps 6 and 7 are retried
+as a pair at most twice.
+
+**Relist as draft** — and a plain relist with *Keep the copy on this device*
+switched off — runs step 6 before step 5 instead, which is the order every
+version up to 1.0.0 used. The draft relist then stops there. If the delete
+fails, the draft is removed with `DELETE /api/v2/item_upload/drafts/<id>` so
+nothing is left lying around.
 
 Every endpoint is built from the page's own `location.origin`, which is why all
 [28 Vinted country domains][Domains] work with no configuration.

@@ -41,15 +41,67 @@
     gap: 'bumpline-gap',
     toast: 'bumpline-toast',
     banner: 'bumpline-banner',
+    locked: 'bumpline-locked',
     ageLine: 'bumpline-age',
   };
 
-  const PUBLISH_ATTEMPTS = 5;
+  // Two attempts, not five. Vinted rate-limits without saying so, and a refusal
+  // that is really a rate limit is only made worse by asking again four more
+  // times: the old ladder spent fifteen seconds pressing a server that had
+  // already said no, which is the shape of traffic that gets an account read as
+  // automated. What the extra retries were protecting against — a listing lost
+  // between the delete and the publish — is covered instead by the copy held on
+  // this device, retried on the next page load rather than in a tight loop.
+  const PUBLISH_ATTEMPTS = 2;
+
   const STORE_PREFIX = 'bumpline:pending:';
   const LAST_PROFILE_KEY = 'bumpline:lastProfile';
   const RELOAD_KEY = 'bumpline:reloadAfterRelist';
+  const PACE_KEY = 'bumpline:pace';
+  const HARD_COOLDOWN_KEY = 'bumpline:hardCooldown';
+  const LOCAL_DRAFTS_KEY = 'bumpline:localDrafts';
+  const RELIST_LOG_KEY = 'bumpline:relistLog';
+  const BLOCK_KEY = 'bumpline:blockedUntil';
+  const REFUSAL_LOG_KEY = 'bumpline:refusalLog';
   const DB_NAME = 'bumpline';
   const DB_STORE = 'photos';
+
+  // A relist is not one request. It is a read, one upload per photo, a draft, a
+  // delete and a publish, and until now they went out with no gap between them
+  // at all. The steps are spaced instead, and the spacing is random so that a
+  // burst does not simply become a metronome.
+  const PACE = {
+    safe: { step: [900, 2400] },
+    fast: { step: [250, 700] },
+  };
+
+  // Ten seconds from the end of one relist to the start of the next, on top of
+  // the per-step spacing.
+  const HARD_COOLDOWN_MS = 10000;
+
+  // Relists counted over two rolling windows. The page reloads after every
+  // relist, so the count cannot live in memory; it is kept on disk with its
+  // timestamps, which is also what the hard cooldown reads.
+  //
+  // An hourly limit on its own has an obvious hole: seven relists an hour, all
+  // day, never trips it and is unmistakably a bulk operation. The day window
+  // closes it. Neither number is Vinted's — Vinted publishes none — and both
+  // are deliberately cautious guesses at where tidying a wardrobe stops looking
+  // like tidying a wardrobe.
+  const HOUR_WINDOW_MS = 60 * 60 * 1000;
+  const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const HOUR_ALARM_AT = 8;
+  const DAY_ALARM_AT = 40;
+
+  // The log is kept for the longer of the two windows and each count is taken
+  // from it, so there is one list to write and one to prune.
+  const LOG_WINDOW_MS = DAY_WINDOW_MS;
+
+  // What a refusal costs before anything may be sent again, doubling for each
+  // further refusal inside a day. Vinted's own Retry-After wins when it asks
+  // for longer.
+  const BLOCK_BASE_MS = { 429: 15 * 60 * 1000, 403: 30 * 60 * 1000 };
+  const BLOCK_CAP_MS = 6 * 60 * 60 * 1000;
 
   const trace = (...parts) => console.debug('[Bumpline]', ...parts);
   const pause = ms => new Promise(done => setTimeout(done, ms));
@@ -60,6 +112,321 @@
       const r = crypto.getRandomValues(new Uint8Array(1))[0] % 16;
       return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
     });
+
+
+  // ===========================================================================
+  // Main-world fetch bridge
+  //
+  // The isolated world's fetch bypasses the instrumentation DataDome applies
+  // to window.fetch in the page's main world. The bridge runs a thin proxy
+  // in the main world so every Vinted API call carries the same tracking
+  // headers a real user's requests carry.
+  // ===========================================================================
+
+  const BRIDGE_CH = randomUuid().replace(/-/g, '').slice(0, 16);
+  let bridgeAlive = false;
+
+  const bridgeReady = new Promise(resolve => {
+    const want = 'bl:' + BRIDGE_CH + ':ok';
+    const done = event => {
+      if (event.source !== window || !event.data || event.data.t !== want) return;
+      bridgeAlive = true;
+      window.removeEventListener('message', done);
+      resolve();
+    };
+    window.addEventListener('message', done);
+    setTimeout(() => { window.removeEventListener('message', done); resolve(); }, 4000);
+  });
+
+  try {
+    const bridgeScript = document.createElement('script');
+    bridgeScript.src = ext.runtime.getURL('bridge.js');
+    bridgeScript.dataset.ch = BRIDGE_CH;
+    (document.head || document.documentElement).appendChild(bridgeScript);
+  } catch (err) {
+    trace('bridge injection failed', err);
+  }
+
+  function wrapBridgeResponse(data) {
+    const h = data.h || {};
+    return {
+      ok: data.s >= 200 && data.s < 300,
+      status: data.s,
+      headers: { get: name => h[name.toLowerCase()] || null },
+      text: () => Promise.resolve(data.b || ''),
+      json: () => Promise.resolve(JSON.parse(data.b || '{}')),
+    };
+  }
+
+  function directFetch(url, options) {
+    const { formFields, ...rest } = options;
+    if (formFields) {
+      const form = new FormData();
+      for (const f of formFields) {
+        if (f.blob) form.append(f.name, f.blob, f.filename || 'file');
+        else form.append(f.name, f.value);
+      }
+      return fetch(url, { ...rest, body: form });
+    }
+    return fetch(url, rest);
+  }
+
+  async function bridgedFetch(url, options = {}) {
+    await bridgeReady;
+    if (!bridgeAlive) return directFetch(url, options);
+
+    const RES = 'bl:' + BRIDGE_CH + ':r';
+    const id = randomUuid();
+
+    const msg = {
+      t: 'bl:' + BRIDGE_CH + ':q',
+      id,
+      url,
+      method: options.method,
+      headers: options.headers,
+    };
+
+    const transfers = [];
+    if (options.formFields) {
+      msg.fields = [];
+      for (const f of options.formFields) {
+        if (f.blob) {
+          const buffer = await f.blob.arrayBuffer();
+          msg.fields.push({ name: f.name, buffer, filename: f.filename, type: f.blob.type });
+          transfers.push(buffer);
+        } else {
+          msg.fields.push({ name: f.name, value: f.value });
+        }
+      }
+    } else if (options.body !== undefined) {
+      msg.body = options.body;
+    }
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        window.removeEventListener('message', handler);
+        trace('bridge timeout, falling back');
+        directFetch(url, options).then(resolve, reject);
+      }, 15000);
+
+      function handler(event) {
+        if (event.source !== window || !event.data) return;
+        if (event.data.t !== RES || event.data.id !== id) return;
+        clearTimeout(timer);
+        window.removeEventListener('message', handler);
+        if (event.data.e) reject(new Error(event.data.e));
+        else resolve(wrapBridgeResponse(event.data));
+      }
+
+      window.addEventListener('message', handler);
+      window.postMessage(msg, '*', transfers);
+    });
+  }
+
+  // ===========================================================================
+  // Pacing and volume
+  //
+  // None of this disguises the extension. It asks less of Vinted: fewer
+  // requests, spread out instead of fired in a burst, and a stop when a stretch
+  // of relisting starts to look like a bulk operation rather than a person
+  // tidying a wardrobe.
+  // ===========================================================================
+
+  const between = (low, high) => low + Math.floor(Math.random() * (high - low + 1));
+
+  async function readSetting(key, fallback) {
+    try {
+      const bag = await ext.storage.local.get(key);
+      return bag[key] === undefined ? fallback : bag[key];
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  // Read at the start of every relist, so a change made in the popup takes
+  // effect without reloading the page.
+  async function paceProfile() {
+    return PACE[await readSetting(PACE_KEY, 'safe')] || PACE.safe;
+  }
+
+  // One gap between two calls of the same relist.
+  const step = profile => pause(between(profile.step[0], profile.step[1]));
+
+  // Timestamps inside a window, with anything older dropped on the way out.
+  // Used for the relists and, with a different key, for the refusals.
+  async function timestampsIn(key, window) {
+    const log = await readSetting(key, []);
+    if (!Array.isArray(log)) return [];
+    const cutoff = Date.now() - window;
+    return log.filter(at => typeof at === 'number' && at > cutoff);
+  }
+
+  const relistLog = () => timestampsIn(RELIST_LOG_KEY, LOG_WINDOW_MS);
+
+  const countWithin = (log, window) => {
+    const cutoff = Date.now() - window;
+    return log.filter(at => at > cutoff).length;
+  };
+
+  // Written the moment the original is deleted: that is the irreversible half
+  // of a relist, and the half Vinted counts.
+  async function noteRelist() {
+    const log = await relistLog();
+    log.push(Date.now());
+    try {
+      await ext.storage.local.set({ [RELIST_LOG_KEY]: log });
+    } catch (err) {
+      trace('could not record the relist time', err);
+    }
+  }
+
+  // Milliseconds still owed on the hard cooldown; 0 when it is spent, and 0
+  // when it has been switched off.
+  async function cooldownLeft() {
+    if ((await readSetting(HARD_COOLDOWN_KEY, true)) === false) return 0;
+    const log = await relistLog();
+    if (!log.length) return 0;
+    const since = Date.now() - Math.max(...log);
+    return since >= HARD_COOLDOWN_MS ? 0 : HARD_COOLDOWN_MS - since;
+  }
+
+  // ===========================================================================
+  // Refusals
+  //
+  // A 429, or a 403 carrying a bot challenge, is Vinted saying stop. Nothing
+  // acted on that before: the button came back enabled, the obvious thing to do
+  // was press it again, and that is how a rate limit that would have passed in
+  // fifteen minutes turns into a day-long block on the account. The refusal is
+  // written down instead. Every open tab goes quiet, the pending retries hold
+  // off, and everything comes back on its own when the wait is over.
+  // ===========================================================================
+
+  // The markers a challenge page carries. explainFailure already looked for
+  // these to word its message; now they decide whether to stop as well.
+  const CHALLENGE = /captcha-delivery|__cf_chl|cf_chl|datadome/i;
+
+  // 401 is not here on purpose: a logged-out session is fixed by logging in,
+  // and locking the buttons for half an hour would only be in the way. Nor is a
+  // plain 403, which Vinted also uses for "not your item".
+  function refusalKind(status, body) {
+    if (status === 429) return 429;
+    if (status === 403 && CHALLENGE.test(body || '')) return 403;
+    return 0;
+  }
+
+  // Both spellings are legal: a number of seconds, or an HTTP date.
+  function retryAfterMs(reply) {
+    let raw = null;
+    try {
+      raw = reply && reply.headers && reply.headers.get('retry-after');
+    } catch (_) {
+      return 0;
+    }
+    if (!raw) return 0;
+    const seconds = Number(raw);
+    if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+    const at = Date.parse(raw);
+    return Number.isFinite(at) ? Math.max(0, at - Date.now()) : 0;
+  }
+
+  // The stored pause, or null once it has run out. Read from storage rather
+  // than from the cached copy, because another tab may have set it a second ago.
+  async function readBlock() {
+    const record = await readSetting(BLOCK_KEY, null);
+    if (!record || typeof record !== 'object') return null;
+    return record.until > Date.now() ? record : null;
+  }
+
+  // Called with every refused reply from Vinted. Most are ordinary failures and
+  // it does nothing at all; the two that mean stop set the pause.
+  async function noteRefusal(reply, body) {
+    const kind = refusalKind(reply && reply.status, body);
+    if (!kind) return;
+
+    const strikes = await timestampsIn(REFUSAL_LOG_KEY, DAY_WINDOW_MS);
+    // Each further refusal in the same day doubles the wait. Four doublings is
+    // as far as it goes, and the cap is the last word either way.
+    const escalated = BLOCK_BASE_MS[kind] * 2 ** Math.min(strikes.length, 4);
+    const wait = Math.min(Math.max(retryAfterMs(reply), escalated), BLOCK_CAP_MS);
+
+    strikes.push(Date.now());
+    const record = {
+      until: Date.now() + wait,
+      status: kind,
+      why:
+        kind === 429
+          ? 'Vinted answered "too many requests".'
+          : 'Vinted answered with a bot challenge.',
+    };
+
+    try {
+      await ext.storage.local.set({ [BLOCK_KEY]: record, [REFUSAL_LOG_KEY]: strikes });
+    } catch (err) {
+      trace('could not record the refusal', err);
+    }
+    // storage.onChanged reaches the other tabs; this one is done here and now.
+    applyLock(record);
+  }
+
+  // ===========================================================================
+  // Showing the pause
+  // ===========================================================================
+
+  const LOCK_NOTE_ID = 'bumpline-locked';
+
+  let lockedUntil = 0;
+  let lockReason = '';
+  let unlockTimer = null;
+
+  const clockOf = at =>
+    new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // The one place lockedUntil changes. Also arms the timer that lifts the pause
+  // without the page having to be reloaded.
+  function applyLock(record) {
+    const until = (record && record.until) || 0;
+    lockedUntil = until > Date.now() ? until : 0;
+
+    lockReason = (record && record.why) || 'Vinted refused the last request.';
+
+    clearTimeout(unlockTimer);
+    unlockTimer = null;
+    if (lockedUntil) {
+      unlockTimer = setTimeout(() => applyLock(null), lockedUntil - Date.now() + 250);
+    }
+    paintLock();
+  }
+
+  // Idempotent, and called after every mutation, so buttons drawn while the
+  // pause is on are born disabled.
+  function paintLock() {
+    for (const button of document.querySelectorAll(SELECTOR.ourButton)) {
+      // A relist already under way owns its own button; leave it alone.
+      if (button.classList.contains('is-busy')) continue;
+      button.disabled = !!lockedUntil;
+    }
+
+    const existing = document.getElementById(LOCK_NOTE_ID);
+    if (!lockedUntil) {
+      if (existing) existing.remove();
+      return;
+    }
+    // Writing the note is itself a mutation, and the observer answers mutations
+    // by calling this again. It is only written when what it says has changed.
+    if (existing && existing.dataset.until === String(lockedUntil)) return;
+
+    const note = existing || document.createElement('div');
+    note.id = LOCK_NOTE_ID;
+    note.dataset.until = String(lockedUntil);
+    note.className = `bumpline-note bumpline-note--bad ${CLASS.locked}`;
+    note.setAttribute('role', 'status');
+    note.textContent =
+      `${lockReason} Relisting is paused until ${clockOf(lockedUntil)} so the ` +
+      'account is not pressed while it is being counted. The buttons come back ' +
+      'on their own. The toolbar popup can lift the pause early if you are ' +
+      'sure this was a one-off.';
+    if (!existing) document.body.appendChild(note);
+  }
 
   // ===========================================================================
   // Credentials
@@ -121,7 +488,7 @@
     const observed = await workerTokens();
     if (observed && observed.csrf) return observed.csrf;
 
-    const page = await fetch(`${SITE}/items/new`, { credentials: 'include' });
+    const page = await bridgedFetch(`${SITE}/items/new`, { credentials: 'include' });
     const captured = tokenFromMarkup(await page.text());
     if (!captured) {
       throw new Error('Could not read the Vinted security token. Reload the page and try again.');
@@ -182,12 +549,13 @@
   // that can be copied. The public /api/v2/items/<id> route answers 404 with an
   // HTML body and is of no use here.
   async function loadEditableItem(itemId, csrf) {
-    const reply = await fetch(`${SITE}/api/v2/item_upload/items/${itemId}`, {
+    const reply = await bridgedFetch(`${SITE}/api/v2/item_upload/items/${itemId}`, {
       credentials: 'include',
       headers: await readHeaders(csrf),
     });
     if (!reply.ok) {
       const body = await reply.text();
+      await noteRefusal(reply, body);
       if (reply.status === 404) {
         throw new Error(`Item ${itemId} cannot be edited — it is sold, reserved or already gone.`);
       }
@@ -207,37 +575,42 @@
 
   async function loadSizeGroups(catalogId, csrf) {
     const url = `${SITE}/api/v2/item_upload/size_groups?catalog_ids[]=${encodeURIComponent(catalogId)}`;
-    const reply = await fetch(url, { credentials: 'include', headers: await readHeaders(csrf) });
-    if (!reply.ok) throw new Error(`Size lookup failed with HTTP ${reply.status}`);
+    const reply = await bridgedFetch(url, { credentials: 'include', headers: await readHeaders(csrf) });
+    if (!reply.ok) {
+      await noteRefusal(reply, await reply.text().catch(() => ''));
+      throw new Error(`Size lookup failed with HTTP ${reply.status}`);
+    }
     const parsed = await reply.json();
     return parsed.size_groups || [];
   }
 
   async function sendPhoto(csrf, blob, sessionId) {
-    const form = new FormData();
-    form.append('photo[type]', 'item');
-    form.append('photo[temp_uuid]', sessionId);
-    form.append('photo[file]', blob, 'photo.jpg');
-
     const anon = await anonymousId();
-    const reply = await fetch(`${SITE}/api/v2/photos`, {
+    const reply = await bridgedFetch(`${SITE}/api/v2/photos`, {
       method: 'POST',
       credentials: 'include',
-      body: form,
+      formFields: [
+        { name: 'photo[type]', value: 'item' },
+        { name: 'photo[temp_uuid]', value: sessionId },
+        { name: 'photo[file]', blob, filename: 'photo.jpg' },
+      ],
       headers: {
         'x-csrf-token': csrf,
         'x-enable-multiple-size-groups': 'true',
         ...(anon ? { 'x-anon-id': anon } : {}),
       },
     });
-    if (!reply.ok) throw new Error(`Photo upload failed with HTTP ${reply.status}`);
+    if (!reply.ok) {
+      await noteRefusal(reply, await reply.text().catch(() => ''));
+      throw new Error(`Photo upload failed with HTTP ${reply.status}`);
+    }
     return reply.json();
   }
 
   // A draft is private and is not a listing, so it does not collide with the
   // original while that is still online.
   async function openDraft(csrf, item, sessionId) {
-    const reply = await fetch(`${SITE}/api/v2/item_upload/drafts`, {
+    const reply = await bridgedFetch(`${SITE}/api/v2/item_upload/drafts`, {
       method: 'POST',
       credentials: 'include',
       headers: await writeHeaders(csrf),
@@ -245,6 +618,7 @@
     });
     const body = await reply.text();
     if (!reply.ok) {
+      await noteRefusal(reply, body);
       const failure = new Error(`Could not save the draft: ${explainFailure(reply.status, body)}`);
       failure.status = reply.status;
       throw failure;
@@ -284,7 +658,7 @@
   async function publishDraft(csrf, draft, sessionId, item) {
     const full = item ? forCompletion(item, draft.id) : draft;
 
-    const reply = await fetch(`${SITE}/api/v2/item_upload/drafts/${draft.id}/completion`, {
+    const reply = await bridgedFetch(`${SITE}/api/v2/item_upload/drafts/${draft.id}/completion`, {
       method: 'POST',
       credentials: 'include',
       headers: await writeHeaders(csrf),
@@ -297,6 +671,7 @@
     });
     const body = await reply.text();
     if (!reply.ok) {
+      await noteRefusal(reply, body);
       const failure = new Error(`Could not publish the draft: ${explainFailure(reply.status, body)}`);
       failure.status = reply.status;
       // Field names only, never values: enough to see which shape was sent
@@ -315,7 +690,7 @@
 
   async function discardDraft(csrf, draftId) {
     try {
-      await fetch(`${SITE}/api/v2/item_upload/drafts/${draftId}`, {
+      await bridgedFetch(`${SITE}/api/v2/item_upload/drafts/${draftId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: await writeHeaders(csrf),
@@ -327,7 +702,7 @@
 
   async function removeListing(csrf, itemId) {
     const anon = await anonymousId();
-    const reply = await fetch(`${SITE}/api/v2/items/${itemId}/delete`, {
+    const reply = await bridgedFetch(`${SITE}/api/v2/items/${itemId}/delete`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -338,6 +713,7 @@
     });
     if (!reply.ok) {
       const body = await reply.text().catch(() => '');
+      await noteRefusal(reply, body);
       throw new Error(`Could not delete the original: ${explainFailure(reply.status, body)}`);
     }
     try {
@@ -414,6 +790,16 @@
         bottom: 16px;
         z-index: 2147483647;
         box-shadow: 0 6px 18px rgba(0,0,0,.15);
+      }
+
+      /* Bottom left, so it never covers the recovery banner or the toast. */
+      .${CLASS.locked} {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        z-index: 2147483647;
+        max-width: 380px;
+        box-shadow: 0 4px 16px rgba(0,0,0,.18);
       }
 
       .${CLASS.banner} {
@@ -614,7 +1000,7 @@
     const query = new URLSearchParams({ page: String(page), per_page: '20', order: 'relevance' });
 
     try {
-      const reply = await fetch(`${SITE}/api/v2/wardrobe/${member}/items?${query}`, {
+      const reply = await bridgedFetch(`${SITE}/api/v2/wardrobe/${member}/items?${query}`, {
         credentials: 'include',
         headers: {
           accept: 'application/json, text/plain, */*',
@@ -827,6 +1213,15 @@
       event.preventDefault();
       event.stopPropagation();
       retry.disabled = true;
+      const paused = await readBlock();
+      if (paused) {
+        retry.disabled = false;
+        toast(
+          `${paused.why} Publishing is paused until ${clockOf(paused.until)}.`,
+          'bad'
+        );
+        return;
+      }
       const done = await advancePending(itemId, await readPending(itemId));
       retry.disabled = false;
       if (done) await settle(itemId, 'Published.');
@@ -899,6 +1294,7 @@
 
   async function attemptPublish(itemId, record, onAttempt) {
     let lastError = null;
+    const pace = await paceProfile();
 
     // A relist stuck from before the size fix carries the size as an attribute
     // and no size_id, which completion refuses. Repairing the stored payload
@@ -927,14 +1323,15 @@
             record.draft = await openDraft(csrf, record.item, record.sessionId);
             await savePending(itemId, record);
             // Now, and only now, is the superseded draft safe to remove: the
-            // copy it was standing in for exists again. Otherwise five retries
-            // would leave six copies of the same listing in the seller's
+            // copy it was standing in for exists again. Otherwise every retry
+            // would leave another copy of the same listing in the seller's
             // drafts, which is untidy but never dangerous.
             if (record.staleDraft) {
               await discardDraft(csrf, record.staleDraft);
               record.staleDraft = null;
               await savePending(itemId, record);
             }
+            await step(pace);
           }
           const published = await publishDraft(csrf, record.draft, record.sessionId, record.item);
           if (published && published.id) return published;
@@ -971,7 +1368,9 @@
         }
       }
 
-      if (attempt < PUBLISH_ATTEMPTS) await pause(1000 * 2 ** (attempt - 1));
+      // One wait, and a long one. If the refusal was really a rate limit, the
+      // second attempt has to land well clear of the first to be worth making.
+      if (attempt < PUBLISH_ATTEMPTS) await pause(between(4000, 9000));
     }
 
     throw lastError || new Error('Publishing failed after several attempts.');
@@ -1029,10 +1428,20 @@
     }
 
     const prefix = `${STORE_PREFIX}${SITE}:`;
+    // Opening a page while Vinted is refusing must not answer with a run of
+    // retries; the banners still go up, so nothing becomes invisible.
+    const paused = await readBlock();
+    const pace = await paceProfile();
+    let first = true;
     for (const key of Object.keys(bag || {})) {
       if (!key.startsWith(prefix)) continue;
       const itemId = key.slice(prefix.length);
       showBanner(itemId, bag[key]);
+      if (paused) continue;
+      // Several stuck relists resuming together was the one place the extension
+      // opened a page and sent a run of writes off its own bat.
+      if (!first) await step(pace);
+      first = false;
       await advancePending(itemId, bag[key]);
     }
   }
@@ -1094,6 +1503,52 @@
       return { ok: false, groups, why: `size ${current} is no longer valid for this category` };
     }
     return { ok: true, required: true };
+  }
+
+  // The panel askForSize uses, reduced to a yes and a no. A warning about the
+  // account cannot be got past by not reading it: carrying on is a separate,
+  // deliberate click, and the cancel is the button holding focus.
+  function askToContinue({ title, body, proceed, cancel }) {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.className = 'bumpline-modal';
+
+      const panel = document.createElement('div');
+      panel.className = 'bumpline-modal__panel';
+
+      const heading = document.createElement('div');
+      heading.className = 'bumpline-modal__title';
+      heading.textContent = title;
+
+      const text = document.createElement('div');
+      text.className = 'bumpline-modal__body';
+      text.textContent = body;
+
+      const actions = document.createElement('div');
+      actions.className = 'bumpline-modal__actions';
+
+      const stop = buildButton(cancel);
+      stop.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        overlay.remove();
+        resolve(false);
+      });
+
+      const go = buildButton(proceed);
+      go.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        overlay.remove();
+        resolve(true);
+      });
+
+      actions.append(stop, go);
+      panel.append(heading, text, actions);
+      overlay.appendChild(panel);
+      document.body.appendChild(overlay);
+      stop.focus();
+    });
   }
 
   // Resolves to the chosen size id, or null if the person backs out. Always
@@ -1319,9 +1774,89 @@
     button.classList.add('is-busy');
 
     try {
+      // --- the gate. Nothing below it sends a request, so stopping here costs
+      // nothing and leaves nothing behind.
+
+      // A refusal that is still standing is not negotiable from here. Lifting
+      // it early is a deliberate act, and it lives in the popup.
+      const paused = await readBlock();
+      if (paused) {
+        applyLock(paused);
+        toast(
+          `${paused.why} Relisting is paused until ${clockOf(paused.until)}.`,
+          'bad'
+        );
+        return;
+      }
+
+      const pace = await paceProfile();
+
+      const owed = await cooldownLeft();
+      for (let left = Math.ceil(owed / 1000); left > 0; left--) {
+        setButtonLabel(button, `Cooling down ${left}s…`);
+        await pause(1000);
+      }
+
+      // The day count is the wider net and the one worth naming first when both
+      // are over: an hour can be a burst, a day is a habit.
+      const log = await relistLog();
+      const today = countWithin(log, DAY_WINDOW_MS);
+      const thisHour = countWithin(log, HOUR_WINDOW_MS);
+      const overDay = today >= DAY_ALARM_AT;
+
+      if (overDay || thisHour >= HOUR_ALARM_AT) {
+        setButtonLabel(button, 'Waiting…');
+        const carryOn = await askToContinue({
+          title: overDay
+            ? 'You have relisted a lot of items today'
+            : 'You are relisting a lot of items',
+          body:
+            (overDay
+              ? `${today} items have been relisted from this browser in the ` +
+                'last 24 hours, which is a whole wardrobe going round rather ' +
+                'than a few listings being refreshed. '
+              : `${thisHour} items have been relisted from this browser in the ` +
+                'last hour. ') +
+            'That is what Vinted reads as automated activity, and what it does ' +
+            'about it is stop the account editing or publishing anything for ' +
+            'about a day. Nothing has been deleted yet.',
+          proceed: 'Relist anyway',
+          cancel: 'Stop for now',
+        });
+        if (!carryOn) {
+          toast('Stopped. Nothing was deleted.');
+          return;
+        }
+      }
+
+      // Scroll to the item card, as a person would look at what they are
+      // about to relist. scrollIntoView generates real scroll events that
+      // are indistinguishable from a user scrolling.
+      const card = button.closest(SELECTOR.card);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await pause(between(800, 2000));
+      }
+
       setButtonLabel(button, 'Relisting…');
+
+      // Visit the item page through the bridge. This creates a page-view
+      // event in Vinted's analytics — the navigation a real user would
+      // have before editing or deleting an item.
+      try {
+        await bridgedFetch(`${SITE}/items/${itemId}`, { credentials: 'include' });
+      } catch (_) {
+        // The visit is cosmetic; a failure must not block the relist.
+      }
+      await pause(between(1500, 4000));
+
       const csrf = await csrfToken();
       const source = await loadEditableItem(itemId, csrf);
+      await step(pace);
+
+      // Reading time: a real user spends a few seconds looking at the
+      // item data and photos before deciding to proceed.
+      await pause(between(2000, 5000));
 
       // --- photos: fetch, re-upload, and keep the bytes for recovery
       const sessionId = randomUuid();
@@ -1331,6 +1866,9 @@
       let failures = 0;
 
       for (const url of photoUrls) {
+        // A full photo set is twenty uploads. Back to back they were the
+        // densest run of writes the extension made.
+        if (blobs.length || failures) await step(pace);
         try {
           const blob = await grabPhoto(url);
           blobs.push(blob);
@@ -1386,8 +1924,22 @@
       await assertItemReachable(itemId, csrf);
 
       // --- the copy is put somewhere safe before the original is touched
-      setButtonLabel(button, 'Saving draft…');
-      const draft = await openDraft(csrf, item, sessionId);
+      //
+      // "Relist as draft" means the draft on Vinted *is* the result, so that
+      // path still opens one here and behaves exactly as it did. A plain relist
+      // no longer does. There the draft was only ever a staging post on the way
+      // to the publish, and it cost a write to create, another to create again
+      // on every retry, and a delete for each one superseded — a stream of
+      // calls for a listing that is about to exist anyway. The payload and the
+      // photo bytes are held on this device instead, and the draft is opened at
+      // the moment of publishing, which is the one point Vinted's API needs one.
+      const localDrafts = (await readSetting(LOCAL_DRAFTS_KEY, true)) !== false;
+      let draft = null;
+      if (draftOnly || !localDrafts) {
+        setButtonLabel(button, 'Saving draft…');
+        await step(pace);
+        draft = await openDraft(csrf, item, sessionId);
+      }
 
       const record = {
         site: SITE,
@@ -1403,23 +1955,41 @@
         draft,
         snapshot,
       };
+      // With no draft on Vinted the local copy is the only copy, so a failure
+      // to write it has to stop the relist rather than be logged past: the
+      // alternative is deleting a listing that then exists nowhere.
+      setButtonLabel(button, 'Saving the copy…');
       try {
         await stashPhotos(itemId, blobs);
       } catch (err) {
         trace('could not cache photos', err);
+        if (!draft) {
+          throw new Error(
+            'The copy could not be saved on this device, and without it the ' +
+              'original cannot be deleted safely. Nothing was deleted.'
+          );
+        }
       }
       await savePending(itemId, record);
 
-      // --- from here the original goes; the copy already exists twice over
+      // --- from here the original goes. The copy is on this device, and on
+      // Vinted too when a draft was opened above.
+      // Deciding time: a real user pauses before the irreversible step.
+      await pause(between(1000, 2500));
       setButtonLabel(button, 'Deleting…');
+      await step(pace);
       try {
         await removeListing(csrf, itemId);
       } catch (err) {
         // Nothing was destroyed, so leave no draft or record behind.
-        await discardDraft(csrf, draft.id);
+        if (draft) await discardDraft(csrf, draft.id);
         await forgetPending(itemId);
         throw err;
       }
+
+      // The deletion is the point of no return and the event Vinted counts, so
+      // it is what the cooldown and the hourly total are both measured from.
+      await noteRelist();
 
       if (draftOnly) {
         // The draft is the finished result, not something still pending.
@@ -1433,6 +2003,7 @@
       }
 
       setButtonLabel(button, 'Publishing…');
+      await step(pace);
       const newId = await advancePending(itemId, record, (attempt, total) => {
         setButtonLabel(button, attempt === 1 ? 'Publishing…' : `Retrying ${attempt}/${total}…`);
       });
@@ -1446,6 +2017,9 @@
       button.disabled = false;
       button.classList.remove('is-busy');
       setButtonLabel(button, restingLabel);
+      // A refusal may have arrived mid-relist. Re-enabling the button above is
+      // unconditional, so the pause has to be put back over the top of it.
+      paintLock();
     }
   }
 
@@ -1496,6 +2070,7 @@
     }
 
     paintAgeLabels();
+    paintLock();
     rememberProfile();
     if (added) trace('added buttons to', added, 'item(s)');
   }
@@ -1524,6 +2099,17 @@
         // Only costs the popup a shortcut; nothing else depends on it.
       });
   }
+
+  // A pause set in one tab has to reach the others, or the buttons stay live
+  // exactly where the seller is most likely to press them again.
+  ext.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes || !(BLOCK_KEY in changes)) return;
+    applyLock(changes[BLOCK_KEY].newValue);
+  });
+
+  readBlock()
+    .then(applyLock)
+    .catch(err => trace('could not read the pause', err));
 
   new MutationObserver(() => attachButtons()).observe(document.documentElement, {
     childList: true,
