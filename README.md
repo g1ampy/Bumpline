@@ -197,8 +197,10 @@ can still back out:
 | `Publishing…` | Creating the draft and turning it into the new listing | No — retried until it works |
 | `Retrying 2/2…` | Publishing failed, trying once more | No — retried until it works |
 
-Greyed-out buttons mean Vinted has refused something and the extension has stood
-down until it is worth asking again; see [When Vinted says stop](#when-vinted-says-stop).
+Greyed-out buttons mean the extension has stood down: either Vinted refused
+something and it is waiting until asking again is worth it, or the account is
+restricted from listing and Vinted says so on your own profile; see [When Vinted
+says stop](#when-vinted-says-stop).
 
 The steps do not run back to back. A random pause of about one to two seconds
 sits between each request so a relist arrives as a person's traffic rather than
@@ -268,6 +270,14 @@ its banner, and picks up where it left off afterwards. The popup can lift the
 pause early, behind the same confirmation as the risky settings, for the case
 where the refusal was really something else — being logged out, or one bad
 network moment.
+
+A restriction is the other half of it, and it does not have to be walked into.
+An account stopped from listing or editing carries the date it runs to in its
+own profile payload — it is where the banner Vinted shows you comes from — so
+Bumpline reads that field as the wardrobe opens, without a request of its own,
+and the buttons are off from the first moment rather than from the first
+refusal. That one cannot be lifted: the popup shows no button for it, because
+the refusal would come from Vinted whether or not the extension stood down.
 If the category now requires a size your old listing never had, a window shows
 the real size list pulled from Vinted and asks you to pick one. Nothing is
 deleted until you choose.
@@ -325,6 +335,11 @@ minute pause into a 24-hour block on the account.
 
 If you are sure it was something else, turn off ad and tracker blockers for
 Vinted, log out and back in, and lift the pause from the toolbar popup.
+
+If the note says the account is restricted from listing, that is Vinted's own
+restriction rather than the extension's caution, and it carries a date. There is
+nothing to lift and the popup offers no button for it; the buttons come back by
+themselves when it expires.
 
 #### The buttons do not appear
 

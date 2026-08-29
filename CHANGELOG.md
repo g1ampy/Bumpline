@@ -52,6 +52,19 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   the popup can lift the pause early behind the same confirmation as the risky
   settings, for the times it was really a logged-out session or one bad network
   moment.
+- **A restriction is read, not walked into.** A refusal can only be learned by
+  being refused, and the request that earns it is one the account did not need
+  to make. An account restricted from listing or editing carries the date the
+  restriction runs to in its own profile payload, beside the ban fields, and
+  the banner Vinted shows you is drawn from it. Bumpline now reads the same
+  field as the wardrobe opens — no request of its own — and the buttons are off
+  from the first moment rather than from the first refusal. They look it, too:
+  dimmed and drained of colour, so a stopped button says so before anyone
+  presses it instead of looking pressable and doing nothing. The note and the
+  popup name the day as well as the hour, since a restriction is counted in
+  days where a refusal is counted in minutes, and the popup drops its **Lift
+  the pause early** button for one: there is nothing to lift when the refusal
+  would come from Vinted either way.
 - **The popup reports the hour and the day.** How many items have been relisted
   in the last sixty minutes and the last twenty-four, how long the next one has
   to wait, and any pause that is standing. These are the numbers the ban turns
