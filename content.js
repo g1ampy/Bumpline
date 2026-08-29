@@ -1002,7 +1002,15 @@
 
   const itemIndex = new Map();
   const ageLabels = new Map();
-  const pager = { started: false, lastPage: 0, totalPages: null };
+  // busy is what keeps the two readers below off each other. Both are fired,
+  // unawaited, by every run of attachButtons, and attachButtons runs on every
+  // mutation of the page — so while the first page is in the air, lastPage is
+  // still 0 and totalPages still null, and each mutation that lands in that
+  // window used to start another reader that asked for lastPage + 1: page one,
+  // again. A wardrobe of eighteen items drew up to nine identical requests in
+  // three seconds, which is the burst of traffic this extension exists to
+  // avoid making.
+  const pager = { started: false, busy: false, lastPage: 0, totalPages: null };
 
   // Vinted does not expose a creation date, but the oldest photo carries an
   // upload timestamp, which is the same moment in practice.
@@ -1076,16 +1084,27 @@
   async function indexFirstPage() {
     if (pager.started) return;
     pager.started = true;
-    const items = await loadWardrobePage(1);
-    if (!items) return;
-    pager.lastPage = 1;
-    paintAgeLabels();
-    dropButtonsOnClosedItems();
+    // Claimed before the first await, so a reader starting in the same tick
+    // sees it.
+    pager.busy = true;
+    try {
+      const items = await loadWardrobePage(1);
+      if (!items) return;
+      pager.lastPage = 1;
+      paintAgeLabels();
+      dropButtonsOnClosedItems();
+    } finally {
+      pager.busy = false;
+    }
   }
 
   // Infinite scroll reveals cards the first page never covered, so keep pulling
   // pages until the visible ids are all accounted for.
   async function indexRemainingPages() {
+    // A page is already being read. Whatever it brings back changes both the
+    // answers below, so there is nothing to decide until it lands.
+    if (pager.busy) return;
+
     const missing = itemIdsOnScreen().filter(id => !itemIndex.has(id));
     if (!missing.length) return;
     if (pager.totalPages !== null && pager.lastPage >= pager.totalPages) return;
@@ -1093,13 +1112,18 @@
     let page = pager.lastPage + 1;
     let budget = 10;
 
-    while (budget-- > 0 && missing.some(id => !itemIndex.has(id))) {
-      if (pager.totalPages !== null && page > pager.totalPages) break;
-      const items = await loadWardrobePage(page);
-      if (!items || !items.length) break;
-      pager.lastPage = page;
-      page += 1;
-      await pause(100); // stay polite with the API
+    pager.busy = true;
+    try {
+      while (budget-- > 0 && missing.some(id => !itemIndex.has(id))) {
+        if (pager.totalPages !== null && page > pager.totalPages) break;
+        const items = await loadWardrobePage(page);
+        if (!items || !items.length) break;
+        pager.lastPage = page;
+        page += 1;
+        await pause(100); // stay polite with the API
+      }
+    } finally {
+      pager.busy = false;
     }
 
     paintAgeLabels();
