@@ -1159,7 +1159,13 @@
           referer: location.href,
         },
       });
-      if (!reply.ok) return null;
+      // The one call that runs on every page load, and so the only chance the
+      // extension has of hearing a rate limit before a seller presses
+      // anything. It used to be thrown away.
+      if (!reply.ok) {
+        await noteRefusal(reply, await reply.text().catch(() => ''));
+        return null;
+      }
 
       const parsed = await reply.json().catch(() => null);
       if (!parsed) return null;
