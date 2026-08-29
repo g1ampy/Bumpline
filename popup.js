@@ -130,6 +130,19 @@ const countWithin = (log, window) => {
 const clockOf = at =>
   new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+// A refusal is measured in hours, a restriction in days, and "until 23:59"
+// with no date is a lie about the second kind.
+const whenOf = at => {
+  const when = new Date(at);
+  if (when.toDateString() === new Date().toDateString()) return clockOf(at);
+  return when.toLocaleString([], {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 // A pause that has already run out is no pause at all.
 function standingPause(record) {
   if (!record || typeof record !== 'object') return null;
@@ -247,11 +260,26 @@ function renderPause(stored) {
     return;
   }
 
-  document.getElementById('paused-detail').textContent =
-    `${stored.paused.why} Nothing will be sent to Vinted until ` +
-    `${clockOf(stored.paused.until)}, on any tab. The buttons come back by ` +
-    'themselves — there is nothing to do but wait, and waiting is the point.';
+  // Vinted's own restriction is not the extension standing down: there is
+  // nothing to lift, because the refusal would come from Vinted either way.
+  const fromVinted = stored.paused.source === 'vinted';
+  const lift = document.getElementById('paused-lift');
+
+  document.getElementById('paused-title').textContent = fromVinted
+    ? 'Vinted has restricted this account'
+    : 'Relisting is paused';
+
+  document.getElementById('paused-detail').textContent = fromVinted
+    ? `${stored.paused.why} It runs to ${whenOf(stored.paused.until)}. Nothing ` +
+      'can be listed or edited until then, through Bumpline or by hand, so the ' +
+      'buttons stay off until it lifts.'
+    : `${stored.paused.why} Nothing will be sent to Vinted until ` +
+      `${whenOf(stored.paused.until)}, on any tab. The buttons come back by ` +
+      'themselves — there is nothing to do but wait, and waiting is the point.';
+
+  lift.hidden = fromVinted;
   card.hidden = false;
+  if (fromVinted) return;
 
   document.getElementById('paused-lift').addEventListener('click', async () => {
     const agreed = await askRisk({

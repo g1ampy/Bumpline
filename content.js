@@ -38,6 +38,7 @@
   const CLASS = {
     button: 'bumpline-btn',
     draftButton: 'bumpline-btn--draft',
+    lockedButton: 'bumpline-btn--locked',
     gap: 'bumpline-gap',
     toast: 'bumpline-toast',
     banner: 'bumpline-banner',
@@ -410,6 +411,73 @@
   }
 
   // ===========================================================================
+  // The restriction Vinted states outright
+  //
+  // A refusal is only learned by being refused: the account is already limited
+  // and the extension finds out by walking into it. But a restricted account
+  // carries the fact in the profile payload, next to the ban fields, and the
+  // page says it in a banner of its own. Reading it costs no request and it is
+  // the only way the buttons can be off before anything is asked of Vinted.
+  // ===========================================================================
+
+  // Any restriction with an expiry ahead of us counts. The action code is
+  // Vinted's, undocumented, and only one value has been seen in the wild, so
+  // the date is what the decision rests on. The payload is JSON inside the
+  // markup, so the quotes may arrive escaped, as with the CSRF token.
+  const RESTRICTION_PATTERN =
+    /\\?"action_restriction\\?"\s*:\s*\{[^{}]*?\\?"expiration_date\\?"\s*:\s*\\?"(\d{4}-\d{2}-\d{2})\\?"/;
+
+  function restrictionFromMarkup(markup) {
+    const hit = String(markup || '').match(RESTRICTION_PATTERN);
+    if (!hit) return null;
+    // A date with no clock on it. Vinted lifts the restriction at some point
+    // during that day, and the end of it is the reading that never turns the
+    // buttons back on early.
+    const until = Date.parse(`${hit[1]}T23:59:59`);
+    return Number.isFinite(until) && until > Date.now() ? until : null;
+  }
+
+  let restrictionSeen = 0;
+  let restrictionReadAt = 0;
+
+  async function noteRestriction() {
+    // Vinted draws its bump buttons on nobody's wardrobe but your own, which
+    // is both what makes the payload yours to read and what makes there be
+    // buttons worth turning off.
+    if (!document.querySelector(SELECTOR.bump)) return;
+
+    // The markup of a wardrobe runs past a megabyte and this is reached from
+    // attachButtons, which answers every mutation of the page. The payload is
+    // written once, with the page, so reading it on a leash loses nothing.
+    if (Date.now() - restrictionReadAt < 10000) return;
+    restrictionReadAt = Date.now();
+
+    const until = restrictionFromMarkup(
+      document.documentElement && document.documentElement.innerHTML,
+    );
+    if (!until || until === restrictionSeen) return;
+    restrictionSeen = until;
+
+    // A refusal already standing for longer is the stricter of the two, and
+    // the strictest is the one that should hold.
+    const standing = await readBlock();
+    if (standing && standing.until >= until) return;
+
+    const record = {
+      until,
+      source: 'vinted',
+      why: 'Vinted has restricted this account from listing or editing items.',
+    };
+
+    try {
+      await ext.storage.local.set({ [BLOCK_KEY]: record });
+    } catch (err) {
+      trace('could not record the restriction', err);
+    }
+    applyLock(record);
+  }
+
+  // ===========================================================================
   // Showing the pause
   // ===========================================================================
 
@@ -417,10 +485,25 @@
 
   let lockedUntil = 0;
   let lockReason = '';
+  let lockSource = '';
   let unlockTimer = null;
 
   const clockOf = at =>
     new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // A refusal is measured in hours, a restriction in days, and "until 23:59"
+  // with no date is a lie about the second kind. The day is named whenever it
+  // is not today's.
+  const whenOf = at => {
+    const when = new Date(at);
+    if (when.toDateString() === new Date().toDateString()) return clockOf(at);
+    return when.toLocaleString([], {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   // The one place lockedUntil changes. Also arms the timer that lifts the pause
   // without the page having to be reloaded.
@@ -429,6 +512,7 @@
     lockedUntil = until > Date.now() ? until : 0;
 
     lockReason = (record && record.why) || 'Vinted refused the last request.';
+    lockSource = (record && record.source) || 'refusal';
 
     clearTimeout(unlockTimer);
     unlockTimer = null;
@@ -445,6 +529,10 @@
       // A relist already under way owns its own button; leave it alone.
       if (button.classList.contains('is-busy')) continue;
       button.disabled = !!lockedUntil;
+      // disabled alone stops the click, but the button borrows Vinted's own
+      // markup and goes on looking pressable, which reads as the extension
+      // having broken rather than having stopped on purpose.
+      button.classList.toggle(CLASS.lockedButton, !!lockedUntil);
     }
 
     const existing = document.getElementById(LOCK_NOTE_ID);
@@ -462,10 +550,14 @@
     note.className = `bumpline-note bumpline-note--bad ${CLASS.locked}`;
     note.setAttribute('role', 'status');
     note.textContent =
-      `${lockReason} Relisting is paused until ${clockOf(lockedUntil)} so the ` +
-      'account is not pressed while it is being counted. The buttons come back ' +
-      'on their own. The toolbar popup can lift the pause early if you are ' +
-      'sure this was a one-off.';
+      lockSource === 'vinted'
+        ? `${lockReason} It runs to ${whenOf(lockedUntil)}, and until then ` +
+          'nothing can be listed or edited — by Bumpline or by hand. The ' +
+          'buttons come back on their own.'
+        : `${lockReason} Relisting is paused until ${whenOf(lockedUntil)} so the ` +
+          'account is not pressed while it is being counted. The buttons come back ' +
+          'on their own. The toolbar popup can lift the pause early if you are ' +
+          'sure this was a one-off.';
     if (!existing) document.body.appendChild(note);
   }
 
@@ -812,6 +904,15 @@
     sheet.textContent = `
       .${CLASS.button} { display: block !important; margin-top: 8px !important; }
       .${CLASS.button}.is-busy { opacity: .6; pointer-events: none; }
+
+      /* The pause. Drained of colour and dimmed, so the button says it is not
+         to be pressed before anyone presses it. The note at the bottom left
+         says until when. */
+      .${CLASS.button}.${CLASS.lockedButton} {
+        opacity: .45;
+        filter: grayscale(1);
+        cursor: not-allowed;
+      }
       .${CLASS.draftButton} { margin-top: 6px !important; }
 
       .bumpline-note {
@@ -2094,6 +2195,7 @@
 
   function attachButtons() {
     installStyles();
+    noteRestriction();
     indexFirstPage();
     indexRemainingPages();
     resumeInterrupted();
