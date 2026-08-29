@@ -121,30 +121,55 @@
   // to window.fetch in the page's main world. The bridge runs a thin proxy
   // in the main world so every Vinted API call carries the same tracking
   // headers a real user's requests carry.
+  //
+  // The main world is the page's own, so nothing crossing this channel is
+  // private to the extension: any script on the page can read the requests and
+  // the replies, and could answer one first. The random channel name keeps the
+  // traffic clear of unrelated listeners; it is not a trust boundary. What
+  // travels over it is what the page already holds — the CSRF token is read
+  // out of its own markup — and the one irreversible step of a relist reads
+  // the item back from Vinted before it runs.
   // ===========================================================================
 
   const BRIDGE_CH = randomUuid().replace(/-/g, '').slice(0, 16);
   let bridgeAlive = false;
+
+  // Settled when the bridge answers, and also the moment it is known not to be
+  // coming. A script tag that fails to load throws nothing an enclosing try can
+  // catch, so without the onerror below every first call would sit out the
+  // whole handshake window before falling back.
+  let bridgeSettled = () => {};
 
   const bridgeReady = new Promise(resolve => {
     const want = 'bl:' + BRIDGE_CH + ':ok';
     const done = event => {
       if (event.source !== window || !event.data || event.data.t !== want) return;
       bridgeAlive = true;
+      bridgeSettled();
+    };
+    const timer = setTimeout(() => bridgeSettled(), 4000);
+    bridgeSettled = () => {
+      clearTimeout(timer);
       window.removeEventListener('message', done);
       resolve();
     };
     window.addEventListener('message', done);
-    setTimeout(() => { window.removeEventListener('message', done); resolve(); }, 4000);
   });
 
   try {
     const bridgeScript = document.createElement('script');
     bridgeScript.src = ext.runtime.getURL('bridge.js');
     bridgeScript.dataset.ch = BRIDGE_CH;
+    // A page whose CSP turns extension scripts away, or a package built
+    // without bridge.js in it, arrives here and nowhere else.
+    bridgeScript.onerror = () => {
+      trace('bridge script did not load; using the isolated-world fetch');
+      bridgeSettled();
+    };
     (document.head || document.documentElement).appendChild(bridgeScript);
   } catch (err) {
     trace('bridge injection failed', err);
+    bridgeSettled();
   }
 
   function wrapBridgeResponse(data) {
@@ -154,7 +179,9 @@
       status: data.s,
       headers: { get: name => h[name.toLowerCase()] || null },
       text: () => Promise.resolve(data.b || ''),
-      json: () => Promise.resolve(JSON.parse(data.b || '{}')),
+      // async, so a body that is not JSON rejects the promise the way a real
+      // Response does, instead of throwing before a .catch can be attached.
+      json: async () => JSON.parse(data.b || '{}'),
     };
   }
 
@@ -171,6 +198,11 @@
     return fetch(url, rest);
   }
 
+  // The methods whose repetition costs nothing. A write that has gone quiet
+  // may still be in flight, and sending it a second time would open a second
+  // draft, upload the same photo twice or publish a duplicate listing.
+  const REPEATABLE = /^(?:GET|HEAD)$/i;
+
   async function bridgedFetch(url, options = {}) {
     await bridgeReady;
     if (!bridgeAlive) return directFetch(url, options);
@@ -184,6 +216,9 @@
       url,
       method: options.method,
       headers: options.headers,
+      // An AbortSignal cannot be handed across, but everything else a caller
+      // sets has to reach the bridge, or the two fetch paths would disagree.
+      credentials: options.credentials,
     };
 
     const transfers = [];
@@ -205,8 +240,14 @@
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         window.removeEventListener('message', handler);
-        trace('bridge timeout, falling back');
-        directFetch(url, options).then(resolve, reject);
+        const method = options.method || 'GET';
+        if (REPEATABLE.test(method)) {
+          trace('bridge timeout, falling back', method, url);
+          directFetch(url, options).then(resolve, reject);
+          return;
+        }
+        trace('bridge timeout on a write; not repeating it', method, url);
+        reject(new Error('Vinted did not answer in time. Nothing was sent twice — try again.'));
       }, 15000);
 
       function handler(event) {
@@ -219,7 +260,7 @@
       }
 
       window.addEventListener('message', handler);
-      window.postMessage(msg, '*', transfers);
+      window.postMessage(msg, location.origin, transfers);
     });
   }
 

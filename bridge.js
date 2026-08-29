@@ -14,9 +14,13 @@
 // every API call Bumpline makes goes through that patched fetch, carrying
 // the headers a real user's requests would carry.
 //
-// Communication is by postMessage on the shared window. The channel name
-// is random per injection so the messages are not trivially addressable by
-// the page's own scripts.
+// Communication is by postMessage on the shared window, pinned to the page's
+// own origin. The channel name is random per injection so the messages are not
+// trivially addressable by the page's own scripts — but this is the main world,
+// so nothing here is hidden from it: it can read every request and every reply,
+// and could answer one first. Nothing crosses the channel that the page does
+// not already hold, and the content script treats what comes back the way it
+// treats any other reply from Vinted.
 
 (() => {
   'use strict';
@@ -36,6 +40,11 @@
     try {
       let body;
       const headers = d.headers ? { ...d.headers } : {};
+      const drop = name => {
+        for (const key of Object.keys(headers)) {
+          if (key.toLowerCase() === name) delete headers[key];
+        }
+      };
 
       if (d.fields) {
         body = new FormData();
@@ -47,14 +56,16 @@
             body.append(f.name, f.value);
           }
         }
-        delete headers['content-type'];
+        // Whatever its spelling: the boundary belongs to the FormData, and a
+        // caller-supplied content-type would replace it with one that has none.
+        drop('content-type');
       } else if (d.body !== undefined) {
         body = d.body;
       }
 
       const response = await fetch(d.url, {
         method: d.method || 'GET',
-        credentials: 'include',
+        credentials: d.credentials || 'include',
         headers,
         body,
       });
@@ -63,12 +74,12 @@
       const rh = {};
       response.headers.forEach((v, k) => { rh[k] = v; });
 
-      window.postMessage({ t: RES, id: d.id, s: response.status, h: rh, b: text }, '*');
+      window.postMessage({ t: RES, id: d.id, s: response.status, h: rh, b: text }, location.origin);
     } catch (err) {
-      window.postMessage({ t: RES, id: d.id, e: String(err) }, '*');
+      window.postMessage({ t: RES, id: d.id, e: String(err) }, location.origin);
     }
   });
 
-  window.postMessage({ t: 'bl:' + ch + ':ok' }, '*');
+  window.postMessage({ t: 'bl:' + ch + ':ok' }, location.origin);
   if (script.parentNode) script.parentNode.removeChild(script);
 })();

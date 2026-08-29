@@ -37,6 +37,7 @@ const OUT = join(ROOT, 'build');
 // given under. The manifest is absent on purpose: each target writes its own.
 const PAYLOAD = [
   'background.js',
+  'bridge.js',
   'content.js',
   'popup.html',
   'popup.css',
