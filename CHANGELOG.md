@@ -5,38 +5,12 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
-
-- **Firefox support.** The extension now builds for Firefox 140 and newer.
-  Firefox runs the background as an event page rather than a service worker and
-  requires an add-on id, so `node build.mjs` writes a manifest per browser and
-  packages both from the same source. Nothing about the relist changed.
-
-### Changed
-
-- **The browser APIs are reached through one alias.** Firefox returns promises
-  only from the `browser` namespace, and the code was written against Chrome's
-  `chrome`. Both are now taken from a single alias per file, and the one
-  callback-style call left — the content script asking the background for
-  Vinted's tokens — was rewritten as a promise, which is the only shape Firefox
-  offers.
-
-- **The description says what the extension does.** It used to spend its second
-  half on the draft-first safety, which is the reason Bumpline is safe to use
-  rather than the reason anyone installs it. Only about 45 characters survive
-  truncation in store search, so the action now takes the visible half and the
-  rest carries the two reasons to install: nothing is retyped, and the item
-  moves back to the top.
-
-[Unreleased]: https://github.com/g1ampy/Bumpline/compare/v1.0.0...HEAD
-
 ## [1.0.0] - 2026-08-28
 
 Bumpline leaves `0.x`. Nothing about the relist changed — the version number
-says the tool is finished and tested, not experimental, and the toolbar popup
-closes the last gap between installing it and finding it.
+says the tool is finished and tested, not experimental. The toolbar popup closes
+the last gap between installing it and finding it, and the extension now runs on
+Firefox as well as Chrome.
 
 ### Added
 
@@ -50,7 +24,6 @@ closes the last gap between installing it and finding it.
   popup names the items still waiting and opens the exact profile page the
   retry runs on. Previously this was only discoverable by returning to that page
   by chance.
-
 - **A switch for the reload after a relist.** The page reloads when a relist
   finishes, because it is otherwise showing an item that no longer exists and
   hiding the copy that replaced it. That costs you your scroll position and any
@@ -75,6 +48,10 @@ closes the last gap between installing it and finding it.
   toolbar popup now show Vinted's own words, and **Download data** saves the
   whole case — the refusal, the number of attempts, the payload that was sent
   and the listing snapshot — instead of the snapshot alone.
+- **Firefox support.** The extension now builds for Firefox 140 and newer.
+  Firefox runs the background as an event page rather than a service worker and
+  requires an add-on id, so `node build.mjs` writes a manifest per browser and
+  packages both from the same source.
 
 ### Changed
 
@@ -82,6 +59,18 @@ closes the last gap between installing it and finding it.
   content script remembers the last profile page it ran on, so the popup can
   link straight back to it from any tab. Records written by earlier versions
   fall back to the country domain.
+- **The browser APIs are reached through one alias.** Firefox returns promises
+  only from the `browser` namespace, and the code was written against Chrome's
+  `chrome`. Both are now taken from a single alias per file, and the one
+  callback-style call left — the content script asking the background for
+  Vinted's tokens — was rewritten as a promise, which is the only shape Firefox
+  offers.
+- **The description says what the extension does.** It used to spend its second
+  half on the draft-first safety, which is the reason Bumpline is safe to use
+  rather than the reason anyone installs it. Only about 45 characters survive
+  truncation in store search, so the action now takes the visible half and the
+  rest carries the two reasons to install: nothing is retyped, and the item
+  moves back to the top.
 
 ### Fixed
 
