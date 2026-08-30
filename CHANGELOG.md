@@ -534,4 +534,6 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.0.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.1
+[1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
 [0.3.0]: https://github.com/g1ampy/Bumpline/releases/tag/v0.3.0
