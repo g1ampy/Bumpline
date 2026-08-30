@@ -225,11 +225,16 @@ retry runs on — says how many items you have relisted in the last hour and in
 the last day, shows any standing pause, and carries the on/off switch and its
 settings:
 
+The icon itself answers the shorter version of that without being clicked: it
+is in colour when the switch is on and the tab you are looking at is a Vinted
+page, and grey otherwise, with the tooltip saying which of the two reasons it
+is.
+
 **The switch in the top right turns Bumpline off.** On by default. Off, no
 buttons are added to any Vinted page, nothing is sent to Vinted, and unfinished
-relists stop being retried. The toolbar icon goes grey and the panel goes with
-it: the cards, the counts and the settings are answers about relisting, and with
-the switch off one line stands in their place. Open tabs drop their buttons the
+relists stop being retried. The toolbar icon goes grey on every tab and the
+panel goes with it: the cards, the counts and the settings are answers about
+relisting, and with the switch off one line stands in their place. Open tabs drop their buttons the
 moment you flip it, with no reload. Nothing is thrown away — your items, your settings, your counts
 and any copy saved on this device are exactly where they were, and turning it
 back on puts the buttons back. A relist already running when you switch off is

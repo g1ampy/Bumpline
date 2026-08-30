@@ -65,41 +65,20 @@ const onVinted = url => !!url && VINTED_HOST.test(url.hostname);
 
 // --- the review link ------------------------------------------------------
 
-// One package ships to both stores, so the review button cannot be given its
-// address at build time. Replace these two with the ids each store hands out on
-// the first submission: the Chrome one is the 32-letter id in the listing URL,
-// the Firefox one is the add-on slug.
-const CHROME_STORE_ID = 'YOUR_CHROME_ID';
-const FIREFOX_ADDON_ID = 'YOUR_FIREFOX_ID';
-
-// The extension's own origin, which is the one thing a browser cannot get wrong
-// about its own extension: Firefox serves these pages from moz-extension:// and
-// every Chromium browser — Chrome, Edge, Brave, Opera, Vivaldi — from
-// chrome-extension://. The user agent is the fallback and not the test, because
-// Edge and Opera both write "Chrome" into theirs.
-function isFirefox() {
-  try {
-    const origin = ext.runtime.getURL('');
-    if (origin.startsWith('moz-extension://')) return true;
-    if (origin.startsWith('chrome-extension://')) return false;
-  } catch (_) {
-    // getURL exists in every browser this popup runs in; the guard is for the
-    // one that does not, where the agent string is all that is left.
-  }
-  return navigator.userAgent.includes('Firefox/');
-}
-
-// Both addresses land on the reviews tab rather than the top of the listing, so
-// the button arrives where its label says it will.
-const reviewUrl = () =>
-  isFirefox()
-    ? 'https://addons.mozilla.org/firefox/addon/' + FIREFOX_ADDON_ID + '/reviews/'
-    : 'https://chromewebstore.google.com/detail/' + CHROME_STORE_ID + '/reviews';
+// Which store this copy came from, and whether that store has a listing to
+// point at, is worked out in store.js — the page shown after install asks the
+// same question, and a store id kept in two files is one that will one day be
+// corrected in only one of them.
 
 // An anchor rather than a click handler: the browser closes the popup itself
 // when it opens the tab, and a real href can be middle-clicked and copied.
 function wireReview() {
-  document.getElementById('review').href = reviewUrl();
+  const link = document.getElementById('review');
+  const url = BumplineStore.reviewUrl();
+  // Nowhere to send anyone is said by not asking, rather than by asking and
+  // landing them on a 404.
+  link.hidden = !url;
+  if (url) link.href = url;
 }
 
 // Asks the page what it actually rendered. Somebody else's wardrobe has the

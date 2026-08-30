@@ -1,31 +1,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bumpline is installed</title>
+<title>Welcome to Bumpline</title>
 <link rel="stylesheet" href="style.css">
 
 <!-- Opened once, by the service worker, right after the extension is installed.
      Installed from the store Bumpline is invisible: it draws nothing anywhere
      until you are on your own Vinted wardrobe, so a new user sees an empty
      toolbar and assumes it is broken. This page answers the only two questions
-     that stand between the install and the first relist — where the icon went,
-     and where the buttons appear — and refuses to grow past them. -->
+     that stand between the install and the first relist (where the icon went,
+     and where the buttons appear) and refuses to grow past them.
+
+     It is built out of the toolbar panel's own components, from the panel's own
+     stylesheet: the same cards, the same buttons, the same footer. A first
+     impression is worth something only if the second one matches it. -->
 
 <header class="hero">
   <img class="hero__logo" src="../icons/logo.svg" alt="" width="56" height="56">
-  <h1 class="hero__title">Bumpline is installed</h1>
-  <p class="hero__lead">The buttons appear inside Vinted, not here. Two steps.</p>
-  <p class="hero__version" id="version"></p>
+  <h1 class="hero__title">Thanks for installing Bumpline</h1>
+  <p class="hero__lead">
+    Relisting an item used to mean retyping the title, the description and
+    every last photo. From now on it is one button. Nothing to set up here
+    either: two quick steps and you can close this tab for good.
+  </p>
 </header>
 
 <main>
   <ol class="steps">
-    <li class="step">
-      <span class="step__number" aria-hidden="true">1</span>
+    <li class="card step">
       <div class="step__body">
-        <h2 class="step__title">Pin Bumpline to the toolbar</h2>
-        <p class="step__text">
-          Click the puzzle piece beside the address bar, then the pin next to
-          Bumpline. The icon then stays in view.
+        <h2 class="card__title">
+          <span class="step__number" aria-hidden="true">1</span>
+          Pin Bumpline to your toolbar
+        </h2>
+        <p class="card__note">
+          Click the puzzle piece next to the address bar, then the little pin
+          beside Bumpline. One click now, and you never have to go looking for
+          it again.
+        </p>
+        <p class="card__note step__aside">
+          After that the icon does the talking: in colour when there is
+          something for Bumpline to do on the tab you are on, grey when there
+          is not. You will not have to click it to find out.
         </p>
       </div>
 
@@ -33,8 +48,8 @@
         <svg class="shot__art" viewBox="0 0 360 214" role="img"
              aria-label="A Chrome window on a Vinted page. The puzzle piece to the right of the address bar is open, and the extensions menu lists Bumpline with a pin beside it.">
           <!-- The window itself. Everything above the page area is browser
-               chrome, so it is drawn in the surface colour and the page in the
-               sunken one, the same way Chrome separates them. -->
+               chrome, so it is drawn on the card colour and the page on the
+               muted one, the same way Chrome separates them. -->
           <rect class="art-panel" x="4" y="4" width="352" height="206" rx="10"/>
 
           <!-- tab strip -->
@@ -119,23 +134,27 @@
       </figure>
     </li>
 
-    <li class="step">
-      <span class="step__number" aria-hidden="true">2</span>
+    <li class="card step">
       <div class="step__body">
-        <h2 class="step__title">Open your own wardrobe</h2>
-        <p class="step__text">
-          Every item of yours still for sale gets a <b>Relist</b> and a
-          <b>Relist as draft</b> button. Nowhere else.
+        <h2 class="card__title">
+          <span class="step__number" aria-hidden="true">2</span>
+          Go to your own wardrobe
+        </h2>
+        <p class="card__note">
+          That is where the buttons turn up. Every item of yours still for sale
+          gets a <b>Relist</b> and a <b>Relist as draft</b>, right beside it.
+          Only on your things. Nobody else&rsquo;s listings are touched.
         </p>
-        <p class="step__note">
-          The copy is saved as a draft <i>before</i> the old listing is deleted,
-          so the item always exists somewhere. Both buttons delete the original; the
-          draft one stops before publishing.
+        <p class="card__note step__aside">
+          Nothing is thrown away first. The copy is made <i>before</i> the old
+          listing goes, so your item is never in limbo. <b>Relist</b> puts it
+          straight back up; <b>Relist as draft</b> stops one step short of
+          publishing, in case you want to look it over first.
         </p>
       </div>
 
       <figure class="shot">
-        <svg class="shot__art" viewBox="0 0 480 216" role="img"
+        <svg class="shot__art" viewBox="60 0 360 216" role="img"
              aria-label="A listing on your own wardrobe, with a Relist button and a Relist as draft button below it.">
           <rect class="art-panel" x="132" y="8" width="216" height="200" rx="12"/>
           <rect class="art-field" x="144" y="20" width="192" height="84" rx="8"/>
@@ -157,11 +176,39 @@
       </figure>
     </li>
   </ol>
+
+  <!-- Last, and deliberately after the two things there are to do: nobody has
+       relisted anything yet at the moment this page opens, so the ask is put
+       where it can be found later rather than in the way now. Which store to
+       send them to is worked out at runtime, in store.js, because one package
+       ships to both stores and the address cannot be baked into it at build
+       time. If this browser's store has no listing yet, the whole card stays
+       hidden rather than pointing at a page that is not there. -->
+  <section class="card rate" id="rate" hidden>
+    <h2 class="card__title">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>
+      </svg>
+      <span>If it saves you time, say so</span>
+    </h2>
+    <p class="card__note">
+      Bumpline is free, open source, and there is no account to sign up for. A
+      rating is the only thing it asks for, and it is how the next seller finds
+      it. No rush: come back once you have actually used the thing.
+    </p>
+    <a class="button rate__button" id="review" href="#" target="_blank" rel="noreferrer">
+      Rate Bumpline
+    </a>
+  </section>
 </main>
 
 <footer class="foot">
   <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer">How it works</a>
   <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer">Report a problem</a>
+  <span class="foot__version" id="version"></span>
 </footer>
 
+<!-- Which store this copy came from, and so where a rating would go. Shared
+     with the toolbar panel, which asks the same question. -->
+<script src="../store.js"></script>
 <script src="script.js"></script>

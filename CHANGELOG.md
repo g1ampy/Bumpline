@@ -86,7 +86,16 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   `moz-extension://` is Firefox, `chrome-extension://` is every Chromium browser
   — rather than from a user agent string, which Edge and Opera both write
   "Chrome" into. One package goes to both stores, so the address cannot be baked
-  into it at build time.
+  into it at build time, and the answer lives in `store.js` rather than in the
+  popup: the page shown after install asks the same question, and a store id
+  kept in two files is one that will eventually be corrected in only one of
+  them. Where a store has no listing yet, nothing asks — a link to a page that
+  does not exist is worse than no link.
+- **The page shown after install asks for a rating too.** Last on the page and
+  after the two things there are to do, because at that moment nobody has
+  relisted anything yet: it is put where it can be found later rather than in
+  the way now. It hides itself entirely, heading and all, when this browser's
+  store has no listing to point at.
 - **Three new settings, two of which ask first.** The cooldown and the pause
   between requests are both on out of the box, and turning either of them off
   makes a block more likely, so the switch springs back and the change is only
@@ -174,16 +183,26 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   line stands in its place: *Bumpline is offline*. The header stays, because the
   switch is the way back, and so does the footer, because the version number is
   what a bug report is built on.
-- **The toolbar icon goes grey with the switch.** With no panel open the icon is
-  the only part of the extension you can see, so it now carries the one state
-  worth knowing from outside: the same drawing with the colour taken out of it
-  by luma, so the disc and the chevrons keep exactly the contrast they had. The
-  tooltip says *Bumpline — off* alongside it. The background worker repaints it
-  from `storage.onChanged`, which is the signal the content scripts already
-  follow, and reads the switch again on the way up — a worker is torn down
+- **The toolbar icon says whether pressing it would get you anything.** With no
+  panel open the icon is the only part of the extension you can see, so it
+  carries the one thing worth knowing from outside. Colour means the switch is
+  on *and* this tab is a Vinted page; grey means neither is worth pressing, and
+  the tooltip says which: *Bumpline: off* or *Bumpline: not a Vinted page*.
+  It is the same drawing with the colour taken out of it by luma, so the disc
+  and the chevrons keep exactly the contrast they had. Grey is the default every
+  tab starts from and colour is painted over it per tab, which is the right way
+  round: most tabs are not Vinted, and a tab the worker has heard nothing about
+  should not claim to be one. The page half of that costs no permission —
+  `tabs.onActivated` and `tabs.onUpdated` fire without the `tabs` permission and
+  it is the url that is withheld without one, and a withheld url is a tab the
+  extension cannot work on, which is the same grey as a tab it will not work on.
+  The switch half is repainted from `storage.onChanged`, the signal the content
+  scripts already follow, and read again on the way up: a worker is torn down
   between events and a browser forgets a set icon at the end of a session, so
   the state is looked up rather than remembered. The mark in the panel's own
-  header greys at the same moment.
+  header greys with the switch at the same moment. A failure to repaint now says
+  so in the worker's console rather than being swallowed — an icon that never
+  changes and no way to find out why is the worse of the two outcomes.
 - **Two things that used to jump now move.** The settings section grows and
   shrinks its own height rather than appearing whole — `<details>` has no
   animation of its own, so the click is taken over and the open attribute is set
@@ -306,6 +325,24 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   across the panel's 328 points, and a rating is not the same kind of errand as
   the two links it would have sat beside, so it takes a line of its own beneath
   them.
+- **The page shown after install is drawn with the panel's own stylesheet.** It
+  had a palette of its own — its own greys, its own teal, its own type scale —
+  written to match the panel and slowly drifting from it, which is what two
+  palettes meant to match always do. It imports `popup.css` now and says only
+  where it is not a 360-point panel: a column width, the drawings set beside the
+  words once there is room for them, and a footer that fits on one row. Every
+  step is one of the panel's cards, the rating is one of its buttons, and the
+  flat drawings are rebuilt on its tokens, so the first thing a new user sees is
+  the thing they will recognise when they later click the icon.
+- **The install page reads like it is talking to somebody.** It was written as a
+  specification: every sentence true, none of them addressed to anyone. It opens
+  by naming the chore it takes away rather than announcing itself, and each step
+  says what the reader gets out of doing it — the pin means never hunting for
+  the icon again, the wardrobe is where the buttons turn up, nothing is thrown
+  away before the copy exists. It still refuses to grow past the two questions
+  that stand between the install and the first relist, and the rating still asks
+  last and says out loud that there is no rush: nobody has relisted anything yet
+  at the moment this page opens.
 - **The warning a guarded setting raises is a modal.** It was a card in the
   flow, opening below the switch that raised it, which made it something the eye
   could move past: on a panel tall enough to scroll it could be answered without

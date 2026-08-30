@@ -129,8 +129,10 @@ ext.runtime.onMessage.addListener((message, _sender, respond) => {
 // --- the toolbar icon -----------------------------------------------------
 
 // The icon is the only part of the extension visible when no panel is open, so
-// it carries the one state worth knowing from outside: colour while it is
-// working, grey while the switch is off. Same drawing, luma only.
+// it carries the one thing worth knowing from outside: whether pressing it
+// would get you anything. Colour means yes — the switch is on and this tab is a
+// Vinted page. Grey means no, for either reason, and the tooltip says which.
+// Same drawing, luma only.
 const ENABLED_KEY = 'bumpline:enabled';
 
 const ACTION_ICONS = {
@@ -138,19 +140,76 @@ const ACTION_ICONS = {
   off: { 16: 'icons/off16.png', 24: 'icons/off24.png', 32: 'icons/off32.png' },
 };
 
-function paintIcon(on) {
+// vinted.it, vinted.com, vinted.co.uk … one domain per country. The same test
+// the popup makes, written the same way.
+const VINTED_HOST = /(^|\.)vinted\.[a-z]{2,3}(\.[a-z]{2})?$/i;
+
+// A tab's url only reaches an extension that holds a host permission for it,
+// which here is exactly the Vinted domains. Everywhere else it arrives
+// undefined — and that is not a gap to work around, it is the answer.
+function onVinted(url) {
+  if (!url) return false;
+  try {
+    return VINTED_HOST.test(new URL(url).hostname);
+  } catch (_) {
+    return false;
+  }
+}
+
+// The switch, cached. The worker is torn down between events and reads it back
+// on the way up; every repaint in between needs it, and none of them should
+// have to wait on storage for it.
+let switchedOn = true;
+
+function titleFor(colour) {
+  if (!switchedOn) return 'Bumpline: off';
+  return colour ? 'Bumpline' : 'Bumpline: not a Vinted page';
+}
+
+// Without a tabId this is the default every tab starts from; with one it is an
+// override for that tab alone, which is what makes the icon able to answer a
+// question about the page rather than only about the switch.
+function paintIcon(colour, tabId) {
   // Chrome returns promises here and Firefox returns them from a different
   // object; neither failure is worth taking the worker down for, and an icon
-  // that did not repaint is not a reason to stop watching request headers.
+  // that did not repaint is not a reason to stop watching request headers. It
+  // is worth saying out loud, though: a swallowed rejection here is an icon
+  // that never changes and no way to find out why.
   const action = ext.action || ext.browserAction;
   if (!action) return;
+  const where = tabId == null ? {} : { tabId };
   try {
-    Promise.resolve(action.setIcon({ path: on ? ACTION_ICONS.on : ACTION_ICONS.off }))
-      .catch(() => {});
-    Promise.resolve(action.setTitle({ title: on ? 'Bumpline' : 'Bumpline — off' }))
-      .catch(() => {});
-  } catch (_) {
+    Promise.resolve(action.setIcon({ ...where, path: colour ? ACTION_ICONS.on : ACTION_ICONS.off }))
+      .catch(err => console.debug('[Bumpline] could not set the icon', err));
+    Promise.resolve(action.setTitle({ ...where, title: titleFor(colour) }))
+      .catch(err => console.debug('[Bumpline] could not set the title', err));
+  } catch (err) {
     // An older browser without these methods keeps the manifest's icon.
+    console.debug('[Bumpline] this browser has no action icon to set', err);
+  }
+}
+
+// Grey is the default because most tabs are not Vinted, and colour is painted
+// over it per tab. A tab that has never been activated or loaded since the
+// worker came up is therefore grey, which is the right guess for a tab the
+// extension has heard nothing about.
+function paintDefault() {
+  paintIcon(false);
+}
+
+function paintTab(tabId, url) {
+  if (tabId == null) return;
+  paintIcon(switchedOn && onVinted(url), tabId);
+}
+
+// Only the active tab's icon is ever on screen, so that is the one repaint that
+// has to happen now; every other tab gets its own when it is activated.
+async function paintActiveTab() {
+  try {
+    const [tab] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tab) paintTab(tab.id, tab.url);
+  } catch (err) {
+    console.debug('[Bumpline] could not read the active tab', err);
   }
 }
 
@@ -160,10 +219,12 @@ function paintIcon(on) {
 async function paintIconFromStore() {
   try {
     const bag = await ext.storage.local.get(ENABLED_KEY);
-    paintIcon(bag[ENABLED_KEY] !== false);
+    switchedOn = bag[ENABLED_KEY] !== false;
   } catch (_) {
-    paintIcon(true);
+    switchedOn = true;
   }
+  paintDefault();
+  await paintActiveTab();
 }
 
 paintIconFromStore();
@@ -174,7 +235,26 @@ ext.runtime.onStartup.addListener(paintIconFromStore);
 // than needing a message of its own.
 ext.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes[ENABLED_KEY]) return;
-  paintIcon(changes[ENABLED_KEY].newValue !== false);
+  switchedOn = changes[ENABLED_KEY].newValue !== false;
+  paintDefault();
+  paintActiveTab();
+});
+
+// Neither of these needs the "tabs" permission. The events fire either way; the
+// url is what is withheld without one, and a withheld url is a tab the
+// extension cannot work on — which is the same grey icon as a tab it will not
+// work on. The two cases do not have to be told apart.
+ext.tabs.onActivated.addListener(({ tabId }) => {
+  Promise.resolve(ext.tabs.get(tabId))
+    .then(tab => paintTab(tabId, tab && tab.url))
+    .catch(() => paintTab(tabId, null));
+});
+
+ext.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // A navigation, or the load finishing. Everything else a tab reports — a
+  // title, a favicon, a mute — cannot have changed the answer.
+  if (!changeInfo.url && changeInfo.status !== 'complete') return;
+  paintTab(tabId, tab && tab.url);
 });
 
 // Installed from the store the extension draws nothing anywhere until you are

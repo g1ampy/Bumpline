@@ -42,6 +42,9 @@ const PAYLOAD = [
   'popup.html',
   'popup.css',
   'popup.js',
+  // Which store this copy came from, read by both the panel and the page shown
+  // after install.
+  'store.js',
   'welcome',
   // Inter, the typeface the shadcn preset asks for. Manifest v3 refuses a
   // remote font, so the two Latin subsets ship with the extension, and OFL.txt

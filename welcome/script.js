@@ -19,9 +19,21 @@
 // once for both.
 const ext = globalThis.browser ?? globalThis.chrome;
 
-// The only moving part on the page: the version, so a bug report can say which
-// build the reader is looking at. A hand-built debug package sets version_name;
-// a store one has none and falls back to the plain version.
+// The version, so a bug report can say which build the reader is looking at. A
+// hand-built debug package sets version_name; a store one has none and falls
+// back to the plain version.
 const build = ext.runtime.getManifest();
 document.getElementById('version').textContent =
   `Version ${build.version_name || build.version}`;
+
+// Where a rating would go, which depends on the store this copy came from:
+// store.js works that out, and returns null when that store has no listing yet.
+// The whole card goes with the link rather than the link alone — a heading
+// asking for a rating above nothing to click is worse than not asking.
+const review = document.getElementById('review');
+const url = BumplineStore.reviewUrl();
+
+if (url) {
+  review.href = url;
+  document.getElementById('rate').hidden = false;
+}

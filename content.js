@@ -248,7 +248,7 @@
           return;
         }
         trace('bridge timeout on a write; not repeating it', method, url);
-        reject(new Error('Vinted did not answer in time. Nothing was sent twice — try again.'));
+        reject(new Error('Vinted did not answer in time. Nothing was sent twice, so try again.'));
       }, 15000);
 
       function handler(event) {
@@ -725,7 +725,7 @@
       const body = await reply.text();
       await noteRefusal(reply, body);
       if (reply.status === 404) {
-        throw new Error(`Item ${itemId} cannot be edited — it is sold, reserved or already gone.`);
+        throw new Error(`Item ${itemId} cannot be edited: it is sold, reserved or already gone.`);
       }
       throw new Error(explainFailure(reply.status, body));
     }
@@ -1689,7 +1689,7 @@
       // only one who can fix it.
       const photos = published.photos;
       if (Array.isArray(photos) && !photos.length) {
-        toast('Relisted, but the copy has no photos — add them on Vinted.', 'bad');
+        toast('Relisted, but the copy has no photos. Add them on Vinted.', 'bad');
       } else {
         toast('Relisted.');
       }
@@ -1869,7 +1869,7 @@
       picker.className = 'bumpline-modal__picker';
       const blank = document.createElement('option');
       blank.value = '';
-      blank.textContent = '— select a size —';
+      blank.textContent = 'Select a size';
       picker.appendChild(blank);
 
       for (const group of groups) {
@@ -2184,7 +2184,7 @@
       if (photoUrls.length && assigned.length < photoUrls.length) {
         throw new Error(
           `Only ${assigned.length} of ${photoUrls.length} photos uploaded ` +
-            `(${failures} failed). Nothing was deleted — try again in a moment.`
+            `(${failures} failed). Nothing was deleted, so try again in a moment.`
         );
       }
       if (!item.title) {

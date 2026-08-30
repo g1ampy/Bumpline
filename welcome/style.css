@@ -1,183 +1,166 @@
 /* Bumpline — the page the service worker opens once, right after install.
  *
- * It carries the popup's palette on purpose: the same teal, the same ink, the
- * same cards. The first thing a new user sees here is the thing they will
- * recognise when they later click the toolbar icon.
+ * It is drawn with the toolbar panel's stylesheet rather than a palette of its
+ * own. That is the point of it: the first thing a new user sees here is the
+ * thing they will recognise when they later click the icon — the same teal, the
+ * same white cards on a tinted off-white, the same Inter, the same pill
+ * buttons. Two palettes that were meant to match are two palettes that drift,
+ * and this page had already drifted once.
  *
- * Colour rule inherited from the popup: the brand teal #00ADB8 is 2.7:1
- * against both white and its own white text, so it never carries text, a
- * filled button or a focus ring. Those use --accent-ink, darkened in light
- * mode and lightened in dark mode, which clears 4.5:1 both ways. The teal
- * survives in the logo.
+ * Everything below only says where this page is not a 360-point panel: it is a
+ * full tab, so it has a column width, room for the drawings beside the words,
+ * and no switch in the corner.
  */
 
-:root {
-  --ink: #1f2328;          /* 15.8:1 on --surface */
-  --ink-soft: #57606a;     /*  6.4:1 on --surface */
-  --line: #d0d7de;
-  --surface: #ffffff;
-  --surface-sunken: #f6f8fa;
+@import url("../popup.css");
 
-  --accent-ink: #00727b;   /*  5.7:1 both ways */
+/* --- the page ------------------------------------------------------------ */
 
-  --radius: 8px;
-  --radius-lg: 14px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 40px;
-  --space-7: 64px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #e6edf3;        /* 13.7:1 on --surface */
-    --ink-soft: #9198a1;   /*  5.6:1 on --surface */
-    --line: #3d444d;
-    --surface: #1c2128;
-    --surface-sunken: #22272e;
-
-    --accent-ink: #3ad1da; /*  8.7:1 on --surface */
-  }
-}
-
-* { box-sizing: border-box; }
-
+/* The panel is a fixed 360 wide with no scroll of its own; a tab is neither.
+   46em of Inter is about 78 characters, a shade under the line length prose
+   stops being comfortable at. */
 body {
-  max-width: 780px;
+  width: auto;
+  max-width: 46rem;
   margin: 0 auto;
-  padding: var(--space-7) var(--space-5) var(--space-6);
-  background: var(--surface);
-  color: var(--ink);
-  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 64px 24px 40px;
 }
 
-/* --- hero --------------------------------------------------------------- */
+@media (max-width: 560px) {
+  body { padding: 40px 16px 32px; }
+}
+
+/* --- hero ---------------------------------------------------------------- */
 
 .hero { text-align: center; }
 
-.hero__logo { display: block; margin: 0 auto var(--space-4); }
+/* The logo at its own colour, unaltered — the one place in the extension where
+   the teal is used as the teal rather than darkened for contrast. */
+.hero__logo { display: block; margin: 0 auto 20px; }
 
 .hero__title {
   margin: 0;
   font-size: clamp(26px, 4.5vw, 34px);
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
+/* The panel's --muted-foreground, at the size a lead paragraph is read at
+   rather than the 14 the panel sets everything in. */
 .hero__lead {
-  max-width: 46ch;
-  margin: var(--space-3) auto 0;
-  color: var(--ink-soft);
+  max-width: 44ch;
+  margin: 16px auto 0;
+  color: var(--muted-foreground);
   font-size: 16px;
+  line-height: 1.5;
 }
 
-.hero__version {
-  margin: var(--space-4) 0 0;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-
-/* --- steps -------------------------------------------------------------- */
+/* --- steps --------------------------------------------------------------- */
 
 .steps {
-  margin: var(--space-7) 0 0;
+  margin: 40px 0 0;
   padding: 0;
   list-style: none;
 }
 
+/* Each step is one of the panel's cards. The panel stacks them 12 apart, which
+   is right for four answers to four questions and too tight for two things to
+   do one after the other. */
 .step {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-2) var(--space-4);
-  align-items: start;
+  gap: 20px;
+  align-items: center;
+  margin-top: 20px;
 }
 
-.step + .step {
-  margin-top: var(--space-6);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--line);
+@media (min-width: 720px) {
+  .step {
+    grid-template-columns: minmax(0, 1fr) 288px;
+    column-gap: 28px;
+  }
 }
 
-/* The number is decorative: the <ol> already carries the order for a screen
-   reader, and repeating it out loud would only say "one one". */
+/* A step's heading is the one thing on the page that outranks the card note
+   under it, so it is set a step above the panel's own card title. */
+.step .card__title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* The <ol> already carries the order for a screen reader, so the number is
+   decorative and hidden from it: read out, it would only say "one one". It
+   takes the place of the icon a card title carries in the panel, and sits on
+   the same 10-point gap. */
 .step__number {
   display: grid;
   place-items: center;
+  flex: none;
   width: 26px;
   height: 26px;
-  border-radius: 50%;
-  background: var(--surface-sunken);
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
+  border-radius: 9999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.step__title {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-}
-
-.step__text { margin: var(--space-2) 0 0; }
-
-.step__note {
-  margin: var(--space-3) 0 0;
-  padding-left: var(--space-3);
-  border-left: 2px solid var(--line);
-  color: var(--ink-soft);
-  font-size: 14px;
+/* The part that is worth knowing but not worth stopping for: the same muted ink
+   as the note above it, behind the rule the panel draws between its settings
+   groups. */
+.step__aside {
+  margin-top: 12px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .step b { font-weight: 600; }
 
-/* --- illustrations ------------------------------------------------------ */
+/* --- illustrations ------------------------------------------------------- */
 
-.shot {
-  grid-column: 2;
-  margin: var(--space-4) 0 0;
-}
+.shot { margin: 0; }
 
 .shot__art {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: var(--radius-lg);
-  background: var(--surface-sunken);
+  border-radius: var(--radius-2xl);
+  background: var(--muted);
 }
 
-.art-panel   { fill: var(--surface); stroke: var(--line); }
-.art-field   { fill: var(--surface-sunken); stroke: var(--line); }
-.art-row     { fill: var(--surface-sunken); stroke: none; }
-.art-bar     { fill: var(--line); }
-.art-tile    { fill: var(--line); }
-.art-dot     { fill: var(--line); }
+/* The drawings are built out of the same tokens as everything they sit beside,
+   which is what makes a browser window drawn in flat shapes read as part of the
+   page rather than as a screenshot dropped into it. */
+.art-panel   { fill: var(--card); stroke: var(--border); }
+.art-field   { fill: var(--muted); stroke: var(--border); }
+.art-row     { fill: var(--muted); stroke: none; }
+.art-bar     { fill: var(--border); }
+.art-tile    { fill: var(--border); }
+.art-dot     { fill: var(--border); }
 .art-bar--faint { opacity: 0.6; }
 
-/* Browser chrome sits on --surface and the page it frames on the sunken tone,
-   the same separation Chrome itself draws. */
-.art-strip   { fill: var(--surface-sunken); stroke: none; }
-.art-page    { fill: var(--surface-sunken); stroke: none; }
-.art-tab     { fill: var(--surface); stroke: var(--line); }
-.art-menu    { fill: var(--surface); stroke: var(--line); }
-.art-divider { fill: none; stroke: var(--line); }
+/* Browser chrome sits on the card colour and the page it frames on the muted
+   one, the same separation Chrome itself draws. */
+.art-strip   { fill: var(--muted); stroke: none; }
+.art-page    { fill: var(--muted); stroke: none; }
+.art-tab     { fill: var(--card); stroke: var(--border); }
+.art-menu    { fill: var(--card); stroke: var(--border); }
+.art-divider { fill: none; stroke: var(--border); }
 
+/* The ring is the only thing on the drawing that says "click this", so it is
+   the only thing drawn in the accent. */
 .art-ring {
   fill: none;
-  stroke: var(--accent-ink);
+  stroke: var(--primary);
   stroke-width: 2;
 }
 
 .art-glyph {
-  color: var(--ink-soft);
+  color: var(--muted-foreground);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.75;
@@ -185,81 +168,79 @@ body {
   stroke-linejoin: round;
 }
 
-.art-glyph--accent { color: var(--accent-ink); }
+.art-glyph--accent { color: var(--primary); }
 .art-glyph--faint  { opacity: 0.55; }
 
-.art-cta { fill: var(--accent-ink); stroke: none; }
-.art-cta--ghost { fill: none; stroke: var(--accent-ink); stroke-width: 1.5; }
+.art-cta { fill: var(--primary); stroke: none; }
+.art-cta--ghost { fill: none; stroke: var(--primary); stroke-width: 1.5; }
 
 .art-label {
-  fill: var(--ink);
+  fill: var(--foreground);
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
 }
 
-.art-label--muted { fill: var(--ink-soft); font-weight: 500; }
+.art-label--muted { fill: var(--muted-foreground); font-weight: 500; }
 
-/* The browser drawing is denser than the listing one, so it is set on a
-   smaller grid and its labels shrink with it. */
+/* The browser drawing is denser than the listing one, so it is set on a smaller
+   grid and its labels shrink with it. */
 .art-label--sm { font-size: 10px; }
 .art-label--xs { font-size: 9px; }
-.art-label--onCta { fill: var(--surface); }
-.art-label--accent { fill: var(--accent-ink); }
+.art-label--onCta { fill: var(--primary-foreground); }
+.art-label--accent { fill: var(--primary); }
 
-/* The drawing is a caption for the words, so it only leaves the text column
-   once there is room to set it beside them. */
-@media (min-width: 880px) {
-  .step {
-    grid-template-columns: auto minmax(0, 1fr) 300px;
-    column-gap: var(--space-5);
-  }
+/* --- the rating ---------------------------------------------------------- */
 
-  .shot {
-    grid-column: 3;
-    grid-row: 1;
-    align-self: center;
-    margin: 0;
-  }
+/* Last, and after the two things there are to do, because a rating is not one
+   of them: nobody has used the extension yet at the moment this page opens. It
+   is here so that the reader knows where it is when they have. */
+.rate {
+  margin-top: 32px;
+  text-align: center;
 }
 
-/* --- footer ------------------------------------------------------------- */
+.rate .card__title { justify-content: center; }
 
-.foot {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-5);
-  margin-top: var(--space-7);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--line);
-  font-size: 14px;
-}
+.rate .card__note { max-width: 44ch; margin-inline: auto; }
 
-.foot__link {
-  color: var(--accent-ink);
+/* The panel's one action is the full width of the panel, because the panel is
+   360 points wide and the button is the only thing in it worth pressing. Here
+   there is a page around it, so it is the width of its own label — a flex
+   container is block-level, and width:auto on one of those is still the whole
+   line, so it has to be asked for by name. */
+.rate__button {
+  width: fit-content;
+  min-width: 200px;
+  margin: 20px auto 0;
   text-decoration: none;
-  border-radius: 3px;
 }
 
-.foot__link:hover { text-decoration: underline; }
+/* --- footer -------------------------------------------------------------- */
 
-/* --- focus and motion --------------------------------------------------- */
-
-:focus-visible {
-  outline: 2px solid var(--accent-ink);
-  outline-offset: 2px;
+/* Centred, and on one row: the panel wraps the rating onto a second line
+   because 328 points will not hold three links, and there is no such shortage
+   here. The auto margin that pushes the version to the right edge of the panel
+   goes with it. */
+.foot {
+  justify-content: center;
+  margin-top: 40px;
 }
+
+.foot__version { margin-left: 0; }
+
+/* --- motion -------------------------------------------------------------- */
 
 /* One quiet entrance, so the page does not simply appear mid-blink after the
-   install. Nothing moves after that. */
-@media (prefers-reduced-motion: no-preference) {
-  .hero, .step {
-    animation: rise 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  }
-
-  .steps > .step:nth-child(1) { animation-delay: 80ms; }
-  .steps > .step:nth-child(2) { animation-delay: 160ms; }
+   install. Nothing moves after that. The panel's stylesheet zeroes every
+   duration under prefers-reduced-motion, this one included. */
+.hero, .step, .rate {
+  animation: rise 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
+
+.steps > .step:nth-child(1) { animation-delay: 80ms; }
+.steps > .step:nth-child(2) { animation-delay: 160ms; }
+.rate { animation-delay: 240ms; }
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(8px); }
