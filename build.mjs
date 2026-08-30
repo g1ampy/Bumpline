@@ -43,10 +43,21 @@ const PAYLOAD = [
   'popup.css',
   'popup.js',
   'welcome',
+  // Inter, the typeface the shadcn preset asks for. Manifest v3 refuses a
+  // remote font, so the two Latin subsets ship with the extension, and OFL.txt
+  // is the licence they ship under.
+  'fonts',
   'LICENSE',
 ];
 
-const ICONS = ['icon16.png', 'icon24.png', 'icon32.png', 'icon48.png', 'icon128.png', "logo.svg"];
+// The off*.png are the action's grey state, set by the background worker when
+// the switch goes off; they are not manifest icons and are named in no manifest
+// key, so they have to be listed here or they would not ship.
+const ICONS = [
+  'icon16.png', 'icon24.png', 'icon32.png', 'icon48.png', 'icon128.png',
+  'off16.png', 'off24.png', 'off32.png',
+  'logo.svg',
+];
 
 // Firefox refuses an add-on whose id it cannot pin down, and without one every
 // update looks like a fresh install with an empty storage.local.
@@ -64,6 +75,9 @@ const TARGETS = {
 
   firefox: manifest => {
     const out = { ...manifest };
+
+    // A Chrome key, and Firefox's own floor is set below rather than here.
+    delete out.minimum_chrome_version;
     
     // Firefox has no service worker to give: an MV3 background there is an
     // event page, woken by the same listeners and torn down the same way.

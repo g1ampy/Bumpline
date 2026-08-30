@@ -42,7 +42,6 @@
     gap: 'bumpline-gap',
     toast: 'bumpline-toast',
     banner: 'bumpline-banner',
-    locked: 'bumpline-locked',
     ageLine: 'bumpline-age',
   };
 
@@ -64,6 +63,7 @@
   const RELIST_LOG_KEY = 'bumpline:relistLog';
   const BLOCK_KEY = 'bumpline:blockedUntil';
   const REFUSAL_LOG_KEY = 'bumpline:refusalLog';
+  const ENABLED_KEY = 'bumpline:enabled';
   const DB_NAME = 'bumpline';
   const DB_STORE = 'photos';
 
@@ -84,15 +84,15 @@
   // relist, so the count cannot live in memory; it is kept on disk with its
   // timestamps, which is also what the hard cooldown reads.
   //
-  // An hourly limit on its own has an obvious hole: seven relists an hour, all
+  // An hourly limit on its own has an obvious hole: three relists an hour, all
   // day, never trips it and is unmistakably a bulk operation. The day window
   // closes it. Neither number is Vinted's — Vinted publishes none — and both
   // are deliberately cautious guesses at where tidying a wardrobe stops looking
   // like tidying a wardrobe.
   const HOUR_WINDOW_MS = 60 * 60 * 1000;
   const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
-  const HOUR_ALARM_AT = 8;
-  const DAY_ALARM_AT = 40;
+  const HOUR_ALARM_AT = 4;
+  const DAY_ALARM_AT = 15;
 
   // The log is kept for the longer of the two windows and each count is taken
   // from it, so there is one list to write and one to prune.
@@ -437,9 +437,15 @@
     return Number.isFinite(until) && until > Date.now() ? until : null;
   }
 
-  let restrictionSeen = 0;
   let restrictionReadAt = 0;
 
+  // The wardrobe is read for a restriction and the stored record is made to
+  // agree with it, in both directions. Only ever writing the restriction, as
+  // this did until 1.0.1, leaves a record that nothing can clear: Vinted lifts
+  // a restriction whenever it likes, the date it published was only the latest
+  // that restriction would have run to, and the card that shows it offers no
+  // way to lift what Vinted itself imposed. The buttons stayed off until a
+  // date that had stopped meaning anything.
   async function noteRestriction() {
     // Vinted draws its bump buttons on nobody's wardrobe but your own, which
     // is both what makes the payload yours to read and what makes there be
@@ -455,13 +461,40 @@
     const until = restrictionFromMarkup(
       document.documentElement && document.documentElement.innerHTML,
     );
-    if (!until || until === restrictionSeen) return;
-    restrictionSeen = until;
-
-    // A refusal already standing for longer is the stricter of the two, and
-    // the strictest is the one that should hold.
+    // Storage rather than a remembered copy, so a record cleared from the popup
+    // or by another tab is seen here. The cache this used to keep is what made
+    // a cleared restriction unwritable until the page was reloaded.
     const standing = await readBlock();
-    if (standing && standing.until >= until) return;
+
+    // A wardrobe that draws bump buttons and states no restriction is a
+    // wardrobe that is not restricted. Anything written from an earlier read is
+    // out of date, and out of date here means locked out.
+    if (!until) {
+      // Only Vinted's own restriction is cleared. A pause the extension set
+      // itself after a refusal is its own cooldown and has to run out on its
+      // own, or a refused account would go straight back to asking.
+      if (!standing || standing.source !== 'vinted') return;
+      try {
+        await ext.storage.local.remove(BLOCK_KEY);
+      } catch (err) {
+        trace('could not clear the restriction', err);
+        return;
+      }
+      applyLock(null);
+      return;
+    }
+
+    // Already recorded, to the millisecond, from the same source. This is the
+    // common case — once every ten seconds for as long as the page is open —
+    // and it is what keeps the read above from turning into a write.
+    if (standing && standing.source === 'vinted' && standing.until === until) return;
+
+    // A refusal already standing for longer is the stricter of the two, and the
+    // strictest is the one that should hold. An earlier reading of Vinted's own
+    // restriction is not a second opinion, though — it is this same statement,
+    // out of date — so a new one replaces it whether the date it carries is
+    // later or earlier.
+    if (standing && standing.source !== 'vinted' && standing.until >= until) return;
 
     const record = {
       until,
@@ -478,41 +511,64 @@
   }
 
   // ===========================================================================
+  // Switched off
+  //
+  // The switch in the toolbar stops the extension without uninstalling it: no
+  // buttons are drawn, no unfinished relist is retried, and nothing at all is
+  // sent to Vinted. It is the one setting that has to reach every open tab the
+  // moment it changes, so it is read before the first button is drawn and
+  // watched for the rest of the session.
+  // ===========================================================================
+
+  // null until storage answers. Nothing is drawn on a maybe: a button that
+  // appears and is taken away again reads as the extension breaking.
+  let enabled = null;
+
+  async function readEnabled() {
+    try {
+      const bag = await ext.storage.local.get(ENABLED_KEY);
+      return bag[ENABLED_KEY] !== false;
+    } catch (_) {
+      // Unreadable storage is not a switched-off extension. Absent means on,
+      // and so does broken.
+      return true;
+    }
+  }
+
+  // Everything this extension put on the page, taken back off it. A relist
+  // already under way keeps its own button: the copy is mid-flight, and the
+  // label on that button is the only progress the seller can see.
+  function removeOurUi() {
+    const ours = `${SELECTOR.ourButton}, .${CLASS.gap}, .${CLASS.ageLine}, ` +
+      `.${CLASS.banner}, .${CLASS.toast}`;
+    for (const node of document.querySelectorAll(ours)) {
+      if (node.classList.contains('is-busy')) continue;
+      node.remove();
+    }
+  }
+
+  function applyEnabled(on) {
+    if (enabled === on) return;
+    enabled = on;
+    if (on) attachButtons();
+    else removeOurUi();
+  }
+
+  // ===========================================================================
   // Showing the pause
   // ===========================================================================
 
-  const LOCK_NOTE_ID = 'bumpline-locked';
-
   let lockedUntil = 0;
-  let lockReason = '';
-  let lockSource = '';
   let unlockTimer = null;
 
   const clockOf = at =>
     new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  // A refusal is measured in hours, a restriction in days, and "until 23:59"
-  // with no date is a lie about the second kind. The day is named whenever it
-  // is not today's.
-  const whenOf = at => {
-    const when = new Date(at);
-    if (when.toDateString() === new Date().toDateString()) return clockOf(at);
-    return when.toLocaleString([], {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   // The one place lockedUntil changes. Also arms the timer that lifts the pause
   // without the page having to be reloaded.
   function applyLock(record) {
     const until = (record && record.until) || 0;
     lockedUntil = until > Date.now() ? until : 0;
-
-    lockReason = (record && record.why) || 'Vinted refused the last request.';
-    lockSource = (record && record.source) || 'refusal';
 
     clearTimeout(unlockTimer);
     unlockTimer = null;
@@ -525,6 +581,10 @@
   // Idempotent, and called after every mutation, so buttons drawn while the
   // pause is on are born disabled.
   function paintLock() {
+    // Switched off there is nothing of ours on the page to grey out, and the
+    // note would be the only thing left of an extension that is not running.
+    if (enabled !== true) return;
+
     for (const button of document.querySelectorAll(SELECTOR.ourButton)) {
       // A relist already under way owns its own button; leave it alone.
       if (button.classList.contains('is-busy')) continue;
@@ -534,31 +594,6 @@
       // having broken rather than having stopped on purpose.
       button.classList.toggle(CLASS.lockedButton, !!lockedUntil);
     }
-
-    const existing = document.getElementById(LOCK_NOTE_ID);
-    if (!lockedUntil) {
-      if (existing) existing.remove();
-      return;
-    }
-    // Writing the note is itself a mutation, and the observer answers mutations
-    // by calling this again. It is only written when what it says has changed.
-    if (existing && existing.dataset.until === String(lockedUntil)) return;
-
-    const note = existing || document.createElement('div');
-    note.id = LOCK_NOTE_ID;
-    note.dataset.until = String(lockedUntil);
-    note.className = `bumpline-note bumpline-note--bad ${CLASS.locked}`;
-    note.setAttribute('role', 'status');
-    note.textContent =
-      lockSource === 'vinted'
-        ? `${lockReason} It runs to ${whenOf(lockedUntil)}, and until then ` +
-          'nothing can be listed or edited — by Bumpline or by hand. The ' +
-          'buttons come back on their own.'
-        : `${lockReason} Relisting is paused until ${whenOf(lockedUntil)} so the ` +
-          'account is not pressed while it is being counted. The buttons come back ' +
-          'on their own. The toolbar popup can lift the pause early if you are ' +
-          'sure this was a one-off.';
-    if (!existing) document.body.appendChild(note);
   }
 
   // ===========================================================================
@@ -915,48 +950,91 @@
       }
       .${CLASS.draftButton} { margin-top: 6px !important; }
 
-      .bumpline-note {
+      /* The three things this extension puts on the page — a toast, the pause,
+         a stuck relist — are one card in three places. Their colours are fixed
+         rather than following the page: a card with its own background reads on
+         a light Vinted and on a dark one. */
+      .bumpline-card {
+        /* The toolbar popup's own tokens, value for value — shadcn preset
+           b1tepwVzU, style base-luma, on the logo's hue — so the two halves of
+           the extension are one thing. They are declared on the card rather
+           than on :root: Vinted has its own custom properties and this must not
+           reach them. The 26px corner is base-luma's rounded-4xl, the same one
+           the popup's cards use. */
+        --bl-card: oklch(1 0 0);
+        --bl-ink: oklch(0.21 0.022 213);
+        --bl-muted-ink: oklch(0.545 0.032 210);
+        --bl-destructive: oklch(0.54 0.225 25);
+        --bl-success: oklch(0.53 0.155 148);
+        --bl-ring: oklch(0.21 0.022 213 / 5%);
+
+        position: fixed;
+        z-index: 2147483647;
         box-sizing: border-box;
-        max-width: 420px;
-        padding: 12px 14px;
-        border-radius: 8px;
-        font-size: 14px;
-        line-height: 1.4;
-      }
-      .bumpline-note--ok  { background:#e6f7ee; color:#0f5132; border:1px solid #a3e4c4; }
-      .bumpline-note--bad { background:#fdecea; color:#842029; border:1px solid #f5c2c7; }
-
-      .${CLASS.toast} {
-        position: fixed;
-        right: 16px;
-        bottom: 16px;
-        z-index: 2147483647;
-        box-shadow: 0 6px 18px rgba(0,0,0,.15);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        max-width: 320px;
+        padding: 14px 16px;
+        border-radius: 26px;
+        background: var(--bl-card);
+        color: var(--bl-ink);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1),
+                    0 0 0 1px var(--bl-ring);
+        font: 14px/1.4285 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+              Helvetica, Arial, sans-serif;
+        animation: bumpline-card-in 180ms cubic-bezier(.16,1,.3,1);
       }
 
-      /* Bottom left, so it never covers the recovery banner or the toast. */
-      .${CLASS.locked} {
-        position: fixed;
-        left: 16px;
-        bottom: 16px;
-        z-index: 2147483647;
-        max-width: 380px;
-        box-shadow: 0 4px 16px rgba(0,0,0,.18);
+      /* Vinted follows the system theme and so does the popup, so this does
+         too rather than sitting on the page as a white slab. */
+      @media (prefers-color-scheme: dark) {
+        .bumpline-card {
+          --bl-card: oklch(0.225 0.018 215);
+          --bl-ink: oklch(0.97 0.007 203);
+          --bl-muted-ink: oklch(0.72 0.026 210);
+          --bl-destructive: oklch(0.71 0.185 25);
+          --bl-success: oklch(0.75 0.155 148);
+          --bl-ring: oklch(1 0 0 / 10%);
+        }
+      }
+      .bumpline-card[data-leaving] {
+        animation: bumpline-card-out 180ms ease forwards;
+      }
+      .bumpline-card__icon {
+        flex: none;
+        width: 16px;
+        height: 16px;
+        margin-top: 1px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .bumpline-card__body { min-width: 0; }
+      .bumpline-card--ok  .bumpline-card__icon { color: var(--bl-success); }
+      .bumpline-card--bad .bumpline-card__icon { color: var(--bl-destructive); }
+
+      @keyframes bumpline-card-in {
+        from { opacity: 0; transform: translateY(8px) scale(.98); }
+      }
+      @keyframes bumpline-card-out {
+        to { opacity: 0; transform: translateY(4px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bumpline-card { animation: none; }
+        .bumpline-card[data-leaving] { opacity: 0; animation: none; }
       }
 
-      .${CLASS.banner} {
-        position: fixed;
-        right: 16px;
-        top: 16px;
-        z-index: 2147483647;
-        max-width: 380px;
-        box-shadow: 0 4px 16px rgba(0,0,0,.18);
-      }
-      .bumpline-banner__why {
+      /* Two corners, so neither can cover the other. */
+      .${CLASS.toast}  { right: 16px; bottom: 16px; font-weight: 500; }
+      .${CLASS.banner} { right: 16px; top: 16px; max-width: 340px; }
+      .bumpline-card__why {
         margin-top: 8px;
         font-size: 13px;
         overflow-wrap: anywhere;
-        opacity: .85;
+        color: var(--bl-muted-ink);
       }
       .bumpline-banner__actions {
         display: flex;
@@ -1032,23 +1110,75 @@
 
   const TOAST_ID = 'bumpline-toast';
 
+  // Lucide check, triangle-alert and circle-pause. The tone is in the glyph as
+  // well as in the colour, so a card survives a greyscale screen.
+  const CARD_GLYPH = {
+    ok: ['M20 6 9 17l-5-5'],
+    bad: [
+      'M12 9v4',
+      'M12 17h.01',
+      'M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
+    ],
+  };
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // Empties a card, gives it its icon, and hands back the body to fill. One
+  // builder, so the three cards cannot drift apart.
+  function paintCard(node, place, tone, glyph) {
+    node.className = `bumpline-card bumpline-card--${tone} ${place}`;
+    node.textContent = '';
+
+    const icon = document.createElementNS(SVG_NS, 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.setAttribute('class', 'bumpline-card__icon');
+    for (const d of glyph) {
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', d);
+      icon.appendChild(path);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'bumpline-card__body';
+    node.append(icon, body);
+    return body;
+  }
+
+  // A confirmation is read in a glance; a refusal takes longer and is worth
+  // reading twice, and gets the same ten seconds the pause gets.
+  const TOAST_MS = { ok: 4000, bad: 10000 };
+
+  // Everything the extension puts in a corner fades the same way, and takes the
+  // same fifth of a second to do it.
+  const FADE_MS = 200;
+
+  function fadeOut(node) {
+    node.setAttribute('data-leaving', '');
+    setTimeout(() => node.remove(), FADE_MS);
+  }
+
   function toast(message, kind = 'ok') {
+    const tone = kind === 'bad' ? 'bad' : 'ok';
+
     let node = document.getElementById(TOAST_ID);
     if (!node) {
       node = document.createElement('div');
       node.id = TOAST_ID;
       document.body.appendChild(node);
     }
-    node.className = `bumpline-note bumpline-note--${kind === 'bad' ? 'bad' : 'ok'} ${CLASS.toast}`;
-    node.setAttribute('role', 'alert');
-    node.setAttribute('aria-live', kind === 'bad' ? 'assertive' : 'polite');
-    node.textContent = message;
 
+    node.removeAttribute('data-leaving');
+    node.setAttribute('role', 'alert');
+    node.setAttribute('aria-live', tone === 'bad' ? 'assertive' : 'polite');
+    paintCard(node, CLASS.toast, tone, CARD_GLYPH[tone]).textContent = message;
+
+    // Everything goes away on its own now, refusals included. A toast is the
+    // one thing on the page with no way to be dismissed by hand, and a refusal
+    // worth acting on is on the banner and in the toolbar popup as well — the
+    // toast was only ever the first place it was said.
     clearTimeout(Number(node.dataset.timer));
-    if (kind !== 'bad') {
-      // Failures stay on screen; confirmations do not need to.
-      node.dataset.timer = String(setTimeout(() => node.remove(), 6000));
-    }
+    node.dataset.timer = String(setTimeout(() => fadeOut(node), TOAST_MS[tone]));
   }
 
   // ===========================================================================
@@ -1354,27 +1484,26 @@
       box.id = bannerId(itemId);
       document.body.appendChild(box);
     }
-    box.className = `bumpline-note bumpline-note--bad ${CLASS.banner}`;
-    box.textContent = '';
+    const body = paintCard(box, CLASS.banner, 'bad', CARD_GLYPH.bad);
 
     const name = (record.snapshot && record.snapshot.title) || itemId;
     const message = document.createElement('div');
     message.textContent =
-      `"${name}" was deleted but is not published yet (${record.attempts || 0} failed attempt(s)). ` +
+      `“${name}” was deleted and is not published yet. ` +
       (record.draft
-        ? 'It is saved as a draft in your Vinted account, so you can also publish it by hand. '
-        : 'Its details and photos are saved on this device. ') +
-      'Publishing is retried every time you open a Vinted page.';
-    box.appendChild(message);
+        ? 'The copy is in your Vinted drafts. '
+        : 'The copy is saved on this device. ') +
+      'Publishing is retried on every Vinted page you open.';
+    body.appendChild(message);
 
     // Vinted's own words for the refusal. They used to reach the console only,
     // which meant a stuck relist could not be reported by the person it
     // happened to: they could see that it failed, never why.
     if (record.lastError) {
       const reason = document.createElement('div');
-      reason.className = 'bumpline-banner__why';
+      reason.className = 'bumpline-card__why';
       reason.textContent = `Vinted refused it: ${record.lastError}`;
-      box.appendChild(reason);
+      body.appendChild(reason);
     }
 
     const actions = document.createElement('div');
@@ -1388,10 +1517,7 @@
       const paused = await readBlock();
       if (paused) {
         retry.disabled = false;
-        toast(
-          `${paused.why} Publishing is paused until ${clockOf(paused.until)}.`,
-          'bad'
-        );
+        toast(`Publishing is paused until ${clockOf(paused.until)}.`, 'bad');
         return;
       }
       const done = await advancePending(itemId, await readPending(itemId));
@@ -1437,7 +1563,7 @@
     });
 
     actions.append(retry, save, forget);
-    box.appendChild(actions);
+    body.appendChild(actions);
   }
 
   function hideBanner(itemId) {
@@ -1563,13 +1689,9 @@
       // only one who can fix it.
       const photos = published.photos;
       if (Array.isArray(photos) && !photos.length) {
-        toast(
-          `Relisted as ${newId}, but the copy has no photos. Open it on Vinted ` +
-            'and add them before anyone sees it.',
-          'bad'
-        );
+        toast('Relisted, but the copy has no photos — add them on Vinted.', 'bad');
       } else {
-        toast(`Relisted. The new listing is ${newId}.`);
+        toast('Relisted.');
       }
       return newId;
     } catch (err) {
@@ -1916,7 +2038,7 @@
       return;
     }
     dropCard(itemId);
-    toast(`${message} The page is out of date until you reload it.`);
+    toast(`${message} Reload to see it.`);
   }
 
   // ===========================================================================
@@ -1934,7 +2056,7 @@
     // before starting anything new.
     const outstanding = await readPending(itemId);
     if (outstanding) {
-      toast('An earlier relist of this item is unfinished. Resuming it first.', 'bad');
+      toast('An unfinished relist of this item. Resuming it.', 'bad');
       await advancePending(itemId, outstanding);
       return;
     }
@@ -1954,10 +2076,7 @@
       const paused = await readBlock();
       if (paused) {
         applyLock(paused);
-        toast(
-          `${paused.why} Relisting is paused until ${clockOf(paused.until)}.`,
-          'bad'
-        );
+        toast(`Relisting is paused until ${clockOf(paused.until)}.`, 'bad');
         return;
       }
 
@@ -2166,11 +2285,7 @@
       if (draftOnly) {
         // The draft is the finished result, not something still pending.
         await forgetPending(itemId);
-        await settle(
-          itemId,
-          'Original deleted. The copy is waiting in your Vinted drafts — publish ' +
-            'it when you are ready.'
-        );
+        await settle(itemId, 'Original deleted. The copy is in your Vinted drafts.');
         return;
       }
 
@@ -2200,6 +2315,10 @@
   // ===========================================================================
 
   function attachButtons() {
+    // Off means off: no styles, no index, no retries, no buttons. The observer
+    // goes on calling this, and it goes on costing a comparison.
+    if (enabled !== true) return;
+
     installStyles();
     noteRestriction();
     indexFirstPage();
@@ -2276,8 +2395,11 @@
   // A pause set in one tab has to reach the others, or the buttons stay live
   // exactly where the seller is most likely to press them again.
   ext.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local' || !changes || !(BLOCK_KEY in changes)) return;
-    applyLock(changes[BLOCK_KEY].newValue);
+    if (area !== 'local' || !changes) return;
+    // The switch first: a pause repainted onto a page the extension has just
+    // left would be the only thing on it.
+    if (ENABLED_KEY in changes) applyEnabled(changes[ENABLED_KEY].newValue !== false);
+    if (BLOCK_KEY in changes) applyLock(changes[BLOCK_KEY].newValue);
   });
 
   readBlock()
@@ -2288,5 +2410,8 @@
     childList: true,
     subtree: true,
   });
-  attachButtons();
+
+  // The switch decides whether there is anything to draw at all, so it is read
+  // before the first attempt rather than after it.
+  readEnabled().then(applyEnabled);
 })();

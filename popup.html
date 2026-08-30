@@ -5,10 +5,26 @@
 <header class="head">
   <img class="head__logo" src="icons/icon32.png" alt="" width="20" height="20">
   <h1 class="head__name">Bumpline</h1>
-  <span class="head__version" id="version"></span>
+
+  <!-- The switch is the first thing in reach and the last thing that can go
+       wrong: everything below it stops when it is off. The word beside it says
+       the state in text as well as in colour and knob position. -->
+  <span class="power__state" id="power-state" aria-hidden="true">On</span>
+  <input class="toggle" type="checkbox" id="power" role="switch" aria-label="Bumpline" checked>
 </header>
 
 <main>
+  <!-- Switched off there is nothing to report: no buttons anywhere, nothing
+       sent, nothing retried. These two lines replace the whole panel rather
+       than joining it, because every card below answers a question about work
+       that is not happening. The state comes first and the way back second,
+       because a message that only says "off" leaves the reader looking for the
+       switch it is already sitting under. -->
+  <p class="offline" id="offline" hidden>
+    Bumpline is switched off
+    <span class="offline__hint">Turn it back on to relist your items.</span>
+  </p>
+
   <!-- An unfinished relist outranks everything else, so it is first in the
        reading order as well as on screen. -->
   <section class="card card--alert" id="pending" hidden>
@@ -32,7 +48,17 @@
       </svg>
       <span id="paused-title">Relisting is paused</span>
     </h2>
-    <p class="card__note" id="paused-detail"></p>
+    <!-- Only the restriction is long enough to be worth folding; the pause the
+         extension sets itself is three short sentences and stays open. The
+         chevron sits in the corner the text fades into, which is the one place
+         it is both out of the way and unmistakably about the fold. -->
+    <div class="fold">
+      <p class="card__note" id="paused-detail"></p>
+      <button class="reveal" id="paused-reveal" type="button" aria-controls="paused-detail"
+              aria-expanded="false" aria-label="Show more" hidden>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
     <button class="button button--quiet" id="paused-lift" type="button">Lift the pause early</button>
   </section>
 
@@ -41,93 +67,161 @@
       <svg class="icon" id="status-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
       <span id="status-title">Checking this tab</span>
     </h2>
-    <p class="card__note" id="status-detail">One moment.</p>
+    <p class="card__note" id="status-detail">One moment…</p>
   </section>
 
   <button class="button" id="action" type="button" hidden></button>
 
   <!-- How much relisting has gone on lately, because that is the number Vinted
-       acts on and the one thing the seller cannot see from the page itself. -->
+       acts on and the one thing the seller cannot see from the page itself.
+       Two figures and a bar: the bar is the budget the next relist is measured
+       against, and it says in a glance what the sentence says in words. -->
   <section class="card" id="volume">
     <h2 class="card__title">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 6v6l4 2"/>
         <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
       </svg>
-      <span id="volume-title">This hour</span>
+      <span>Relisting volume</span>
     </h2>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat__value" id="volume-hour">0</span>
+        <span class="stat__label">this hour</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value" id="volume-day">0</span>
+        <span class="stat__label">today</span>
+      </div>
+    </div>
+    <!-- The bar repeats what the numbers and the note already say, so it is
+         hidden from a screen reader rather than read out twice. -->
+    <div class="meter" aria-hidden="true"><span class="meter__fill" id="volume-fill"></span></div>
     <p class="card__note" id="volume-detail"></p>
   </section>
 
-  <section class="setting">
-    <label class="switch">
-      <input type="checkbox" id="reload-toggle" checked>
-      <span class="switch__label">
-        Reload the page after a relist
-        <span class="switch__hint">
-          Turn this off to keep your place on the page. The relisted copy then
-          will not show up until you reload it yourself.
-        </span>
-      </span>
-    </label>
-
-    <label class="switch">
-      <input type="checkbox" id="cooldown-toggle" checked>
-      <span class="switch__label">
-        Wait 10 seconds between relists
-        <span class="switch__hint">
-          One relist straight after another is the pattern Vinted answers with a
-          block. This is the only hard stop between one deletion and the next.
-        </span>
-      </span>
-    </label>
-
-    <label class="switch">
-      <input type="checkbox" id="fast-toggle">
-      <span class="switch__label">
-        Relist faster
-        <span class="switch__hint">
-          Shortens the random pause the extension leaves between each request a
-          relist makes. Quicker, and much closer to the burst of traffic that
-          gets accounts blocked.
-        </span>
-      </span>
-    </label>
-
-    <label class="switch">
-      <input type="checkbox" id="local-drafts-toggle" checked>
-      <span class="switch__label">
-        Keep the copy on this device
-        <span class="switch__hint">
-          A plain relist holds the copy here and only creates a draft on Vinted
-          at the moment it publishes. Turn this off to park a draft in your
-          Vinted account first, as before, at the cost of extra writes on every
-          relist and every retry. “Relist as draft” is unaffected either way.
-        </span>
-      </span>
-    </label>
-  </section>
-
-  <!-- The guarded settings put their warning here rather than flipping quietly.
-       The checkbox stays where it was until the second, deliberate click. -->
-  <section class="card card--alert" id="risk" role="alert" hidden>
-    <h2 class="card__title">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+  <!-- Every switch here is on by default and every label says what it does at
+       its own number, so the row reads the same way in all three: on is the
+       cautious position and the hint says what off costs. The two that raise
+       the odds of a block used to argue their case in this section, where it
+       was read by everyone and acted on by nobody; that argument now appears in
+       the warning at the moment the setting is changed, which is the only
+       moment it can change a mind. -->
+  <details class="drawer">
+    <summary class="drawer__summary">
+      Settings
+      <!-- What is not at its default, said without opening the section. Three
+           switches all sitting where they were left is the common case, and it
+           should not need reading. -->
+      <span class="drawer__count" id="settings-count"></span>
+      <svg class="icon icon--chevron" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m6 9 6 6 6-6"/>
       </svg>
-      <span id="risk-title"></span>
-    </h2>
-    <p class="card__note" id="risk-detail"></p>
-    <div class="risk__actions">
-      <button class="button button--quiet" id="risk-cancel" type="button">Leave it alone</button>
-      <button class="button" id="risk-accept" type="button">Change it anyway</button>
+    </summary>
+
+    <!-- The wrapper exists for the open and close animation: it is the box
+         whose height is grown and shrunk, and it has to be one the switches
+         cannot resize on their own. -->
+    <div class="drawer__body">
+      <div class="setting">
+        <!-- The two that decide how the traffic looks come first. Both are
+             guarded, and both guard the same direction: turning either off is
+             what needs agreeing to. -->
+        <p class="setting__group">Pacing</p>
+
+        <label class="switch">
+          <span class="switch__label">
+            Wait 10 seconds between relists
+            <span class="switch__hint">
+              Recommended. Off sends them back to back, the pattern Vinted blocks
+              accounts for.
+            </span>
+          </span>
+          <input class="toggle" type="checkbox" id="cooldown-toggle" role="switch" checked>
+        </label>
+
+        <label class="switch">
+          <span class="switch__label">
+            Pause 0.9 to 2.4s between requests
+            <span class="switch__hint">
+              Recommended. Off shortens it to 0.25 to 0.7s, fast enough to read as
+              an automated script.
+            </span>
+          </span>
+          <input class="toggle" type="checkbox" id="pace-toggle" role="switch" checked>
+        </label>
+
+        <p class="setting__group">After a relist</p>
+
+        <label class="switch">
+          <span class="switch__label">
+            Reload the page
+            <span class="switch__hint">
+              Off keeps your place on the page; the relisted copy appears at
+              your next reload.
+            </span>
+          </span>
+          <input class="toggle" type="checkbox" id="reload-toggle" role="switch" checked>
+        </label>
+
+        <!-- Out of sight, not out of the build. The switch is still wired and the
+             stored value is still what the page reads on every relist; only the
+             row is hidden. Take the hidden attribute off to bring it back. -->
+        <label class="switch" hidden>
+          <span class="switch__label">
+            Keep the copy on this device
+            <span class="switch__hint">
+              Relist button only. Off saves a draft to your Vinted account
+              first, as in versions before 1.0.1.
+            </span>
+          </span>
+          <input class="toggle" type="checkbox" id="local-drafts-toggle" role="switch" checked>
+        </label>
+      </div>
     </div>
-  </section>
+  </details>
 </main>
+
+<!-- The guarded settings put their warning here rather than flipping quietly.
+     The switch stays where it was until the second, deliberate click.
+
+     A modal rather than a card in the flow, because a card is something the eye
+     can move past: it appeared below the switch that opened it, and on a panel
+     tall enough to scroll it could be answered without ever having been read.
+     <dialog> is what makes it a stop — the focus goes into it, the tab key
+     cannot leave it, Escape answers it as a no, and the panel behind it is
+     blurred through the backdrop so there is visibly nothing else to do. -->
+<dialog class="modal card card--alert" id="risk"
+        aria-labelledby="risk-title" aria-describedby="risk-detail">
+  <h2 class="card__title">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+    </svg>
+    <span id="risk-title"></span>
+  </h2>
+  <p class="card__note" id="risk-detail"></p>
+  <!-- Stacked, and each on the full width, because side by side the two labels
+       had to be short enough to fit rather than clear enough to read. -->
+  <div class="risk__actions">
+    <button class="button button--quiet" id="risk-cancel" type="button">Keep this setting</button>
+    <button class="button" id="risk-accept" type="button">Change it anyway</button>
+  </div>
+</dialog>
 
 <footer class="foot">
   <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer">How it works</a>
   <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer">Report a problem</a>
+  <span class="foot__version" id="version"></span>
+
+  <!-- A rating is the one thing an extension cannot write for itself, and the
+       panel being open is the only moment its user is near a store page. Which
+       store that is gets asked at runtime, in popup.js: one package ships to
+       both, so the address cannot be baked in at build time.
+
+       On a line of its own below the other two, which is what buys it the room
+       to say the whole name: the two links above are where you go when
+       something is unclear or broken, and this is not that. -->
+  <a class="foot__link foot__rate" id="review" href="#" target="_blank" rel="noreferrer">Rate Bumpline</a>
 </footer>
 
 <script src="popup.js"></script>

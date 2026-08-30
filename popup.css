@@ -1,58 +1,205 @@
 /* Bumpline — toolbar popup.
  *
  * The extension does its real work inside the Vinted page; this panel only
- * answers "does it work on this tab?" and "did a relist get stuck?".
+ * answers "is it on?", "does it work on this tab?", "did a relist get stuck?"
+ * and "how much have I relisted lately?".
  *
- * Colour rule worth keeping: the brand teal #00ADB8 is 2.7:1 against both
- * white and its own white text, so it never carries text, a filled button or
- * a focus ring. Those use --accent-ink, darkened in light mode and lightened
- * in dark mode, which clears 4.5:1 both ways. The teal survives in the logo.
+ * This is shadcn/ui preset b1tepwVzU — style base-luma, base colour neutral,
+ * Lucide icons, Inter — rebuilt in plain CSS. Every measurement below was read
+ * off the components that
+ *
+ *   npx shadcn@latest init --preset b1tepwVzU --template next
+ *
+ * writes, not off the docs: base-luma is not the new-york style, and it differs
+ * where it counts. Buttons and cards are pills, the switch is 44×20 with a
+ * rounded rectangle for a thumb, the progress track is --muted rather than the
+ * fill at a fifth, cards carry a ring rather than a border, and the destructive
+ * button is a tint rather than a fill.
+ *
+ * None of shadcn's React, Tailwind or Radix comes with it — a popup with no
+ * build step is not going to carry them — and none of it is needed: the
+ * switches are real checkboxes and the settings section is a real <details>.
+ *
+ * The theme keeps the preset's shape — the same token names, the same slots,
+ * .dark folded into a prefers-color-scheme query because a popup has no app
+ * shell to put the class on — and takes its colours from the logo, which is
+ * two of them: #00ADB8 on #FBFBFB. In oklch the teal is 0.681 0.116 202.84,
+ * and that hue is what every token below is built on.
+ *
+ * The logo colour cannot simply be pasted into --primary. At its own lightness
+ * it is 2.7:1 against white and 2.7:1 against its own white text, so it can
+ * carry neither a label nor a filled button. --primary is that hue held and
+ * that lightness moved: darkened for the light scheme, lightened for the dark
+ * one, with a little more chroma than the logo so it reads as the same teal
+ * rather than a washed-out one. The logo keeps its own value, unaltered, in
+ * icons/logo.svg — and #FBFBFB, its second colour, is what the filled button
+ * writes its label in.
+ *
+ * The rest follows from that hue:
+ *
+ *   - Every neutral carries a little of it. A grey at chroma 0 next to a
+ *     saturated teal looks dead; the same grey at chroma 0.01 on the teal's
+ *     hue looks like it belongs to it.
+ *   - The page is a tinted off-white and the cards are pure white, rather than
+ *     both being #fff and the cards relying on a shadow to exist.
+ *   - Dark mode lightens the accent instead of darkening it. The preset had
+ *     its dark blue darker than its light one, which is backwards on a dark
+ *     surface.
+ *   - --success is pushed to 148 rather than sitting at 160, where a green and
+ *     a teal that close together stop reading as two different answers.
+ *   - --destructive stays at 25. Against a teal that is very nearly the
+ *     opposite hue, which is why the pair looks deliberate.
+ *   - --ring follows the accent. The preset's neutral ring at 30% opacity is a
+ *     focus ring you have to look for.
+ *
+ * Every pair is measured off a rendered screenshot rather than derived, light
+ * then dark: --foreground on the card 17.6:1 and 15.7:1, --muted-foreground
+ * 4.9:1 and 6.9:1, --primary 5.5:1 and 7.3:1, --destructive 5.6:1 and 6.1:1,
+ * --success 4.9:1 and 8.1:1, the folded restriction's softened ink 10.1:1 and
+ * 9.6:1, the filled button's own label on it 5.3:1 and 7.8:1, and the
+ * destructive button's label on its own tint 4.7:1 and 5.4:1 — that last one
+ * is 3.7:1 in the preset, and --destructive sits at 0.54 rather than 0.577 to
+ * clear it. --success sits at 0.53 for the same reason; at 0.55 it was 4.5:1
+ * on the card and under it on the page behind.
+ *
+ * Two pairs are still deliberately short of 4.5:1, both the preset's own: the
+ * switch's off track against the panel, at 1.2:1 and 1.5:1, where the thumb's
+ * position and its own contrast say the same thing again, and --ring at 30%,
+ * at 1.6:1 and 1.9:1, which is a focus ring you have to look for.
  */
 
+/* Inter, subsetted by Google Fonts, because the preset's own layout.tsx loads
+   Inter for --font-sans. Manifest v3 will not load a remote font — font-src is
+   'self' — so the subsets ship inside the extension. Latin Extended is here
+   and not in the preset because Vinted runs in twenty-eight countries and a
+   stuck relist is listed by its own title. */
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* --- the theme, as the preset writes it ---------------------------------- */
+
 :root {
-  --ink: #1f2328;          /* 15.8:1 on --surface */
-  --ink-soft: #57606a;     /*  6.4:1 on --surface */
-  --line: #d0d7de;
-  --surface: #ffffff;
-  --surface-sunken: #f6f8fa;
-
-  --accent-ink: #00727b;   /*  5.7:1 both ways */
-  --accent-ink-strong: #005c63;
-
-  --alert-bg: #fdecea;
-  --alert-ink: #842029;    /*  8.3:1 on --alert-bg */
-  --alert-line: #f5c2c7;
-
-  --ok-bg: #e6f7ee;
-  --ok-ink: #0f5132;       /*  8.4:1 on --ok-bg */
-  --ok-line: #a3e4c4;
-
-  --radius: 8px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
+  /* 203 is the logo's hue, and every neutral below borrows a little of it. */
+  --background: oklch(0.985 0.005 203);
+  --foreground: oklch(0.21 0.022 213);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.022 213);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.022 213);
+  --primary: oklch(0.5 0.115 203);
+  --primary-foreground: #fbfbfb;          /* the logo's own second colour */
+  --secondary: oklch(0.962 0.015 203);
+  --secondary-foreground: oklch(0.26 0.028 213);
+  --muted: oklch(0.965 0.011 203);
+  --muted-foreground: oklch(0.545 0.032 210);
+  --accent: oklch(0.955 0.024 203);
+  --accent-foreground: oklch(0.26 0.028 213);
+  --destructive: oklch(0.54 0.225 25);
+  --border: oklch(0.918 0.015 203);
+  --input: oklch(0.918 0.015 203);
+  --ring: oklch(0.5 0.115 203);
+  --chart-1: oklch(0.5 0.115 203);
+  --chart-2: oklch(0.62 0.115 190);
+  --chart-3: oklch(0.68 0.116 203);        /* the logo, at its own value */
+  --chart-4: oklch(0.6 0.13 240);
+  --chart-5: oklch(0.66 0.14 165);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0.005 203);
+  --sidebar-foreground: oklch(0.21 0.022 213);
+  --sidebar-primary: oklch(0.5 0.115 203);
+  --sidebar-primary-foreground: #fbfbfb;
+  --sidebar-accent: oklch(0.955 0.024 203);
+  --sidebar-accent-foreground: oklch(0.26 0.028 213);
+  --sidebar-border: oklch(0.918 0.015 203);
+  --sidebar-ring: oklch(0.5 0.115 203);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #e6edf3;        /* 13.7:1 on --surface */
-    --ink-soft: #9198a1;   /*  5.6:1 on --surface */
-    --line: #3d444d;
-    --surface: #1c2128;
-    --surface-sunken: #22272e;
-
-    --accent-ink: #3ad1da; /*  8.7:1 on --surface */
-    --accent-ink-strong: #5fe0e8;
-
-    --alert-bg: #3a1d1d;
-    --alert-ink: #ffb3ab;  /*  9.0:1 on --alert-bg */
-    --alert-line: #6b2b2b;
-
-    --ok-bg: #14301f;
-    --ok-ink: #7ee2b0;     /*  9.1:1 on --ok-bg */
-    --ok-line: #2b5c3f;
+    --background: oklch(0.175 0.015 215);
+    --foreground: oklch(0.97 0.007 203);
+    --card: oklch(0.225 0.018 215);
+    --card-foreground: oklch(0.97 0.007 203);
+    --popover: oklch(0.225 0.018 215);
+    --popover-foreground: oklch(0.97 0.007 203);
+    --primary: oklch(0.72 0.13 203);
+    --primary-foreground: oklch(0.2 0.028 215);
+    --secondary: oklch(0.285 0.021 215);
+    --secondary-foreground: oklch(0.97 0.007 203);
+    --muted: oklch(0.285 0.021 215);
+    --muted-foreground: oklch(0.72 0.026 210);
+    --accent: oklch(0.3 0.025 215);
+    --accent-foreground: oklch(0.97 0.007 203);
+    --destructive: oklch(0.71 0.185 25);
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 16%);
+    --ring: oklch(0.72 0.13 203);
+    --chart-1: oklch(0.72 0.13 203);
+    --chart-2: oklch(0.72 0.12 190);
+    --chart-3: oklch(0.681 0.116 203);      /* the logo, at its own value */
+    --chart-4: oklch(0.7 0.13 240);
+    --chart-5: oklch(0.75 0.14 165);
+    --sidebar: oklch(0.225 0.018 215);
+    --sidebar-foreground: oklch(0.97 0.007 203);
+    --sidebar-primary: oklch(0.72 0.13 203);
+    --sidebar-primary-foreground: oklch(0.2 0.028 215);
+    --sidebar-accent: oklch(0.3 0.025 215);
+    --sidebar-accent-foreground: oklch(0.97 0.007 203);
+    --sidebar-border: oklch(1 0 0 / 12%);
+    --sidebar-ring: oklch(0.72 0.13 203);
   }
+}
+
+/* The preset's own @theme inline block derives these from --radius. base-luma
+   scales the radius rather than adding to it, which is why its buttons and
+   cards are pills and not rounded rectangles: 0.625rem × 2.6 is 26px. */
+:root {
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* card.tsx names this one itself and spends it on padding and on the gap
+     between a card's header and its content. */
+  --card-spacing: 24px;
+
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* --- what the preset does not carry -------------------------------------- */
+
+/* No shadcn theme has a success colour; the component set has no success
+   variant to spend one on. This panel does: "Ready on this page" is the whole
+   reason it is worth opening. It sits at the lightness and the chroma of the
+   theme's own --destructive, so the two read as one pair rather than two
+   borrowed greens and reds. */
+:root { --success: oklch(0.53 0.155 148); }
+
+@media (prefers-color-scheme: dark) {
+  :root { --success: oklch(0.75 0.155 148); }
 }
 
 * { box-sizing: border-box; }
@@ -62,12 +209,14 @@
 [hidden] { display: none !important; }
 
 body {
-  width: 304px;
+  width: 360px;
   margin: 0;
-  padding: var(--space-3);
-  background: var(--surface);
-  color: var(--ink);
-  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 16px;
+  background: var(--background);
+  color: var(--foreground);
+  font: 14px/1.4285 Inter, ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* --- header ------------------------------------------------------------- */
@@ -75,80 +224,230 @@ body {
 .head {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-.head__logo { display: block; border-radius: 4px; }
+.head__logo { display: block; border-radius: var(--radius-sm); }
 
 .head__name {
   flex: 1;
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
-.head__version {
-  color: var(--ink-soft);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
+/* The state in a word, for anyone who reads the panel rather than the switch.
+   A screen reader gets the same from the switch role and skips this. */
+.power__state {
+  color: var(--muted-foreground);
+  font-size: 14px;
 }
 
-/* --- cards -------------------------------------------------------------- */
+/* --- switch ------------------------------------------------------------- */
 
+/* switch.tsx: h-5 w-11 with a two-pixel border, and a thumb that is h-4 w-6 —
+   a rounded rectangle, not a circle — travelling its own width less eight
+   pixels. Checked, the border joins the fill; unchecked it is transparent and
+   the track is --input at nine tenths. */
+.toggle {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--input) 90%, transparent);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--background);
+  background-clip: padding-box;
+  box-shadow: var(--shadow-sm);
+  transition: transform 150ms ease;
+}
+
+.toggle:checked {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.toggle:checked::after { transform: translateX(16px); }
+
+/* Dark takes the thumb off the page colour, which there is darker than either
+   track it sits on. */
+@media (prefers-color-scheme: dark) {
+  .toggle::after { background: var(--foreground); background-clip: border-box; }
+  .toggle:checked::after { background: var(--primary-foreground); }
+}
+
+/* --- card --------------------------------------------------------------- */
+
+/* card.tsx: rounded-4xl, no border — a one-pixel ring of the foreground at 5%
+   and a medium shadow — with --card-spacing for padding and for the gap
+   between the header and whatever follows it. */
 .card {
-  margin-top: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-sunken);
+  margin-top: 12px;
+  padding: var(--card-spacing);
+  border-radius: var(--radius-4xl);
+  background: var(--card);
+  box-shadow: var(--shadow-md),
+    0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
+  color: var(--card-foreground);
+  overflow: hidden;
 }
 
-/* The state is carried by the icon and the wording as well as the colour, so
-   it survives a colour-blind reader and a greyscale screen. */
-.card--ok    { background: var(--ok-bg);    border-color: var(--ok-line);    color: var(--ok-ink); }
-.card--alert { background: var(--alert-bg); border-color: var(--alert-line); color: var(--alert-ink); }
+@media (prefers-color-scheme: dark) {
+  .card {
+    box-shadow: var(--shadow-md),
+      0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
+  }
+}
 
+/* alert.tsx's variants change the ink, not the shape: the destructive alert is
+   still a card on the card colour, with everything inside it turned red. */
+.card--alert { color: var(--destructive); }
+.card--ok { color: var(--success); }
+
+/* CardTitle is text-base font-medium; the header's own gap is 1.5, and the
+   icon sits 2.5 from the text it belongs to. */
 .card__title {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
+  gap: 10px;
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .card__note {
-  margin: var(--space-2) 0 0;
-  font-size: 12px;
-  line-height: 1.45;
-  opacity: 0.9;
+  margin: 6px 0 0;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.4285;
 }
+
+/* The title and the icon carry the alarm at full strength. Everything under
+   them is the same red walked most of the way back towards the page's own ink:
+   still unmistakably part of the warning, no longer shouting a paragraph of it. */
+.card--alert .card__note,
+.card--alert .card__list,
+.card--alert .stat__label,
+.card--alert .reveal {
+  color: color-mix(in oklab, var(--destructive) 55%, var(--foreground));
+}
+
+.card--ok .card__note,
+/* Folded to two lines until asked. The restriction note is the one thing in the
+   panel that says more than it needs to at a glance and less than it should when
+   read, so it does both. Cut with a mask rather than an ellipsis: three dots
+   after a full stop read as a typo, and a line that fades out says "there is
+   more of this" without spending a character on it. Two lines of 14px at
+   1.4285 is 40px exactly. */
+/* Registered, so that it can be transitioned: to the engine an unregistered
+   custom property is a string, and a string jumps. This is the point the fade
+   starts from, and moving it to the bottom is what puts the text back. */
+@property --fade {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+/* The mask stays on whether the fold is open or shut, because a mask that
+   appears at the moment the text closes would be a second thing happening. At
+   100% it covers the paragraph and does nothing. */
+.fold .card__note {
+  -webkit-mask-image: linear-gradient(to bottom, #000 var(--fade), transparent);
+  mask-image: linear-gradient(to bottom, #000 var(--fade), transparent);
+  transition: --fade 200ms ease-out;
+}
+
+.card__note--clamped {
+  --fade: 50%;
+  max-height: 40px;
+  overflow: hidden;
+  /* The folded text opens the fold as well as the chevron does, so the chevron
+     is free to be quiet without being the only way in. */
+  cursor: pointer;
+}
+
+/* The fold and its handle. The chevron sits in the bottom corner the text fades
+   into: no fill, no border, no label — the direction it points is the whole
+   message, and it turns over when the text is open. */
+.fold { position: relative; }
+
+.reveal {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+/* Faded with the line it sits in, and brought back by the pointer or by the
+   keyboard: at rest it is 2.3:1 against the card, which is under the 3:1 a
+   control is meant to hold, and it is not the only way to open the fold. */
+.reveal[aria-expanded="false"] { opacity: 0.6; }
+
+.reveal:hover,
+.reveal:focus-visible { opacity: 1; }
+
+.reveal .icon {
+  margin: 0;
+  transition: transform 200ms ease;
+}
+
+.reveal[aria-expanded="true"] .icon { transform: rotate(180deg); }
 
 .card__list {
-  margin: var(--space-2) 0 0;
+  margin: 6px 0 0;
   padding-left: 18px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
-.card__list li + li { margin-top: var(--space-2); }
+.card__list li + li { margin-top: 6px; }
 
 .card__why {
   display: block;
   margin-top: 2px;
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.45;
   overflow-wrap: anywhere;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
+/* size-4, nudged down half a step, exactly as the alert nudges its icon. */
 .icon {
   flex: none;
   width: 16px;
   height: 16px;
-  margin-top: 1px;         /* optical alignment with the cap height */
+  margin-top: 2px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -156,126 +455,387 @@ body {
   stroke-linejoin: round;
 }
 
-/* --- action ------------------------------------------------------------- */
+/* --- the volume figures ------------------------------------------------- */
 
-.button {
-  display: block;
-  width: 100%;
-  min-height: 36px;
-  margin-top: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--accent-ink);
-  color: var(--surface);
-  font: inherit;
+/* A card puts --card-spacing between its header and its content. */
+.stats {
+  display: flex;
+  gap: 24px;
+  margin-top: var(--card-spacing);
+}
+
+.stat { display: flex; flex-direction: column; }
+
+.stat__value {
+  font-size: 24px;
   font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  /* The two figures sit side by side and must not jitter as they change. */
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__label {
+  margin-top: 6px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+/* progress.tsx: an h-3 track on --muted, which is where base-luma parts
+   company with the fill-at-a-fifth track of the other styles. */
+.meter {
+  height: 12px;
+  margin-top: 16px;
+  border-radius: 9999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.meter__fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+  transition: width 200ms ease;
+}
+
+.card--alert .meter__fill { background: var(--destructive); }
+
+/* --- button ------------------------------------------------------------- */
+
+/* button.tsx at the default size: h-9, px-3, rounded-4xl — which at this
+   height is a pill — a transparent border clipped to the padding box, a hover
+   that fades the fill to four fifths, and a press that moves it down a pixel. */
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  /* base-luma's lg size. The one action the panel ever offers should not be the
+     smallest thing in it, and the margin below adds to the next card's own 12px
+     so the button sits with 16px of air on both sides. */
+  height: 40px;
+  margin: 16px 0 4px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-4xl);
+  background: var(--primary);
+  background-clip: padding-box;
+  color: var(--primary-foreground);
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background-color 160ms ease;
+  user-select: none;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
-.button:hover { background: var(--accent-ink-strong); }
+.button:hover { background: color-mix(in oklab, var(--primary) 80%, transparent); }
+.button:active { transform: translateY(1px); }
 
-/* Pressing changes colour only: moving the button would shift the layout. */
-.button:active { background: var(--accent-ink-strong); }
-
-/* --- setting ----------------------------------------------------------- */
-
-.setting {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
+/* The outline variant: the page colour inside the theme's own border, filling
+   with --muted on hover. Dark drops the fill and hovers on --input instead. */
+.button--quiet {
+  border-color: var(--border);
+  background: var(--background);
+  color: var(--foreground);
 }
 
+.button--quiet:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+@media (prefers-color-scheme: dark) {
+  .button--quiet { background: transparent; }
+  .button--quiet:hover { background: color-mix(in oklab, var(--input) 30%, transparent); }
+}
+
+/* --- switched off -------------------------------------------------------- */
+
+/* Two lines where the panel was. Everything else in main is an answer about
+   relisting, and with the switch off there is no relisting to answer for; the
+   header stays because the switch is the way back, and the footer stays because
+   a version number, a bug report and a rating are all still worth reaching with
+   the extension switched off. */
+.is-off main > :not(.offline) { display: none; }
+
+.offline {
+  margin: 0;
+  padding: 28px 0 24px;
+  color: var(--foreground);
+  font-weight: 500;
+  text-align: center;
+}
+
+/* The instruction, a step quieter than the state above it: it is only worth
+   reading once, and only by someone who did not mean to switch it off. */
+.offline__hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+
+/* The mark loses its colour with everything else. The toolbar icon does the
+   same, from icons/off*.png, so the two agree whether or not the panel is
+   open. */
+.is-off .head__logo {
+  filter: grayscale(1);
+  opacity: 0.65;
+}
+
+/* --- settings ----------------------------------------------------------- */
+
+.drawer {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.drawer__summary {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  font-size: 14px;
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+}
+
+/* The marker is replaced by the chevron on the right, which turns with the
+   section — shadcn's accordion, without the accordion. */
+.drawer__summary::-webkit-details-marker { display: none; }
+
+.icon--chevron {
+  margin: 0 0 0 auto;
+  color: var(--muted-foreground);
+  transition: transform 200ms ease;
+}
+
+/* The chevron follows the direction, not the attribute: on a close the
+   attribute stays on until the body has finished shrinking, and a chevron that
+   turned back only then would be reporting the animation rather than leading
+   it. */
+.drawer[open]:not(.drawer--closing) .icon--chevron { transform: rotate(180deg); }
+
+/* The box the open and close animation resizes. Its content has to be clipped
+   while it is shorter than the switches inside it. */
+.drawer__body { overflow: hidden; }
+
+/* Matches the summary's own padding, so the divider under the section sits the
+   same distance from the last switch as it does from the word Settings when the
+   section is shut. */
+.setting { padding-bottom: 16px; }
+
+/* Three switches in a row is a list; two headings make it a decision about
+   pace and a decision about what happens afterwards. */
+.setting__group {
+  margin: 0 0 12px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.switch + .setting__group {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+
+/* Sits between the word "Settings" and the chevron, which keeps its auto
+   margin and stays on the right. */
+.drawer__count {
+  margin-left: 8px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Text on the left, control on the right: the row reads as a sentence with its
+   answer at the end, and the whole row is the hit area. */
 .switch {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
-  cursor: pointer;
-}
-
-.switch input {
-  flex: none;
-  width: 15px;
-  height: 15px;
-  margin: 1px 0 0;       /* optical alignment with the first line of text */
-  accent-color: var(--accent-ink);
+  gap: 16px;
   cursor: pointer;
 }
 
 .switch__label {
-  font-size: 12px;
-  line-height: 1.45;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4285;
 }
 
+/* A field description: the size of the label it belongs to, in the muted ink. */
 .switch__hint {
   display: block;
-  margin-top: 2px;
-  color: var(--ink-soft);
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4285;
 }
 
-/* The settings are a list now, not a single switch, and they need to read as
-   separate decisions rather than one paragraph of checkboxes. */
-.switch + .switch {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
-}
+/* Inside a group the rows are separated by air rather than a rule: two of
+   them, each a bold label over muted ink, already read as two things, and a
+   line between every pair turned a three-item list into six bands. The rule
+   above a group heading stays, because that is where the subject changes. */
+.switch + .switch { margin-top: 20px; }
 
 /* --- the risk gate ------------------------------------------------------ */
 
 /* Two buttons side by side, and the safe one first: the reading order is the
    tab order, so the answer reached by reflex is the one that changes nothing. */
+/* --- the warning -------------------------------------------------------- */
+
+/* A <dialog> centres itself on the viewport with auto margins, so .card's own
+   top margin has to come off or the box sits low by exactly that much. The
+   width is the panel's content column: the warning reads as this panel stopping
+   rather than as a second, narrower window opening on top of it. */
+.modal {
+  width: calc(100% - 32px);
+  max-width: 328px;
+  max-height: calc(100vh - 32px);
+  margin: auto;
+  padding: var(--card-spacing);
+  border: 0;
+  /* .card hides its overflow to keep its corners; a warning taller than a short
+     panel has to be readable, so this one scrolls instead. */
+  overflow: auto;
+}
+
+/* The panel is still there and still says what the switch was, so it is blurred
+   rather than covered: the background at just over half strength, which in both
+   schemes is a veil the layout reads through and the text does not. */
+.modal::backdrop {
+  background: color-mix(in oklab, var(--background) 55%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+/* The same 200ms ease-out the drawer and the fold open on. Nothing animates the
+   close: the answer has been given and the panel underneath is the thing to
+   look at. The reduced-motion rule at the foot of this file zeroes both. */
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+}
+
+.modal[open] { animation: modal-in 200ms ease-out; }
+.modal[open]::backdrop { animation: backdrop-in 200ms ease-out; }
+
+/* Stacked and full width. Side by side inside 296px, the two labels had to be
+   kept short enough to fit rather than clear enough to read, and the longest of
+   them — "Turn the cooldown off" — ran out of its own button. The margin the
+   .button rule carries is the gap from the note above, applied once here rather
+   than once per button. */
 .risk__actions {
   display: flex;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .risk__actions .button {
-  flex: 1;
-  min-width: 0;
+  height: 36px;
+  margin: 0;
 }
 
-/* Inside the alert card the accent fill would read as the recommended answer,
-   which it is not. The quiet button carries the card's own ink instead. */
-.button--quiet {
-  border: 1px solid currentColor;
-  background: transparent;
-  color: inherit;
+/* base-luma's destructive button is a tint carrying the destructive ink, not a
+   filled red block. It is the quieter of the two buttons to look at and still
+   the only one that changes anything. */
+.card--alert .button:not(.button--quiet) {
+  background: color-mix(in oklab, var(--destructive) 10%, transparent);
+  color: var(--destructive);
 }
 
-.button--quiet:hover,
-.button--quiet:active {
-  background: transparent;
-  opacity: 0.8;
+.card--alert .button:not(.button--quiet):hover {
+  background: color-mix(in oklab, var(--destructive) 20%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card--alert .button:not(.button--quiet) {
+    background: color-mix(in oklab, var(--destructive) 20%, transparent);
+  }
+  .card--alert .button:not(.button--quiet):hover {
+    background: color-mix(in oklab, var(--destructive) 30%, transparent);
+  }
 }
 
 /* --- footer ------------------------------------------------------------- */
 
+/* No margin above the rule: the drawer's own 16px of padding is the whole gap,
+   which is what puts the word Settings midway between the two dividers. */
+/* Two rows: where to go when something is unclear or broken, and the version
+   they would quote, on the first; the rating on the second. The wrap is the
+   layout rather than a fallback — .foot__rate takes a whole line and pushes
+   itself onto one — so the row gap is set shorter than the column gap, which
+   is what keeps the two lines reading as one footer. */
 .foot {
   display: flex;
-  gap: var(--space-4);
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
-  font-size: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
 }
 
 .foot__link {
-  color: var(--accent-ink);
+  color: var(--muted-foreground);
   text-decoration: none;
-  border-radius: 3px;
+  /* A label broken across two lines would read as two links. */
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  transition: color 150ms ease;
 }
 
-.foot__link:hover { text-decoration: underline; }
+.foot__link:hover {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* A whole line to itself, which is what a flex item asks for by claiming the
+   full width of the row it lands on. Left, so its edge lines up with the two
+   links above rather than floating in the middle of the panel. */
+.foot__rate { flex-basis: 100%; }
+
+/* Pushed to the end of the first row: it is there for a bug report, not for
+   reading. The rating below it starts the second row, so the auto margin only
+   ever has the two links to push away from. */
+.foot__version {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
 
 /* --- focus -------------------------------------------------------------- */
 
+/* focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30.
+   The ring is drawn as an outline so it costs no layout and never clips inside
+   a card; the border half only shows on the controls that keep one. */
 :focus-visible {
-  outline: 2px solid var(--accent-ink);
-  outline-offset: 2px;
+  outline: 3px solid color-mix(in oklab, var(--ring) 30%, transparent);
+  outline-offset: 0;
 }
 
+.button:focus-visible,
+.toggle:focus-visible { border-color: var(--ring); }
+
+/* Script asks the same question before it animates anything; this covers the
+   stylesheet's own half. */
 @media (prefers-reduced-motion: reduce) {
-  * { transition-duration: 0ms !important; }
+  * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
 }

@@ -222,32 +222,57 @@ Clicking the Bumpline icon in the toolbar tells you whether the buttons are on
 the page you are looking at and how many items they are on, lists any relist
 that has not finished publishing yet — with a button that reopens the page the
 retry runs on — says how many items you have relisted in the last hour and in
-the last day, shows any standing pause, and carries four settings:
+the last day, shows any standing pause, and carries the on/off switch and its
+settings:
 
-**Reload the page after a relist.** On by default. The page has to be refreshed
-to stop showing the listing that was just deleted and to start showing the copy.
-Turn it off if you would rather keep your scroll position and your filters; the
-deleted item's card is removed straight away, and the rest of the page stays out
-of date until you reload it yourself.
+**The switch in the top right turns Bumpline off.** On by default. Off, no
+buttons are added to any Vinted page, nothing is sent to Vinted, and unfinished
+relists stop being retried. The toolbar icon goes grey and the panel goes with
+it: the cards, the counts and the settings are answers about relisting, and with
+the switch off one line stands in their place. Open tabs drop their buttons the
+moment you flip it, with no reload. Nothing is thrown away — your items, your settings, your counts
+and any copy saved on this device are exactly where they were, and turning it
+back on puts the buttons back. A relist already running when you switch off is
+allowed to finish, because by then it may already have deleted the original.
+
+They sit in two groups. *Pacing* decides what the traffic looks like from
+Vinted's side, and turning either of its settings off raises a warning that has
+to be answered before anything is stored. *After a relist* decides what happens
+on your own page once the work is done, and neither setting there can cost you
+an account. Every switch is on by default, so on is the cautious position in
+each row and the description under it says what off costs. The section header
+says how many are off their default, so you can see that something was changed
+without opening it.
 
 **Wait 10 seconds between relists.** On by default, and the only hard stop
-between one deletion and the next. Turning it off asks you to confirm first,
-because a run of relists then goes out as fast as the network allows, which is
-the pattern Vinted answers with a temporary block on editing and publishing.
+between one deletion and the next. Turning it off sends them back to back and
+asks you to confirm first, because a run of relists then goes out as fast as the
+network allows, which is the pattern Vinted answers with a temporary block on
+editing and publishing.
 
-**Relist faster.** Off by default. Shortens the random pause between each
-request from roughly 0.9–2.4 seconds to 0.25–0.7. Turning it on asks you to
-confirm: it makes every relist quicker and makes the traffic look far more like
-a script.
+**Pause 0.9–2.4s between requests.** On by default. That random pause is what
+keeps a relist from arriving as one burst of API calls. Turning it off shortens
+it to 0.25–0.7 seconds and asks you to confirm first: every relist gets quicker,
+and the traffic looks far more like a script.
 
-**Keep the copy on this device.** On by default, and the subject of the note
-further up: a plain relist holds the copy in your browser and only creates a
-draft on Vinted when it publishes. Turn it off to park a draft in your Vinted
-account before the delete, as versions before 1.0.1 did.
+**Reload the page.** On by default. The page has to be refreshed to stop showing
+the listing that was just deleted and to start showing the copy. Turn it off if
+you would rather keep your scroll position and your filters; the deleted item's
+card is removed straight away, and the rest of the page stays out of date until
+you reload it yourself.
 
-Past eight relists in an hour, or forty in a day, the next one stops and asks
+**Keep the copy on this device.** On by default, and hidden in this release —
+the switch is still wired and the stored value is still what a relist reads, but
+the row is not drawn. It is the subject of the note further up: a plain relist
+holds the copy in your browser and only creates a draft on Vinted when it
+publishes, and turning it off parks a draft in your Vinted account before the
+delete, as versions before 1.0.1 did. It governs the **Relist** button and
+nothing else — **Relist as draft** opens a draft on Vinted either way, because
+there the draft *is* the result.
+
+Past four relists in an hour, or fifteen in a day, the next one stops and asks
 whether you mean it. Two windows rather than one, because an hourly limit on its
-own has an obvious hole: seven an hour, all day, never trips it and is
+own has an obvious hole: three an hour, all day, never trips it and is
 unmistakably a bulk operation. Neither number is Vinted's — Vinted publishes
 none — and both are deliberately cautious guesses at where tidying a wardrobe
 stops looking like tidying a wardrobe.
@@ -276,8 +301,12 @@ An account stopped from listing or editing carries the date it runs to in its
 own profile payload — it is where the banner Vinted shows you comes from — so
 Bumpline reads that field as the wardrobe opens, without a request of its own,
 and the buttons are off from the first moment rather than from the first
-refusal. That one cannot be lifted: the popup shows no button for it, because
-the refusal would come from Vinted whether or not the extension stood down.
+refusal. The field is read in both directions: Vinted lifts a restriction
+whenever it likes, and the date it published was only the latest it would have
+run to, so a wardrobe that no longer carries one clears the record. Overriding
+that restriction is not on offer — the refusal would come from Vinted whether or
+not the extension stood down — but the popup can clear the record it holds, and
+the next wardrobe page you open decides afresh.
 If the category now requires a size your old listing never had, a window shows
 the real size list pulled from Vinted and asks you to pick one. Nothing is
 deleted until you choose.
@@ -329,17 +358,22 @@ account Vinted is already counting calls on.
 #### "Blocked by anti-bot", or the buttons have gone grey
 
 Vinted thinks you are a robot. Nothing was deleted. Since 1.0.1 the extension
-answers this by pausing itself — the buttons grey out in every Vinted tab and a
-note says when they come back. Wait it out: pressing on is what turns a fifteen
-minute pause into a 24-hour block on the account.
+answers this by pausing itself — the buttons grey out in every Vinted tab, and
+the toolbar popup says why and until when. Wait it out: pressing on is what turns
+a fifteen minute pause into a 24-hour block on the account.
 
 If you are sure it was something else, turn off ad and tracker blockers for
 Vinted, log out and back in, and lift the pause from the toolbar popup.
 
-If the note says the account is restricted from listing, that is Vinted's own
-restriction rather than the extension's caution, and it carries a date. There is
-nothing to lift and the popup offers no button for it; the buttons come back by
-themselves when it expires.
+If the popup says the account is restricted from listing, that is Vinted's own
+restriction rather than the extension's caution. There is nothing to override,
+and the buttons come back by themselves once your wardrobe stops carrying it,
+which is checked every time you open one. Vinted can lift a restriction earlier
+than the date it published, so if it is already gone from the account and the
+popup has not caught up, **Vinted has lifted it** clears the record and the next
+wardrobe page decides afresh. Why the restriction was applied is in the message
+Vinted sent the account, which is the only place that reason exists — the API
+says nothing past the refusal itself.
 
 #### The buttons do not appear
 

@@ -2,10 +2,10 @@
 //
 // Installed from the store the extension is otherwise invisible: it works only
 // inside a Vinted profile page, so a new user sees nothing anywhere and assumes
-// it is broken. The popup answers three questions and refuses to grow past them
-// — "does it work on this tab?", "did a relist get stuck?" and "how much have I
-// relisted lately?" — and always offers the one action that follows from the
-// answer.
+// it is broken. The popup answers four questions and refuses to grow past them
+// — "is it on?", "does it work on this tab?", "did a relist get stuck?" and
+// "how much have I relisted lately?" — and always offers the one action that
+// follows from the answer.
 
 // Firefox answers to `browser` and only that namespace returns promises there;
 // Chrome answers to `chrome`. One alias, and the rest of the file is written
@@ -20,13 +20,14 @@ const HARD_COOLDOWN_KEY = 'bumpline:hardCooldown';
 const LOCAL_DRAFTS_KEY = 'bumpline:localDrafts';
 const RELIST_LOG_KEY = 'bumpline:relistLog';
 const BLOCK_KEY = 'bumpline:blockedUntil';
+const ENABLED_KEY = 'bumpline:enabled';
 
 // These have to agree with content.js, which is the side that enforces them.
 // The popup only reports, sets, and — for the pause — lifts.
 const HOUR_WINDOW_MS = 60 * 60 * 1000;
 const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
-const HOUR_ALARM_AT = 8;
-const DAY_ALARM_AT = 40;
+const HOUR_ALARM_AT = 4;
+const DAY_ALARM_AT = 15;
 const HARD_COOLDOWN_MS = 10000;
 
 // vinted.it, vinted.com, vinted.co.uk … one domain per country.
@@ -62,6 +63,45 @@ function currentUrl(tab) {
 
 const onVinted = url => !!url && VINTED_HOST.test(url.hostname);
 
+// --- the review link ------------------------------------------------------
+
+// One package ships to both stores, so the review button cannot be given its
+// address at build time. Replace these two with the ids each store hands out on
+// the first submission: the Chrome one is the 32-letter id in the listing URL,
+// the Firefox one is the add-on slug.
+const CHROME_STORE_ID = 'YOUR_CHROME_ID';
+const FIREFOX_ADDON_ID = 'YOUR_FIREFOX_ID';
+
+// The extension's own origin, which is the one thing a browser cannot get wrong
+// about its own extension: Firefox serves these pages from moz-extension:// and
+// every Chromium browser — Chrome, Edge, Brave, Opera, Vivaldi — from
+// chrome-extension://. The user agent is the fallback and not the test, because
+// Edge and Opera both write "Chrome" into theirs.
+function isFirefox() {
+  try {
+    const origin = ext.runtime.getURL('');
+    if (origin.startsWith('moz-extension://')) return true;
+    if (origin.startsWith('chrome-extension://')) return false;
+  } catch (_) {
+    // getURL exists in every browser this popup runs in; the guard is for the
+    // one that does not, where the agent string is all that is left.
+  }
+  return navigator.userAgent.includes('Firefox/');
+}
+
+// Both addresses land on the reviews tab rather than the top of the listing, so
+// the button arrives where its label says it will.
+const reviewUrl = () =>
+  isFirefox()
+    ? 'https://addons.mozilla.org/firefox/addon/' + FIREFOX_ADDON_ID + '/reviews/'
+    : 'https://chromewebstore.google.com/detail/' + CHROME_STORE_ID + '/reviews';
+
+// An anchor rather than a click handler: the browser closes the popup itself
+// when it opens the tab, and a real href can be middle-clicked and copied.
+function wireReview() {
+  document.getElementById('review').href = reviewUrl();
+}
+
 // Asks the page what it actually rendered. Somebody else's wardrobe has the
 // same URL shape as your own, so the URL alone can never answer this; only the
 // content script knows whether it managed to attach any buttons. No reply means
@@ -92,9 +132,7 @@ function describePage(page, url) {
       tone: 'plain',
       glyph: GLYPH.elsewhere,
       title: 'Nothing to relist here',
-      detail:
-        'Buttons appear only on your own items that are still on sale — not on ' +
-        'someone else’s wardrobe, and not on sold or reserved items.',
+      detail: 'Relist buttons appear on your own items that are still on sale.',
     };
   }
   if (onVinted(url)) {
@@ -102,15 +140,71 @@ function describePage(page, url) {
       tone: 'plain',
       glyph: GLYPH.elsewhere,
       title: 'Not a profile page',
-      detail: 'The buttons only appear on your own wardrobe.',
+      detail: 'Relist buttons only appear on your own wardrobe.',
     };
   }
   return {
     tone: 'plain',
     glyph: GLYPH.elsewhere,
     title: 'Not on Vinted',
-    detail: 'Open your profile page to relist an item.',
+    detail: 'Open your Vinted wardrobe to relist an item.',
   };
+}
+
+// Anything that moves asks this first. The stylesheet answers the same question
+// for its own transitions; these are the ones script drives, and a query object
+// is live, so a setting changed while the panel is open is honoured.
+const STILL = matchMedia('(prefers-reduced-motion: reduce)');
+
+// The duration and curve every opening in the panel uses, which is base-luma's
+// accordion.
+const OPEN_MS = 200;
+const OPEN_EASE = 'ease-out';
+
+// Covers the distance between two measured sizes and then gets out of the way:
+// the element keeps its own CSS at both ends, so nothing is left holding an
+// inline height that the next reflow would have to fight.
+function grow(el, prop, from, to) {
+  if (STILL.matches) return null;
+  return el.animate({ [prop]: [`${from}px`, `${to}px`] },
+                    { duration: OPEN_MS, easing: OPEN_EASE });
+}
+
+// <details> has no animation of its own: the browser shows and hides the body
+// outright. The click is taken over so the body can be grown and shrunk
+// instead, and the open attribute is set at the moment each direction becomes
+// true — at the start of an opening, at the end of a closing.
+function wireDrawer() {
+  const drawer = document.querySelector('.drawer');
+  const summary = drawer.querySelector('.drawer__summary');
+  const body = drawer.querySelector('.drawer__body');
+  let running = null;
+
+  summary.addEventListener('click', event => {
+    if (STILL.matches) return;
+    event.preventDefault();
+
+    // A second click during a close is a reopening, even though the attribute
+    // has not come off yet. Both heights are read before the running animation
+    // is cancelled, because cancelling snaps the box back to its CSS size.
+    const opening = !drawer.open || drawer.classList.contains('drawer--closing');
+    const from = drawer.open ? body.offsetHeight : 0;
+    if (running) running.cancel();
+    drawer.open = true;
+    drawer.classList.toggle('drawer--closing', !opening);
+
+    const mine = grow(body, 'height', from, opening ? body.scrollHeight : 0);
+    running = mine;
+    // finished rather than onfinish, and the second arm is the cancel: a click
+    // that interrupts this one owns the drawer from then on, so the interrupted
+    // animation must not close anything on its way out.
+    mine.finished.then(() => {
+      if (running !== mine) return;
+      running = null;
+      drawer.classList.remove('drawer--closing');
+      if (!opening) drawer.open = false;
+    }, () => {});
+  });
 }
 
 // Timestamps of the relists still inside the day. The content script prunes as
@@ -143,6 +237,14 @@ const whenOf = at => {
   });
 };
 
+// Said in the page and in this panel both, so the two cannot disagree about
+// what a restricted account can do.
+const RESTRICTION_NOTE =
+  'The message Vinted sent you says why. You cannot relist until Vinted ' +
+  'lifts the restriction. Vinted can lift one earlier than the date it ' +
+  'published: the next wardrobe page you open will notice, or you can clear ' +
+  'this here and let that page decide afresh.';
+
 // A pause that has already run out is no pause at all.
 function standingPause(record) {
   if (!record || typeof record !== 'object') return null;
@@ -174,7 +276,12 @@ async function readStored() {
     reload: bag[RELOAD_KEY] !== false,
     cooldown: bag[HARD_COOLDOWN_KEY] !== false,
     localDrafts: bag[LOCAL_DRAFTS_KEY] !== false,
-    fast: bag[PACE_KEY] === 'fast',
+    // Stored as a pace rather than a flag, and read here as the switch reads
+    // in the panel: on is the pause, off is the fast lane.
+    paced: bag[PACE_KEY] !== 'fast',
+    // Absent means on here too: an extension that has never been switched off
+    // has never written the key.
+    enabled: bag[ENABLED_KEY] !== false,
     relists: recentRelists(bag[RELIST_LOG_KEY]),
     paused: standingPause(bag[BLOCK_KEY]),
   };
@@ -187,7 +294,7 @@ const nameOf = record =>
 // best guess left, and it at least lands on the right site.
 const profileOf = record => record.profileUrl || record.site || null;
 
-function renderPending(records) {
+function renderPending(records, enabled) {
   const box = document.getElementById('pending');
   if (!records.length) {
     box.hidden = true;
@@ -227,11 +334,12 @@ function renderPending(records) {
   // than saying nothing. A record that reached the draft stage carries its id.
   const onVintedToo = records.some(record => record.draft && record.draft.id);
   document.getElementById('pending-note').textContent =
-    'Publishing is retried each time you open a Vinted profile page. ' +
+    (enabled
+      ? 'Bumpline retries these each time you open a Vinted profile page. '
+      : 'Bumpline is off, so nothing is being retried. ') +
     (onVintedToo
-      ? 'The copy is also in your Vinted drafts, ready to publish by hand.'
-      : 'The copy — details and photos — is saved on this device until it goes ' +
-        'through, and the banner on the page can download it.');
+      ? 'The copy is also in your Vinted drafts.'
+      : 'The copy is saved on this device.');
 
   box.hidden = false;
 }
@@ -269,35 +377,77 @@ function renderPause(stored) {
     ? 'Vinted has restricted this account'
     : 'Relisting is paused';
 
-  document.getElementById('paused-detail').textContent = fromVinted
-    ? `${stored.paused.why} It runs to ${whenOf(stored.paused.until)}. Nothing ` +
-      'can be listed or edited until then, through Bumpline or by hand, so the ' +
-      'buttons stay off until it lifts.'
-    : `${stored.paused.why} Nothing will be sent to Vinted until ` +
-      `${whenOf(stored.paused.until)}, on any tab. The buttons come back by ` +
-      'themselves — there is nothing to do but wait, and waiting is the point.';
+  // The title already names the restriction, and when it lifts is Vinted's to
+  // say, not this extension's to guess at: the message Vinted sent the account
+  // is the only place either the reason or the end of it actually exists.
+  const detail = document.getElementById('paused-detail');
+  detail.textContent = fromVinted
+    ? RESTRICTION_NOTE
+    : `${stored.paused.why} Nothing is sent until ` +
+      `${whenOf(stored.paused.until)}, on any tab. The buttons come back on ` +
+      'their own.';
 
-  lift.hidden = fromVinted;
+  // Folded to two lines, because the title has already said the thing that
+  // matters and the rest is where to go looking. The pause the extension sets
+  // itself is short enough to stay open.
+  const reveal = document.getElementById('paused-reveal');
+  detail.classList.toggle('card__note--clamped', fromVinted);
+  reveal.hidden = !fromVinted;
+  // The folded height belongs to the stylesheet. Read here, while the fold is
+  // still on, rather than repeated in two places that could drift apart.
+  const shut = parseFloat(getComputedStyle(detail).maxHeight) || 0;
+  // Folded, the text is its own button; open, it goes back to being text so it
+  // can be selected and read.
+  detail.onclick = () => {
+    if (detail.classList.contains('card__note--clamped')) reveal.click();
+  };
+
+  reveal.onclick = () => {
+    // Both ends are measured before the class moves: open, the paragraph is as
+    // tall as it is; folded, scrollHeight is still the whole of it.
+    const from = detail.offsetHeight;
+    const full = detail.scrollHeight;
+    const folded = detail.classList.toggle('card__note--clamped');
+    // The chevron turns over on its own; the name is for anyone who cannot see
+    // it turn.
+    reveal.setAttribute('aria-expanded', String(!folded));
+    reveal.setAttribute('aria-label', folded ? 'Show more' : 'Show less');
+    // max-height rather than height, because that is the property the fold is
+    // made of: the animation covers the distance and the class holds the end.
+    grow(detail, 'maxHeight', from, folded ? shut : full);
+  };
+
+  // One button, two meanings, because the two pauses are cleared for opposite
+  // reasons. The extension's own is overridden — it is still standing and the
+  // seller is choosing to ignore it, which is what the warning is for. Vinted's
+  // is only ever mirrored here, so clearing it overrides nothing: the next
+  // wardrobe page reads the account again and writes the restriction straight
+  // back if it is still in force. That is the only way out of a restriction
+  // Vinted lifted early, and without it the record stood until a date that had
+  // stopped meaning anything.
+  lift.textContent = fromVinted ? 'Vinted has lifted it' : 'Lift the pause early';
+  lift.hidden = false;
   card.hidden = false;
-  if (fromVinted) return;
 
-  document.getElementById('paused-lift').addEventListener('click', async () => {
-    const agreed = await askRisk({
-      title: 'Vinted asked for this pause',
-      detail:
-        'The pause is there because Vinted refused a request and refusing ' +
-        'again is what turns a rate limit into a block on the account. Lift it ' +
-        'only if you are sure the refusal was something else — being logged ' +
-        'out, or a one-off network failure. Relisting straight back into a ' +
-        'live rate limit is the surest way to lose the account for a day.',
-      accept: 'Lift it anyway',
-    });
-    if (!agreed) return;
+  lift.addEventListener('click', async () => {
+    if (!fromVinted) {
+      const agreed = await askRisk({
+        title: 'Vinted asked for this pause',
+        detail:
+          'The pause is there because Vinted refused a request, and being ' +
+          'refused again is what turns a rate limit into a block on the ' +
+          'account. Lift it only if you are sure the refusal was something ' +
+          'else, like a logged-out session or a one-off network failure.',
+        accept: 'Lift it anyway',
+        cancel: 'Keep the pause',
+      });
+      if (!agreed) return;
+    }
     try {
       await ext.storage.local.remove(BLOCK_KEY);
       card.hidden = true;
     } catch (_) {
-      // The card stays up, which is the honest outcome: nothing was lifted.
+      // The card stays up, which is the honest outcome: nothing was cleared.
     }
   });
 }
@@ -310,38 +460,45 @@ function renderVolume({ relists, cooldown }) {
   const today = relists.length;
   const thisHour = countWithin(relists, HOUR_WINDOW_MS);
 
+  document.getElementById('volume-hour').textContent = String(thisHour);
+  document.getElementById('volume-day').textContent = String(today);
+
+  // Two budgets run at once, and the bar draws whichever is nearer its warning:
+  // that is the one that will stop the next relist. The sentence under it says
+  // where the warning sits, because a bar on its own is not a number.
+  const share = Math.max(thisHour / HOUR_ALARM_AT, today / DAY_ALARM_AT);
+  document.getElementById('volume-fill').style.width =
+    `${Math.min(100, Math.round(share * 100))}%`;
+
   const owed = cooldown && today
     ? Math.max(0, HARD_COOLDOWN_MS - (Date.now() - Math.max(...relists)))
     : 0;
   const wait = owed > 0 ? ` The next one waits ${Math.ceil(owed / 1000)}s.` : '';
 
+  // Nothing relisted is nothing to say. The two noughts and an empty bar are
+  // the whole answer, and a sentence about limits nobody is near was being read
+  // every time the panel opened.
   if (!today) {
-    document.getElementById('volume-title').textContent = 'Nothing relisted today';
-    detail.textContent =
-      `Bumpline counts your relists and asks you to confirm past ` +
-      `${HOUR_ALARM_AT} in an hour or ${DAY_ALARM_AT} in a day.`;
+    detail.textContent = '';
     return;
   }
-
-  document.getElementById('volume-title').textContent =
-    `${thisHour} this hour, ${today} today`;
 
   if (today >= DAY_ALARM_AT) {
     card.classList.add('card--alert');
     detail.textContent =
-      'A whole wardrobe going round in a day is a bulk operation from where ' +
-      'Vinted is standing, and it answers those by blocking edits and new ' +
-      'listings on the account for about a day. The next relist will ask you ' +
-      'to confirm before it starts.' + wait;
+      'A whole wardrobe in a day looks like a bulk operation from where ' +
+      'Vinted is standing, and Vinted answers those with a day-long block ' +
+      'on editing and publishing, or a longer restriction. The next relist ' +
+      'will ask you to confirm.' + wait;
     return;
   }
 
   if (thisHour >= HOUR_ALARM_AT) {
     card.classList.add('card--alert');
     detail.textContent =
-      'That is the volume Vinted reads as automated activity, and it answers ' +
-      'it by blocking edits and new listings on the account for about a day. ' +
-      'The next relist will ask you to confirm before it starts.' + wait;
+      'That is the volume Vinted reads as automated activity, and Vinted ' +
+      'answers it with a day-long block on editing and publishing, or a ' +
+      'longer restriction. The next relist will ask you to confirm.' + wait;
     return;
   }
 
@@ -356,37 +513,61 @@ function renderVolume({ relists, cooldown }) {
 // warning left on screen can never commit a change once it is out of sight.
 let closeGate = null;
 
-function askRisk({ title, detail, accept }) {
+// The cancel names what staying put means, so it changes with the question:
+// keeping a setting is not the same act as keeping a pause Vinted asked for.
+function askRisk({ title, detail, accept, cancel = 'Keep this setting' }) {
   if (closeGate) closeGate(false);
 
-  const card = document.getElementById('risk');
+  const modal = document.getElementById('risk');
   const yes = document.getElementById('risk-accept');
   const no = document.getElementById('risk-cancel');
 
   document.getElementById('risk-title').textContent = title;
   document.getElementById('risk-detail').textContent = detail;
   yes.textContent = accept;
-  card.hidden = false;
+  no.textContent = cancel;
 
   return new Promise(resolve => {
     const finish = agreed => {
+      // Taken off before the dialog is closed, because closing fires the very
+      // event this is reached from and the listener would call it again.
       yes.removeEventListener('click', onYes);
       no.removeEventListener('click', onNo);
-      card.hidden = true;
+      modal.removeEventListener('close', onClose);
+      if (modal.open) modal.close();
       closeGate = null;
       resolve(agreed);
     };
     const onYes = () => finish(true);
     const onNo = () => finish(false);
+    // Escape closes a modal dialog without either button being pressed. That is
+    // a no, and it has to be answered as one or the setting waits forever.
+    const onClose = () => finish(false);
 
     yes.addEventListener('click', onYes);
     no.addEventListener('click', onNo);
+    modal.addEventListener('close', onClose);
     closeGate = finish;
-    // The warning is worth nothing if it scrolls in below the fold.
-    card.scrollIntoView({ block: 'nearest' });
+    // showModal throws on a dialog that is already open; the gate closed above
+    // makes that impossible, and the guard says so.
+    if (!modal.open) modal.showModal();
+    // The safe answer takes the focus, so Enter on a warning nobody read keeps
+    // the setting where it was.
     no.focus();
   });
 }
+
+// What each setting reads as when nobody has touched it. The popup says how
+// many are off their default without being opened, because every switch sitting
+// where it was left is the common case and should not need reading.
+//
+// localDrafts is absent on purpose: its row is hidden, and a count that points
+// at a switch nobody can find is worse than no count.
+const SETTING_DEFAULTS = {
+  reload: true,
+  cooldown: true,
+  paced: true,
+};
 
 // Writes the value and keeps the checkbox honest: if the write fails the box
 // goes back where it was rather than showing a setting that is not stored.
@@ -398,63 +579,122 @@ async function commit(box, key, value) {
   }
 }
 
-// A plain setting: the box is the setting.
-function wireToggle(id, key, on, valueOf = checked => checked) {
+// A plain setting: the box is the setting. `after` is handed the value that
+// actually survived the write, which is not the clicked one if it failed.
+function wireToggle(id, key, on, after, valueOf = checked => checked) {
   const box = document.getElementById(id);
   box.checked = on;
-  box.addEventListener('change', () => commit(box, key, valueOf(box.checked)));
+  box.addEventListener('change', async () => {
+    await commit(box, key, valueOf(box.checked));
+    after(box.checked);
+  });
 }
 
 // A guarded setting is one whose risky position raises the odds of the account
 // being blocked. The box springs back the instant it is clicked and only the
 // second, deliberate click in the warning commits it — so the warning cannot be
 // got past by ignoring it, and cancelling leaves the setting untouched.
-function wireGuarded(id, key, on, risky, warning, valueOf = checked => checked) {
+function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => checked) {
   const box = document.getElementById(id);
   box.checked = on;
-  box.addEventListener('change', () => {
+  box.addEventListener('change', async () => {
     const wanted = box.checked;
     if (wanted !== risky) {
-      commit(box, key, valueOf(wanted));
+      await commit(box, key, valueOf(wanted));
+      after(box.checked);
       return;
     }
     box.checked = !risky;
-    askRisk(warning).then(agreed => {
-      if (!agreed) return;
-      box.checked = risky;
-      commit(box, key, valueOf(risky));
-    });
+    const agreed = await askRisk(warning);
+    if (!agreed) return;
+    box.checked = risky;
+    await commit(box, key, valueOf(risky));
+    after(box.checked);
   });
 }
 
 function wireSettings(stored) {
+  const count = document.getElementById('settings-count');
+  const paint = () => {
+    const changed = Object.keys(SETTING_DEFAULTS)
+      .filter(name => stored[name] !== SETTING_DEFAULTS[name]).length;
+    count.textContent = changed ? `${changed} changed` : '';
+  };
+  const note = name => value => {
+    stored[name] = value;
+    paint();
+  };
+  paint();
+
   // The page reads this fresh on every relist, so writing it here is all the
   // wiring the setting needs. The same is true of the three below it.
-  wireToggle('reload-toggle', RELOAD_KEY, stored.reload);
+  wireToggle('reload-toggle', RELOAD_KEY, stored.reload, note('reload'));
 
-  wireToggle('local-drafts-toggle', LOCAL_DRAFTS_KEY, stored.localDrafts);
+  wireToggle('local-drafts-toggle', LOCAL_DRAFTS_KEY, stored.localDrafts, note('localDrafts'));
 
   wireGuarded('cooldown-toggle', HARD_COOLDOWN_KEY, stored.cooldown, false, {
-    title: 'Turning off the only hard stop',
+    title: 'This is the only hard stop',
     detail:
-      'The ten seconds between relists exist because back-to-back deletions ' +
-      'and re-publishes are the pattern Vinted matches on. Without them a run ' +
-      'of relists goes out as fast as the network allows, and a temporary ' +
-      'block on editing and publishing — usually 24 hours — is the likely ' +
-      'result. You can turn it back on at any time.',
-    accept: 'Turn the cooldown off',
-  });
+      'Deleting and re-publishing back to back is the pattern Vinted matches ' +
+      'on. Without the ten seconds, a run of relists goes out as fast as the ' +
+      'network allows. A 24-hour block on editing and publishing is the ' +
+      'mildest answer to that, and Vinted can restrict the account for ' +
+      'longer.',
+    accept: 'Turn it off',
+    cancel: 'Keep the cooldown',
+  }, note('cooldown'));
 
-  wireGuarded('fast-toggle', PACE_KEY, stored.fast, true, {
-    title: 'Faster means riskier',
+  wireGuarded('pace-toggle', PACE_KEY, stored.paced, false, {
+    title: 'This keeps a relist from arriving as one burst',
     detail:
-      'The random pause between each request is what keeps a relist from ' +
-      'arriving as one burst of API calls. Shortening it makes every relist ' +
-      'quicker and makes the traffic look far more like a script, which is ' +
-      'what Vinted blocks accounts for. Leave it off unless you are relisting ' +
-      'a single item and in a hurry.',
-    accept: 'Relist faster anyway',
-  }, checked => (checked ? 'fast' : 'safe'));
+      'The random 0.9 to 2.4 seconds between requests spread a relist out ' +
+      'over its twenty or so API calls. At 0.25 to 0.7 seconds the traffic ' +
+      'looks far more like a script, and that is what Vinted blocks accounts ' +
+      'for.',
+    accept: 'Shorten it',
+    cancel: 'Keep the pause',
+  }, note('paced'), checked => (checked ? 'safe' : 'fast'));
+}
+
+// The master switch. Off is the safe direction — nothing is sent to Vinted
+// while it is off — so it passes no warning, and on puts the pages back exactly
+// as they were.
+function wirePower(stored, tab, repaint, notePage) {
+  const box = document.getElementById('power');
+  const word = document.getElementById('power-state');
+
+  const paint = () => {
+    box.checked = stored.enabled;
+    word.textContent = stored.enabled ? 'On' : 'Off';
+  };
+  paint();
+
+  box.addEventListener('change', async () => {
+    const wanted = box.checked;
+    // Switching off hides the whole panel, an open warning with it. A warning
+    // that leaves the screen unanswered would otherwise still be holding a
+    // promise, and its setting would commit on a click of a button nobody can
+    // see any more. Answered here, as a no: the setting stays where it was.
+    if (!wanted && closeGate) closeGate(false);
+    try {
+      await ext.storage.local.set({ [ENABLED_KEY]: wanted });
+    } catch (_) {
+      // Nothing was stored, so nothing changed on any page either.
+      box.checked = !wanted;
+      return;
+    }
+    stored.enabled = wanted;
+    paint();
+    // Every open tab draws or drops its buttons the moment the value lands, and
+    // the count held here is the one from before that. Ask the page again once
+    // it has had its turn, or this panel contradicts what is on screen.
+    if (wanted) {
+      await new Promise(done => setTimeout(done, 150));
+      const fresh = await askPage(tab);
+      if (fresh) notePage(fresh);
+    }
+    repaint();
+  });
 }
 
 async function main() {
@@ -472,32 +712,57 @@ async function main() {
   }
 
   const url = currentUrl(tab);
-  const [page, stored] = await Promise.all([askPage(tab), readStored()]);
+  const [initial, stored] = await Promise.all([askPage(tab), readStored()]);
   const here = url ? `${url.origin}${url.pathname}` : null;
 
-  const state = describePage(page, url);
-  draw(document.getElementById('status-icon'), state.glyph);
-  document.getElementById('status-title').textContent = state.title;
-  document.getElementById('status-detail').textContent = state.detail;
-  if (state.tone !== 'plain') {
-    document.getElementById('status').classList.add(`card--${state.tone}`);
-  }
+  // What the page holds is asked for again when the switch is thrown, so it
+  // cannot be a constant.
+  let page = initial;
 
-  renderPending(stored.pending);
+  const status = document.getElementById('status');
+  const button = document.getElementById('action');
+
+  // Everything the switch changes the answer to, in one place, so that throwing
+  // it never leaves half the panel describing the other state.
+  const paintTab = () => {
+    const state = describePage(page, url);
+    draw(document.getElementById('status-icon'), state.glyph);
+    document.getElementById('status-title').textContent = state.title;
+    document.getElementById('status-detail').textContent = state.detail;
+    status.classList.toggle('card--ok', state.tone === 'ok');
+
+    // Switched off, the panel is one line and the logo goes grey with the
+    // toolbar icon the background worker is repainting at the same moment. The
+    // class does the hiding, so nothing below has to know about the switch.
+    document.body.classList.toggle('is-off', !stored.enabled);
+    document.getElementById('offline').hidden = stored.enabled;
+
+    // Paused, "Ready on this page" is a lie — the buttons are there and greyed
+    // out — and the card above has already said why.
+    status.hidden = !!stored.paused;
+
+    renderPending(stored.pending, stored.enabled);
+
+    // Switched off, an offer to open a wardrobe leads to a page with no buttons
+    // on it, which is worse than no offer at all.
+    const action = stored.enabled ? chooseAction(stored, page, here) : null;
+    button.hidden = !action;
+    if (action) {
+      button.textContent = action.label;
+      button.onclick = () => {
+        ext.tabs.create({ url: action.url });
+        window.close();
+      };
+    }
+  };
+
+  wirePower(stored, tab, paintTab, fresh => { page = fresh; });
+  paintTab();
   renderPause(stored);
   renderVolume(stored);
   wireSettings(stored);
-
-  const action = chooseAction(stored, page, here);
-  if (action) {
-    const button = document.getElementById('action');
-    button.textContent = action.label;
-    button.hidden = false;
-    button.addEventListener('click', () => {
-      ext.tabs.create({ url: action.url });
-      window.close();
-    });
-  }
+  wireDrawer();
+  wireReview();
 }
 
 main();

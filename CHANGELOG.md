@@ -5,7 +5,7 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-08-29
+## [1.0.1] - 2026-08-30
 
 Vinted answers traffic that looks automated with a temporary block on editing
 and publishing. Nothing a relist produced was wrong; the shape of its traffic
@@ -29,14 +29,14 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   which is the moment Vinted counts, and kept on disk — the page reloads after
   every relist, so a counter in memory would reset each time. The button counts
   the wait down instead of ignoring the click.
-- **A warning past eight relists in an hour.** The ninth stops before it sends
+- **A warning past four relists in an hour.** The fifth stops before it sends
   anything and asks whether you mean it, saying what the volume looks like from
   Vinted's side and what it does about it. Nothing has been deleted at that
-  point, so stopping costs nothing. Eight is not Vinted's number — Vinted does
+  point, so stopping costs nothing. Four is not Vinted's number — Vinted does
   not publish one — it is a deliberately cautious guess.
-- **A daily budget as well as an hourly one.** Forty in twenty-four hours, next
-  to the eight in an hour. An hourly limit on its own has an obvious hole —
-  seven an hour, all day, never trips it and is unmistakably a bulk operation —
+- **A daily budget as well as an hourly one.** Fifteen in twenty-four hours,
+  next to the four in an hour. An hourly limit on its own has an obvious hole —
+  three an hour, all day, never trips it and is unmistakably a bulk operation —
   and the day window closes it. Both numbers are guesses, and cautious ones;
   Vinted publishes neither.
 - **Vinted saying stop is now acted on.** A `429`, or a `403` carrying a bot
@@ -62,18 +62,36 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   dimmed and drained of colour, so a stopped button says so before anyone
   presses it instead of looking pressable and doing nothing. The note and the
   popup name the day as well as the hour, since a restriction is counted in
-  days where a refusal is counted in minutes, and the popup drops its **Lift
-  the pause early** button for one: there is nothing to lift when the refusal
-  would come from Vinted either way.
+  days where a refusal is counted in minutes. The field is read in both
+  directions. Vinted lifts a restriction whenever it likes, and the date in the
+  payload was only ever the latest it would have run to, so a wardrobe that
+  draws its bump buttons and states no restriction clears the record — a record
+  that is only ever written is a record nothing can clear, and the buttons stay
+  off until a date that has stopped meaning anything. A restriction Vinted
+  shortens replaces the one read before it for the same reason: an earlier
+  reading is not a second opinion, it is the same statement out of date. The
+  popup swaps its **Lift the pause early** button for **Vinted has lifted it**,
+  because the two are cleared for opposite reasons. The extension's own pause is
+  still standing and is being overridden, which is what the confirmation is for;
+  Vinted's is only mirrored here, so clearing it overrides nothing and the next
+  wardrobe page writes the restriction straight back if it still stands.
 - **The popup reports the hour and the day.** How many items have been relisted
   in the last sixty minutes and the last twenty-four, how long the next one has
   to wait, and any pause that is standing. These are the numbers the ban turns
   on and the only ones a seller could not see from the page.
-- **Three new settings, two of which ask first.** The cooldown and the pacing
-  can both be turned towards *faster*, and both make a block more likely, so the
-  checkbox springs back and the change is only made by a second, deliberate
-  click in a panel that says what the risk is. Cancelling leaves the setting
-  exactly as it was.
+- **A rating is one click from the panel.** The footer carries a **Rate
+  Bumpline** link on a line of its own, beneath the two that are there for when
+  something is unclear or broken. Which store it opens is decided as the popup
+  is drawn, from the origin the extension's own pages are served from —
+  `moz-extension://` is Firefox, `chrome-extension://` is every Chromium browser
+  — rather than from a user agent string, which Edge and Opera both write
+  "Chrome" into. One package goes to both stores, so the address cannot be baked
+  into it at build time.
+- **Three new settings, two of which ask first.** The cooldown and the pause
+  between requests are both on out of the box, and turning either of them off
+  makes a block more likely, so the switch springs back and the change is only
+  made by a second, deliberate click in a panel that says what the risk is.
+  Cancelling leaves the setting exactly as it was.
 - **API calls go through the page's own fetch.** Every request Bumpline makes
   now runs through the main-world `window.fetch`, which is the fetch DataDome
   and similar SDKs have instrumented. The content script's isolated-world fetch
@@ -96,9 +114,158 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   and before deleting (1–2.5 s, simulating the moment of deciding). The delays
   are random and non-uniform, so the session fingerprint is that of someone
   stepping through a form rather than a script walking a list.
+- **An on/off switch in the popup.** Uninstalling was the only way to stop the
+  extension touching Vinted, and reinstalling loses every copy held on the
+  device. The switch in the top right of the popup stops it instead: no buttons
+  are drawn, no unfinished relist is retried, and nothing is sent to Vinted at
+  all. It reaches every open tab through storage, so tabs drop their buttons as
+  it is flipped rather than at the next reload, and turning it back on puts them
+  back. A relist already in flight is left to finish — by then it may already
+  have deleted the original. Nothing is deleted by the switch: items, settings,
+  counts and saved copies survive it, which is the point of having it.
 
 ### Changed
 
+- **Everything the extension puts on the page is one card now.** The toast, the
+  note that says relisting is paused, and the banner over a stuck relist were
+  three wide coloured blocks; they are one card in three corners — a tick, a
+  pause or a warning triangle carrying the tone, capped at 320px, sliding up as
+  it arrives. They carry the toolbar popup's own theme, down to the 26px corner
+  and the two colour schemes, so the two halves of the extension are one thing;
+  the tokens are declared on the card rather than on `:root`, because Vinted has
+  custom properties of its own and this must not reach them. One builder draws
+  all three, so they cannot drift apart.
+- **The corner clears itself.** A confirmation used to be dropped after six
+  seconds and a refusal never at all, so a failed relist left a red slab in the
+  corner until the page was reloaded; the note about a standing pause never left
+  at all. Four seconds for a confirmation now, ten for a refusal, ten for the
+  pause, with a fade rather than a disappearance — and the pause is said once
+  rather than redrawn every time the page changes under it. Nothing is lost by
+  that: the greyed-out buttons are the standing signal, and both the banner and
+  the toolbar popup still say why. The volume card says nothing at all when
+  nothing has been relisted: two noughts and an empty bar are the whole answer,
+  and the sentence about limits nobody was near was being read every time the
+  panel opened.
+- **The three of them say less.** "Relisted." rather than "Relisted. The new
+  listing is 1234567." The pause was five lines explaining that waiting is the
+  point; it is two, and the only thing it still distinguishes is the one thing
+  that matters — Vinted restricting the account, which nothing can lift, against
+  this extension standing down, which the popup can. The banner dropped its
+  attempt count, which the banner's own presence already implies.
+- **The pause says nothing in the page any more.** It greyed the buttons out
+  and wrote a note in the corner saying why, which is the one thing the toolbar
+  popup was already saying in full, one click away and without a countdown to
+  read it by. The buttons still grey out in every open tab the moment the pause
+  is set; the explanation lives in one place now.
+- **A restricted account is told where the reason is.** Vinted says why in a
+  message to the account, and that message is the only place the reason exists —
+  the API says nothing past the refusal itself. The popup says so, and says
+  plainly that the extension is unusable until the restriction lifts; that
+  sentence is the whole card, because the title already names the restriction
+  and when it lifts is Vinted’s to say rather than this extension’s to guess
+  at. The note in the page is the other half of the same answer and stays one
+  sentence: it names the day the restriction lifts, which is what somebody
+  standing on the page wanted to know.
+- **Switched off, the panel is one line.** It used to answer the switch with a
+  card — that no buttons were drawn, that nothing was sent, that nothing had
+  been deleted — under a title saying what the word beside the switch already
+  said, and then went on to show the counts, the settings and an offer to open a
+  wardrobe that would have no buttons on it. Off, all of that is gone and one
+  line stands in its place: *Bumpline is offline*. The header stays, because the
+  switch is the way back, and so does the footer, because the version number is
+  what a bug report is built on.
+- **The toolbar icon goes grey with the switch.** With no panel open the icon is
+  the only part of the extension you can see, so it now carries the one state
+  worth knowing from outside: the same drawing with the colour taken out of it
+  by luma, so the disc and the chevrons keep exactly the contrast they had. The
+  tooltip says *Bumpline — off* alongside it. The background worker repaints it
+  from `storage.onChanged`, which is the signal the content scripts already
+  follow, and reads the switch again on the way up — a worker is torn down
+  between events and a browser forgets a set icon at the end of a session, so
+  the state is looked up rather than remembered. The mark in the panel's own
+  header greys at the same moment.
+- **Two things that used to jump now move.** The settings section grows and
+  shrinks its own height rather than appearing whole — `<details>` has no
+  animation of its own, so the click is taken over and the open attribute is set
+  at the moment each direction becomes true, at the start of an opening and the
+  end of a closing. The folded restriction does the same on its way open, and
+  its fade travels with it: the mask's stop is a registered custom property, so
+  it can be transitioned rather than switched. Both last 200ms on base-luma's
+  own accordion curve, both survive being interrupted halfway by a second click,
+  and both ask `prefers-reduced-motion` first — where it is set, the section
+  falls back to the browser's own instant open and nothing else moves.
+- **The settings are two groups, and every switch means the same thing.**
+  *Pacing* — the cooldown and the pause between requests — decides what the
+  traffic looks like from Vinted's side. *After a relist* — the reload, and
+  where the copy is kept — decides what happens on your own page, and neither
+  setting there can cost you an account. All of them are on by default, so on
+  is the cautious position in every row and the guarded ones guard the same
+  direction; the setting that used to be called *Relist faster*, alone in being
+  off by default and risky to switch on, is now *Pause 0.9–2.4s between
+  requests* and stores exactly what it stored before. Each label carries its own
+  number and each description says what off costs, in that order, in all three
+  rows. The section header carries a count of how many are off their default,
+  which is the one thing about the settings worth knowing without opening
+  them.
+- **The popup was rebuilt around the switch.** The four settings — each with a
+  paragraph explaining what it costs — pushed the answer to "does this work
+  here?" below the fold, so they are folded into a **Settings** section that
+  opens in place. Every on/off is now a switch rather than a checkbox, with the
+  control on the right of the row it belongs to, and the hourly and daily counts
+  are two figures and a bar showing how close the nearer of the two budgets is
+  to the warning, instead of a sentence to be parsed. Each setting says one
+  line about itself rather than a paragraph: the two that raise the odds of a
+  block used to argue their case in the panel, where everyone read it and
+  nobody acted on it, and that argument now appears in the warning at the
+  moment the setting is changed — the only moment it can change a mind. The
+  same pass went through the cards, which said in four sentences what two
+  say.
+- **The panel is shadcn/ui preset `b1tepwVzU`.** Style base-luma, base colour
+  neutral, Lucide icons, Inter — rebuilt in plain CSS, because
+  shadcn is React, Tailwind and Base UI and a popup with no build step is going
+  to carry none of those, and because the markup is already accessible without
+  them: the switches are real checkboxes and the settings section is a real
+  `<details>`. Every measurement was read off the components the preset actually
+  writes rather than off the documentation, which describes a different style
+  and would have been wrong in five places: base-luma scales its radius instead
+  of adding to it, so cards and buttons are pills; cards carry a one-pixel ring
+  of the foreground at 5% and a medium shadow instead of a border; the switch is
+  44×20 with a rounded rectangle for a thumb; the progress track is `--muted`
+  rather than the fill at a fifth; and the destructive button is a tint carrying
+  red ink rather than a filled red block. The panel is 360px wide at a 14px
+  base, cards hold 24px of padding, and the destructive card turns its ink red
+  and leaves the shape alone, exactly as `alert.tsx` does. The theme keeps the
+  preset's shape — every token name, every slot — and takes its colours from
+  the logo, which is two of them: `#00ADB8` on `#FBFBFB`. The teal cannot
+  simply be pasted into `--primary`, because at its own lightness it is 2.7:1
+  against white and 2.7:1 against its own white label, and so can carry neither
+  text nor a filled button; `--primary` holds the hue and moves the lightness
+  instead, darker for the light scheme and lighter for the dark one, while the
+  logo keeps its own value in `icons/logo.svg` and `#FBFBFB` becomes the label
+  the filled button writes in. Every neutral borrows a little of that hue,
+  because a grey at chroma 0 beside a saturated teal looks dead; the page is a
+  tinted off-white and the cards are pure white, rather than both being `#fff`
+  and the cards relying on a shadow to exist; `--success` moves to hue 148,
+  where it stops reading as a second version of the accent; and `--ring`
+  follows the accent rather than the preset's neutral. Two rules are applied to
+  the block itself: `.dark` becomes a `prefers-color-scheme` query, a popup
+  having no app shell to put the class on, and `@theme inline` becomes plain
+  custom properties. Every pair is measured off a rendered screenshot rather
+  than derived, and one the preset does not clear now does — the destructive
+  button's label on its own tint, 3.7:1 there and 4.7:1 here. Two are still
+  deliberately short of 4.5:1: the switch's off track, where the thumb's
+  position says the same thing again, and `--ring`, which at 30% is a focus
+  ring you have to look for. The one colour added is `--success`, because no
+  shadcn theme carries one and "Ready on this page" is the whole reason the
+  panel is worth opening.
+- **Inter ships with the extension.** Manifest v3 will not load a remote font —
+  `font-src` is `'self'` — so the Latin and Latin Extended subsets sit in
+  `fonts/` with their SIL Open Font Licence, and the package goes from 76 kB to
+  210 kB. Latin Extended is the one thing here the preset does not ask for: it
+  loads the Latin subset alone, and Vinted runs in twenty-eight countries whose
+  sellers name their own items. The oklch colours and the `color-mix()` the
+  faded variants are built from need Chrome 111, which the manifest now asks
+  for; Firefox has wanted 140 since before this release.
 - **Publishing retries twice, not five times.** The old ladder — five attempts
   with a doubling wait — spent fifteen seconds pressing a server that had
   already refused. When the refusal is really an unstated rate limit, which is
@@ -119,6 +286,41 @@ buttons, and the same rule that nothing is deleted until the copy exists.
 - **The recovery banner and the popup say where the copy actually is.** Telling
   someone to publish it by hand from their Vinted drafts is useless advice when
   the copy is on their disk, so both now read the record and say which it is.
+- **Switched off, the panel says what to do about it.** One line reading
+  "Bumpline is offline" named the state and left the reader looking for the
+  switch it was already sitting under. Two lines now: the state, and the way
+  back under it in the quieter ink.
+- **The settings say which way is the recommended one.** Every hint led with
+  what turning the switch off would cost, which is the right argument in the
+  wrong order: the row has to be skimmable by the seller who is not changing
+  anything, and that is almost every seller almost every time. Each hint now
+  opens with **Recommended** and says the cost after it. The warning's own
+  cancel stopped scolding while it was there — **Leave it alone** is **Keep
+  this setting** — and the panel calls them relist buttons, since "buttons
+  appear on your own items" is as true of Vinted's own buttons as of these.
+- **Switching off answers a warning left open.** A confirmation on screen when
+  the switch went off was carried away still holding its question, and the
+  setting behind it would have committed on a click of a button nobody could
+  see any more. Off answers it as a no, and the setting stays where it was.
+- **The footer is two rows.** Three links and a version number do not fit
+  across the panel's 328 points, and a rating is not the same kind of errand as
+  the two links it would have sat beside, so it takes a line of its own beneath
+  them.
+- **The warning a guarded setting raises is a modal.** It was a card in the
+  flow, opening below the switch that raised it, which made it something the eye
+  could move past: on a panel tall enough to scroll it could be answered without
+  having been read, and a warning nobody reads is a confirmation step and
+  nothing more. It is a `<dialog>` now — the focus moves into it, the tab key
+  cannot leave it, Escape answers it as a no, and the panel behind is blurred
+  through the backdrop rather than covered, so what raised the question is still
+  legible while it is being answered.
+- **The two answers are stacked and say what they do.** Side by side inside
+  296 points each label had to be short enough to fit rather than clear enough
+  to read, and the longest of them ran out of its own button and over the edge.
+  A line each now. The action names the thing rather than repeating the setting
+  — **Turn it off**, **Shorten it** — and the cancel names what staying put
+  means, which is not the same sentence for a setting as for a pause Vinted
+  asked for: **Keep the cooldown**, **Keep the pause**.
 
 ## [1.0.0] - 2026-08-28
 
