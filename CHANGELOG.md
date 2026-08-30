@@ -359,6 +359,23 @@ buttons, and the same rule that nothing is deleted until the copy exists.
   means, which is not the same sentence for a setting as for a pause Vinted
   asked for: **Keep the cooldown**, **Keep the pause**.
 
+### Fixed
+
+- **Reloading the extension no longer leaves an error on the page.** A browser
+  takes the extension's half of a content script away the moment the extension
+  is reloaded, updated or switched off, and leaves the page's half running on
+  every tab that was already open. Every call into extension storage from that
+  point throws, and it throws where it is called rather than rejecting the
+  promise it would have returned, so the `.catch()` written to absorb it was
+  hung off a promise that never existed and the failure surfaced in the seller's
+  console as an uncaught error. Both of the calls that were not already inside a
+  `try` now make the call from inside a `then`, which is where the rest of the
+  file has always made them: the note of which wardrobe is yours, which only
+  costs the popup a shortcut, and the record a half-finished relist is recovered
+  from, where the failure now reaches the caller in the shape it is waiting for.
+  Nothing about a relist changes; a page left open across an extension reload
+  simply stops writing instead of complaining about it.
+
 ## [1.0.0] - 2026-08-28
 
 Bumpline leaves `0.x`. Nothing about the relist changed — the version number

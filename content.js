@@ -1450,8 +1450,15 @@
   const takePhotos = itemId => withStore('readonly', s => s.get(pendingKey(itemId)));
   const dropPhotos = itemId => withStore('readwrite', s => s.delete(pendingKey(itemId)));
 
+  // Held inside the then for the reason rememberProfile is: an extension that
+  // has been reloaded under this page throws at the call rather than rejecting,
+  // and every caller here is written to await a promise. This is the record a
+  // relist is recovered from, so a failure has to reach them in the shape they
+  // are watching for rather than escaping sideways.
   const savePending = (itemId, record) =>
-    ext.storage.local.set({ [pendingKey(itemId)]: record });
+    Promise.resolve().then(() =>
+      ext.storage.local.set({ [pendingKey(itemId)]: record })
+    );
 
   async function readPending(itemId) {
     const bag = await ext.storage.local.get(pendingKey(itemId));
@@ -2385,11 +2392,17 @@
   // that is the only page where buttons appear.
   function rememberProfile() {
     if (!document.querySelector(SELECTOR.ourButton)) return;
-    ext.storage.local
-      .set({ [LAST_PROFILE_KEY]: `${SITE}${location.pathname}` })
-      .catch(() => {
-        // Only costs the popup a shortcut; nothing else depends on it.
-      });
+    // The call sits inside the then rather than in front of it, the same way
+    // askWorker holds its own. An extension that is reloaded, updated or
+    // switched off takes its half of this script away and leaves the page's
+    // half running, and from that moment ext.storage throws where it is
+    // touched instead of rejecting the promise it would have returned. A
+    // .catch() hung off a promise that was never created cannot see that, so
+    // the failure used to land in the page's console as an uncaught error.
+    // Failing here only costs the popup a shortcut; nothing else depends on it.
+    Promise.resolve()
+      .then(() => ext.storage.local.set({ [LAST_PROFILE_KEY]: `${SITE}${location.pathname}` }))
+      .catch(() => {});
   }
 
   // A pause set in one tab has to reach the others, or the buttons stay live
