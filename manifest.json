@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Bumpline - Relist for Vinted",
   "version": "1.0.1",
-  "description": "Relist your own Vinted items in one click. Every field and photo is copied over, and the item goes back to the top of the results.",
+  "description": "Relist your own Vinted items in one click. Bumpline copies every field and photo, and the listing returns to the top of results.",
   "minimum_chrome_version": "111",
   "icons": {
     "16": "icons/icon16.png",
