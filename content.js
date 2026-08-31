@@ -22,6 +22,10 @@
   // once for both.
   const ext = globalThis.browser ?? globalThis.chrome;
 
+  // The words, in the seller's language. One letter because the file says it
+  // several hundred times.
+  const T = (key, ...subs) => BumplineText.t(key, ...subs);
+
   // Every request is derived from the page we are on, which is what makes the
   // extension work unchanged across all of Vinted's country domains.
   const SITE = location.origin;
@@ -2069,7 +2073,7 @@
     }
 
     const draftOnly = mode === 'draft';
-    const restingLabel = draftOnly ? 'Relist as draft' : 'Relist';
+    const restingLabel = draftOnly ? T('button.draft') : T('button.relist');
 
     button.disabled = true;
     button.classList.add('is-busy');
@@ -2091,7 +2095,7 @@
 
       const owed = await cooldownLeft();
       for (let left = Math.ceil(owed / 1000); left > 0; left--) {
-        setButtonLabel(button, `Cooling down ${left}s…`);
+        setButtonLabel(button, T('button.cooldown', left));
         await pause(1000);
       }
 
@@ -2103,7 +2107,7 @@
       const overDay = today >= DAY_ALARM_AT;
 
       if (overDay || thisHour >= HOUR_ALARM_AT) {
-        setButtonLabel(button, 'Waiting…');
+        setButtonLabel(button, T('button.waiting'));
         const carryOn = await askToContinue({
           title: overDay
             ? 'You have relisted a lot of items today'
@@ -2136,7 +2140,7 @@
         await pause(between(800, 2000));
       }
 
-      setButtonLabel(button, 'Relisting…');
+      setButtonLabel(button, T('button.relisting'));
 
       // Visit the item page through the bridge. This creates a page-view
       // event in Vinted's analytics — the navigation a real user would
@@ -2204,13 +2208,13 @@
         );
       }
 
-      setButtonLabel(button, 'Checking size…');
+      setButtonLabel(button, T('button.checkingSize'));
       const size = await inspectSize(source, csrf);
       if (!size.ok) {
         if (!size.groups || !size.groups.length) {
           throw new Error(`${size.why}. Nothing was deleted.`);
         }
-        setButtonLabel(button, 'Waiting for size…');
+        setButtonLabel(button, T('button.waitingSize'));
         const chosen = await askForSize(size.groups, item.title, size.why);
         if (!chosen) throw new Error('Cancelled. Nothing was deleted.');
         item.size_id = chosen;
@@ -2218,7 +2222,7 @@
         snapshot.size_id = chosen;
       }
 
-      setButtonLabel(button, 'Checking…');
+      setButtonLabel(button, T('button.checking'));
       await assertItemReachable(itemId, csrf);
 
       // --- the copy is put somewhere safe before the original is touched
@@ -2234,7 +2238,7 @@
       const localDrafts = (await readSetting(LOCAL_DRAFTS_KEY, true)) !== false;
       let draft = null;
       if (draftOnly || !localDrafts) {
-        setButtonLabel(button, 'Saving draft…');
+        setButtonLabel(button, T('button.savingDraft'));
         await step(pace);
         draft = await openDraft(csrf, item, sessionId);
       }
@@ -2256,7 +2260,7 @@
       // With no draft on Vinted the local copy is the only copy, so a failure
       // to write it has to stop the relist rather than be logged past: the
       // alternative is deleting a listing that then exists nowhere.
-      setButtonLabel(button, 'Saving the copy…');
+      setButtonLabel(button, T('button.savingCopy'));
       try {
         await stashPhotos(itemId, blobs);
       } catch (err) {
@@ -2274,7 +2278,7 @@
       // Vinted too when a draft was opened above.
       // Deciding time: a real user pauses before the irreversible step.
       await pause(between(1000, 2500));
-      setButtonLabel(button, 'Deleting…');
+      setButtonLabel(button, T('button.deleting'));
       await step(pace);
       try {
         await removeListing(csrf, itemId);
@@ -2296,10 +2300,10 @@
         return;
       }
 
-      setButtonLabel(button, 'Publishing…');
+      setButtonLabel(button, T('button.publishing'));
       await step(pace);
       const newId = await advancePending(itemId, record, (attempt, total) => {
-        setButtonLabel(button, attempt === 1 ? 'Publishing…' : `Retrying ${attempt}/${total}…`);
+        setButtonLabel(button, attempt === 1 ? T('button.publishing') : T('button.retrying', attempt, total));
       });
       if (newId) await settle(itemId, 'Relisted.');
       // On failure advancePending has already stored the record and raised the
@@ -2342,7 +2346,7 @@
       const id = itemIdFor(bump);
       if (id && !canRelist(id)) continue;
 
-      const publish = buildButton('Relist');
+      const publish = buildButton(T('button.relist'));
       publish.classList.add(CLASS.button);
       publish.addEventListener('click', event => {
         event.preventDefault();
@@ -2350,9 +2354,9 @@
         relist(publish, 'publish');
       });
 
-      const draft = buildButton('Relist as draft');
+      const draft = buildButton(T('button.draft'));
       draft.classList.add(CLASS.button, CLASS.draftButton);
-      draft.title = 'Delete the original and leave the copy unpublished in your Vinted drafts';
+      draft.title = T('button.draft.title');
       draft.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
