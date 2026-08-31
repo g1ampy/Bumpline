@@ -42,6 +42,50 @@ const BumplineText = (() => {
       'button.deleting': 'Deleting…',
       'button.publishing': 'Publishing…',
       'button.retrying': 'Retrying {0}/{1}…',
+
+      // Toasts: the corner notice that reports what a relist just did.
+      'toast.pausedUntil': 'Relisting is paused until {0}.',
+      'toast.publishPausedUntil': 'Publishing is paused until {0}.',
+      'toast.published': 'Published.',
+      'toast.relisted': 'Relisted.',
+      'toast.relistedNoPhotos': 'Relisted, but the copy has no photos. Add them on Vinted.',
+      'toast.originalDeletedDraft': 'Original deleted. The copy is in your Vinted drafts.',
+      'toast.reloading': '{0} Reloading…',
+      'toast.reloadToSee': '{0} Reload to see it.',
+      'toast.cantFindItem': 'Could not tell which item that button belongs to.',
+      'toast.resumingUnfinished': 'An unfinished relist of this item. Resuming it.',
+      'toast.stopped': 'Stopped. Nothing was deleted.',
+      'toast.relistStopped': 'Relist stopped: {0}',
+
+      // The recovery card: shown when an original was deleted but the copy
+      // never made it back onto Vinted.
+      'card.recovery.message.draft': '“{0}” was deleted and is not published yet. The copy is in your Vinted drafts. Publishing is retried on every Vinted page you open.',
+      'card.recovery.message.device': '“{0}” was deleted and is not published yet. The copy is saved on this device. Publishing is retried on every Vinted page you open.',
+      'card.recovery.reason': 'Vinted refused it: {0}',
+      'card.recovery.retry': 'Retry now',
+      'card.recovery.download': 'Download data',
+      'card.recovery.discard': 'Discard',
+
+      // The size dialog: shown when a listing cannot be relisted without a
+      // size Vinted will still accept.
+      'size.title': 'Pick a size to continue',
+      'size.body': '"{0}" cannot be relisted as it is: {1}. Choose the size the new listing should carry. Nothing has been deleted yet.',
+      'size.blank': 'Select a size',
+      'size.cancel': 'Cancel relist',
+      'size.accept': 'Use this size',
+      'size.group': 'Group {0}',
+      'size.why.required': 'this category now requires a size and the listing has none',
+      'size.why.invalid': 'size {0} is no longer valid for this category',
+      'size.unavailable': '{0}. Nothing was deleted.',
+
+      // The budget-warning modal: shown before a relist that would push the
+      // day's or hour's count high enough for Vinted to read as automation.
+      'budget.title.day': 'You have relisted a lot of items today',
+      'budget.title.hour': 'You are relisting a lot of items',
+      'budget.body.day': '{0} items have been relisted from this browser in the last 24 hours, which is a whole wardrobe going round rather than a few listings being refreshed. That is what Vinted reads as automated activity, and what it does about it is stop the account editing or publishing anything for about a day. Nothing has been deleted yet.',
+      'budget.body.hour': '{0} items have been relisted from this browser in the last hour. That is what Vinted reads as automated activity, and what it does about it is stop the account editing or publishing anything for about a day. Nothing has been deleted yet.',
+      'budget.proceed': 'Relist anyway',
+      'budget.cancel': 'Stop for now',
     },
     it: {
       'button.relist': 'Ripubblica',
@@ -58,6 +102,43 @@ const BumplineText = (() => {
       'button.deleting': 'Eliminazione…',
       'button.publishing': 'Pubblicazione…',
       'button.retrying': 'Nuovo tentativo {0}/{1}…',
+
+      'toast.pausedUntil': 'La ripubblicazione è in pausa fino alle {0}.',
+      'toast.publishPausedUntil': 'La pubblicazione è in pausa fino alle {0}.',
+      'toast.published': 'Pubblicato.',
+      'toast.relisted': 'Ripubblicato.',
+      'toast.relistedNoPhotos': 'Ripubblicato, ma la copia non ha foto. Aggiungile su Vinted.',
+      'toast.originalDeletedDraft': 'Originale eliminato. La copia si trova nelle tue bozze di Vinted.',
+      'toast.reloading': '{0} Ricaricamento…',
+      'toast.reloadToSee': '{0} Ricarica per vederlo.',
+      'toast.cantFindItem': 'Impossibile capire a quale articolo appartiene questo pulsante.',
+      'toast.resumingUnfinished': 'Una ripubblicazione di questo articolo non è stata completata. Ripresa in corso.',
+      'toast.stopped': 'Interrotto. Non è stato eliminato nulla.',
+      'toast.relistStopped': 'Ripubblicazione interrotta: {0}',
+
+      'card.recovery.message.draft': '«{0}» è stato eliminato e non è ancora pubblicato. La copia si trova nelle tue bozze di Vinted. La pubblicazione viene ritentata a ogni pagina di Vinted che apri.',
+      'card.recovery.message.device': '«{0}» è stato eliminato e non è ancora pubblicato. La copia è salvata su questo dispositivo. La pubblicazione viene ritentata a ogni pagina di Vinted che apri.',
+      'card.recovery.reason': 'Vinted l\'ha rifiutata: {0}',
+      'card.recovery.retry': 'Riprova ora',
+      'card.recovery.download': 'Scarica i dati',
+      'card.recovery.discard': 'Scarta',
+
+      'size.title': 'Scegli una taglia per continuare',
+      'size.body': '«{0}» non può essere ripubblicato così com\'è: {1}. Scegli la taglia che dovrà avere il nuovo annuncio. Non è stato ancora eliminato nulla.',
+      'size.blank': 'Seleziona una taglia',
+      'size.cancel': 'Annulla la ripubblicazione',
+      'size.accept': 'Usa questa taglia',
+      'size.group': 'Gruppo {0}',
+      'size.why.required': 'questa categoria ora richiede una taglia e l\'annuncio non ne ha una',
+      'size.why.invalid': 'la taglia {0} non è più valida per questa categoria',
+      'size.unavailable': '{0}. Non è stato eliminato nulla.',
+
+      'budget.title.day': 'Oggi hai ripubblicato molti articoli',
+      'budget.title.hour': 'Stai ripubblicando molti articoli',
+      'budget.body.day': '{0} articoli sono stati ripubblicati da questo browser nelle ultime 24 ore, il che equivale a far girare un intero armadio invece di rinfrescare qualche annuncio. Questo è ciò che Vinted interpreta come attività automatizzata, e la conseguenza è che blocca l\'account dalla modifica o dalla pubblicazione di qualsiasi cosa per circa un giorno. Non è stato ancora eliminato nulla.',
+      'budget.body.hour': '{0} articoli sono stati ripubblicati da questo browser nell\'ultima ora. Questo è ciò che Vinted interpreta come attività automatizzata, e la conseguenza è che blocca l\'account dalla modifica o dalla pubblicazione di qualsiasi cosa per circa un giorno. Non è stato ancora eliminato nulla.',
+      'budget.proceed': 'Ripubblica comunque',
+      'budget.cancel': 'Interrompi per ora',
     },
   };
 

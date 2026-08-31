@@ -566,7 +566,7 @@
   let unlockTimer = null;
 
   const clockOf = at =>
-    new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    new Date(at).toLocaleTimeString(BumplineText.locale(), { hour: '2-digit', minute: '2-digit' });
 
   // The one place lockedUntil changes. Also arms the timer that lifts the pause
   // without the page having to be reloaded.
@@ -1499,12 +1499,9 @@
 
     const name = (record.snapshot && record.snapshot.title) || itemId;
     const message = document.createElement('div');
-    message.textContent =
-      `“${name}” was deleted and is not published yet. ` +
-      (record.draft
-        ? 'The copy is in your Vinted drafts. '
-        : 'The copy is saved on this device. ') +
-      'Publishing is retried on every Vinted page you open.';
+    message.textContent = record.draft
+      ? T('card.recovery.message.draft', name)
+      : T('card.recovery.message.device', name);
     body.appendChild(message);
 
     // Vinted's own words for the refusal. They used to reach the console only,
@@ -1513,14 +1510,14 @@
     if (record.lastError) {
       const reason = document.createElement('div');
       reason.className = 'bumpline-card__why';
-      reason.textContent = `Vinted refused it: ${record.lastError}`;
+      reason.textContent = T('card.recovery.reason', record.lastError);
       body.appendChild(reason);
     }
 
     const actions = document.createElement('div');
     actions.className = 'bumpline-banner__actions';
 
-    const retry = buildButton('Retry now');
+    const retry = buildButton(T('card.recovery.retry'));
     retry.addEventListener('click', async event => {
       event.preventDefault();
       event.stopPropagation();
@@ -1528,15 +1525,15 @@
       const paused = await readBlock();
       if (paused) {
         retry.disabled = false;
-        toast(`Publishing is paused until ${clockOf(paused.until)}.`, 'bad');
+        toast(T('toast.publishPausedUntil', clockOf(paused.until)), 'bad');
         return;
       }
       const done = await advancePending(itemId, await readPending(itemId));
       retry.disabled = false;
-      if (done) await settle(itemId, 'Published.');
+      if (done) await settle(itemId, T('toast.published'));
     });
 
-    const save = buildButton('Download data');
+    const save = buildButton(T('card.recovery.download'));
     save.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
@@ -1565,7 +1562,7 @@
       setTimeout(() => URL.revokeObjectURL(href), 5000);
     });
 
-    const forget = buildButton('Discard');
+    const forget = buildButton(T('card.recovery.discard'));
     forget.addEventListener('click', async event => {
       event.preventDefault();
       event.stopPropagation();
@@ -1700,9 +1697,9 @@
       // only one who can fix it.
       const photos = published.photos;
       if (Array.isArray(photos) && !photos.length) {
-        toast('Relisted, but the copy has no photos. Add them on Vinted.', 'bad');
+        toast(T('toast.relistedNoPhotos'), 'bad');
       } else {
-        toast('Relisted.');
+        toast(T('toast.relisted'));
       }
       return newId;
     } catch (err) {
@@ -1796,7 +1793,7 @@
     if (current == null) {
       // Listings predating a catalog that has since made the size mandatory.
       // Publishing them unchanged fails with "Fill in size to continue".
-      return { ok: false, groups, why: 'this category now requires a size and the listing has none' };
+      return { ok: false, groups, why: T('size.why.required') };
     }
 
     const accepted = new Set();
@@ -1805,7 +1802,7 @@
       for (const id of group.size_ids || []) accepted.add(id);
     }
     if (!accepted.has(current)) {
-      return { ok: false, groups, why: `size ${current} is no longer valid for this category` };
+      return { ok: false, groups, why: T('size.why.invalid', current) };
     }
     return { ok: true, required: true };
   }
@@ -1868,24 +1865,22 @@
 
       const heading = document.createElement('div');
       heading.className = 'bumpline-modal__title';
-      heading.textContent = 'Pick a size to continue';
+      heading.textContent = T('size.title');
 
       const body = document.createElement('div');
       body.className = 'bumpline-modal__body';
-      body.textContent =
-        `"${title}" cannot be relisted as it is: ${why}. Choose the size the new ` +
-        'listing should carry. Nothing has been deleted yet.';
+      body.textContent = T('size.body', title, why);
 
       const picker = document.createElement('select');
       picker.className = 'bumpline-modal__picker';
       const blank = document.createElement('option');
       blank.value = '';
-      blank.textContent = 'Select a size';
+      blank.textContent = T('size.blank');
       picker.appendChild(blank);
 
       for (const group of groups) {
         const section = document.createElement('optgroup');
-        section.label = group.description || group.caption || `Group ${group.id}`;
+        section.label = group.description || group.caption || T('size.group', group.id);
         for (const size of group.sizes || []) {
           const choice = document.createElement('option');
           choice.value = String(size.id);
@@ -1898,7 +1893,7 @@
       const actions = document.createElement('div');
       actions.className = 'bumpline-modal__actions';
 
-      const cancel = buildButton('Cancel relist');
+      const cancel = buildButton(T('size.cancel'));
       cancel.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
@@ -1906,7 +1901,7 @@
         resolve(null);
       });
 
-      const accept = buildButton('Use this size');
+      const accept = buildButton(T('size.accept'));
       accept.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
@@ -2044,12 +2039,12 @@
   // no longer exists and say plainly that the rest of the page is stale.
   async function settle(itemId, message) {
     if (await reloadWanted()) {
-      toast(`${message} Reloading…`);
+      toast(T('toast.reloading', message));
       setTimeout(() => location.reload(), 1200);
       return;
     }
     dropCard(itemId);
-    toast(`${message} Reload to see it.`);
+    toast(T('toast.reloadToSee', message));
   }
 
   // ===========================================================================
@@ -2059,7 +2054,7 @@
   async function relist(button, mode) {
     const itemId = itemIdFor(button);
     if (!itemId) {
-      toast('Could not tell which item that button belongs to.', 'bad');
+      toast(T('toast.cantFindItem'), 'bad');
       return;
     }
 
@@ -2067,7 +2062,7 @@
     // before starting anything new.
     const outstanding = await readPending(itemId);
     if (outstanding) {
-      toast('An unfinished relist of this item. Resuming it.', 'bad');
+      toast(T('toast.resumingUnfinished'), 'bad');
       await advancePending(itemId, outstanding);
       return;
     }
@@ -2087,7 +2082,7 @@
       const paused = await readBlock();
       if (paused) {
         applyLock(paused);
-        toast(`Relisting is paused until ${clockOf(paused.until)}.`, 'bad');
+        toast(T('toast.pausedUntil', clockOf(paused.until)), 'bad');
         return;
       }
 
@@ -2109,24 +2104,15 @@
       if (overDay || thisHour >= HOUR_ALARM_AT) {
         setButtonLabel(button, T('button.waiting'));
         const carryOn = await askToContinue({
-          title: overDay
-            ? 'You have relisted a lot of items today'
-            : 'You are relisting a lot of items',
-          body:
-            (overDay
-              ? `${today} items have been relisted from this browser in the ` +
-                'last 24 hours, which is a whole wardrobe going round rather ' +
-                'than a few listings being refreshed. '
-              : `${thisHour} items have been relisted from this browser in the ` +
-                'last hour. ') +
-            'That is what Vinted reads as automated activity, and what it does ' +
-            'about it is stop the account editing or publishing anything for ' +
-            'about a day. Nothing has been deleted yet.',
-          proceed: 'Relist anyway',
-          cancel: 'Stop for now',
+          title: overDay ? T('budget.title.day') : T('budget.title.hour'),
+          body: overDay
+            ? T('budget.body.day', today)
+            : T('budget.body.hour', thisHour),
+          proceed: T('budget.proceed'),
+          cancel: T('budget.cancel'),
         });
         if (!carryOn) {
-          toast('Stopped. Nothing was deleted.');
+          toast(T('toast.stopped'));
           return;
         }
       }
@@ -2212,7 +2198,7 @@
       const size = await inspectSize(source, csrf);
       if (!size.ok) {
         if (!size.groups || !size.groups.length) {
-          throw new Error(`${size.why}. Nothing was deleted.`);
+          throw new Error(T('size.unavailable', size.why));
         }
         setButtonLabel(button, T('button.waitingSize'));
         const chosen = await askForSize(size.groups, item.title, size.why);
@@ -2296,7 +2282,7 @@
       if (draftOnly) {
         // The draft is the finished result, not something still pending.
         await forgetPending(itemId);
-        await settle(itemId, 'Original deleted. The copy is in your Vinted drafts.');
+        await settle(itemId, T('toast.originalDeletedDraft'));
         return;
       }
 
@@ -2305,12 +2291,12 @@
       const newId = await advancePending(itemId, record, (attempt, total) => {
         setButtonLabel(button, attempt === 1 ? T('button.publishing') : T('button.retrying', attempt, total));
       });
-      if (newId) await settle(itemId, 'Relisted.');
+      if (newId) await settle(itemId, T('toast.relisted'));
       // On failure advancePending has already stored the record and raised the
       // banner, and the next page load will try again.
     } catch (err) {
       console.error('[Bumpline]', err);
-      toast(`Relist stopped: ${(err && err.message) || err}`, 'bad');
+      toast(T('toast.relistStopped', (err && err.message) || err), 'bad');
     } finally {
       button.disabled = false;
       button.classList.remove('is-busy');
