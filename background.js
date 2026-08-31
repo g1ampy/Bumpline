@@ -36,7 +36,7 @@ const COUNTRY_DOMAINS = [
   'vinted.es', 'vinted.fi', 'vinted.fr', 'vinted.gr', 'vinted.hr',
   'vinted.hu', 'vinted.ie', 'vinted.it', 'vinted.lt', 'vinted.lv',
   'vinted.nl', 'vinted.no', 'vinted.pl', 'vinted.pt', 'vinted.ro',
-  'vinted.se', 'vinted.si', 'vinted.sk',
+  'vinted.se', 'vinted.si', 'vinted.sk', 'vinted.com.au',
 ];
 
 // Both shapes appear in the wild: /api/... at the root, and /<locale>/api/...

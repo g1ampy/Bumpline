@@ -5,6 +5,23 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-08-31
+
+Vinted opened an Australian site on a domain of its own, `vinted.com.au`, and
+every list of country domains in the extension was written before that domain
+existed. The catch-all patterns do not stretch to it either: `*.vinted.com`
+matches a subdomain of `vinted.com`, which `vinted.com.au` is not. On the
+Australian site the buttons simply never appeared.
+
+### Added
+
+- **Australia (`www.vinted.com.au`).** The domain is now named in all four
+  places a country site has to be named for a relist to work: the host
+  permissions, the pages `bridge.js` may be loaded into, the wardrobe pages
+  `content.js` runs on, and the request filter the service worker reads the
+  Vinted tokens from. Everything a relist does on the Australian site is what it
+  does everywhere else; nothing about the relist itself changed.
+
 ## [1.0.1] - 2026-08-30
 
 Vinted answers traffic that looks automated with a temporary block on editing
@@ -534,6 +551,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.0.2]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.2
 [1.0.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.1
 [1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
 [0.3.0]: https://github.com/g1ampy/Bumpline/releases/tag/v0.3.0

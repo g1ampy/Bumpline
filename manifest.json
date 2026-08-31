@@ -91,7 +91,8 @@
         "https://www.vinted.ro/*",
         "https://www.vinted.se/*",
         "https://www.vinted.si/*",
-        "https://www.vinted.sk/*"
+        "https://www.vinted.sk/*",
+        "https://www.vinted.com.au/*"
       ]
     }
   ],
@@ -125,7 +126,8 @@
         "https://www.vinted.ro/member/*",
         "https://www.vinted.se/member/*",
         "https://www.vinted.si/member/*",
-        "https://www.vinted.sk/member/*"
+        "https://www.vinted.sk/member/*",
+        "https://www.vinted.com.au/member/*"
       ],
       "js": [
         "content.js"
