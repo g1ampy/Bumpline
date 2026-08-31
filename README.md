@@ -443,7 +443,7 @@ fails, the draft is removed with `DELETE /api/v2/item_upload/drafts/<id>` so
 nothing is left lying around.
 
 Every endpoint is built from the page's own `location.origin`, which is why all
-[28 Vinted country domains][Domains] work with no configuration.
+[29 Vinted country domains][Domains] work with no configuration.
 
 ## Limitations
 
