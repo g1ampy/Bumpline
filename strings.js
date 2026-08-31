@@ -86,6 +86,20 @@ const BumplineText = (() => {
       'budget.body.hour': '{0} items have been relisted from this browser in the last hour. That is what Vinted reads as automated activity, and what it does about it is stop the account editing or publishing anything for about a day. Nothing has been deleted yet.',
       'budget.proceed': 'Relist anyway',
       'budget.cancel': 'Stop for now',
+
+      // Pre-flight guard checks inside relist(): none of these are Vinted's
+      // text (contrast record.lastError), so they reach the seller through
+      // the toast.relistStopped wrapper same as any other Bumpline copy.
+      'relist.error.noPhoto': 'No photo could be uploaded. Nothing was deleted.',
+      'relist.error.photosIncomplete': 'Only {0} of {1} photos uploaded ({2} failed). Nothing was deleted, so try again in a moment.',
+      'relist.error.noTitle': 'The listing has no title. Nothing was deleted.',
+      'relist.error.noCondition': 'Could not read the item condition, and relisting it with the wrong one would be worse than stopping. Nothing was deleted.',
+      'relist.error.copyNotSaved': 'The copy could not be saved on this device, and without it the original cannot be deleted safely. Nothing was deleted.',
+      'size.cancelled': 'Cancelled. Nothing was deleted.',
+
+      // The age line painted under every wardrobe item.
+      'age.today': 'Created today',
+      'age.daysAgo': 'Created {0} days ago',
     },
     it: {
       'button.relist': 'Ripubblica',
@@ -121,7 +135,7 @@ const BumplineText = (() => {
       'card.recovery.reason': 'Vinted l\'ha rifiutata: {0}',
       'card.recovery.retry': 'Riprova ora',
       'card.recovery.download': 'Scarica i dati',
-      'card.recovery.discard': 'Scarta',
+      'card.recovery.discard': 'Scarta la copia',
 
       'size.title': 'Scegli una taglia per continuare',
       'size.body': '«{0}» non può essere ripubblicato così com\'è: {1}. Scegli la taglia che dovrà avere il nuovo annuncio. Non è stato ancora eliminato nulla.',
@@ -135,10 +149,20 @@ const BumplineText = (() => {
 
       'budget.title.day': 'Oggi hai ripubblicato molti articoli',
       'budget.title.hour': 'Stai ripubblicando molti articoli',
-      'budget.body.day': '{0} articoli sono stati ripubblicati da questo browser nelle ultime 24 ore, il che equivale a far girare un intero armadio invece di rinfrescare qualche annuncio. Questo è ciò che Vinted interpreta come attività automatizzata, e la conseguenza è che blocca l\'account dalla modifica o dalla pubblicazione di qualsiasi cosa per circa un giorno. Non è stato ancora eliminato nulla.',
-      'budget.body.hour': '{0} articoli sono stati ripubblicati da questo browser nell\'ultima ora. Questo è ciò che Vinted interpreta come attività automatizzata, e la conseguenza è che blocca l\'account dalla modifica o dalla pubblicazione di qualsiasi cosa per circa un giorno. Non è stato ancora eliminato nulla.',
+      'budget.body.day': '{0} articoli sono stati ripubblicati da questo browser nelle ultime 24 ore, che equivale a ripubblicare un armadio intero invece di rinfrescare qualche annuncio. Questo è ciò che Vinted interpreta come attività automatizzata, e la conseguenza è che impedisce all\'account di modificare o pubblicare qualsiasi cosa per circa un giorno. Non è stato ancora eliminato nulla.',
+      'budget.body.hour': '{0} articoli sono stati ripubblicati da questo browser nell\'ultima ora. Questo è ciò che Vinted interpreta come attività automatizzata, e la conseguenza è che impedisce all\'account di modificare o pubblicare qualsiasi cosa per circa un giorno. Non è stato ancora eliminato nulla.',
       'budget.proceed': 'Ripubblica comunque',
       'budget.cancel': 'Interrompi per ora',
+
+      'relist.error.noPhoto': 'Nessuna foto è stata caricata. Non è stato eliminato nulla.',
+      'relist.error.photosIncomplete': 'Caricate solo {0} foto su {1} ({2} non riuscite). Non è stato eliminato nulla, riprova tra un momento.',
+      'relist.error.noTitle': 'L\'annuncio non ha un titolo. Non è stato eliminato nulla.',
+      'relist.error.noCondition': 'Non è stato possibile leggere le condizioni dell\'articolo, e ripubblicarlo con quelle sbagliate sarebbe peggio che fermarsi. Non è stato eliminato nulla.',
+      'relist.error.copyNotSaved': 'Non è stato possibile salvare la copia su questo dispositivo, e senza di essa l\'originale non può essere eliminato in sicurezza. Non è stato eliminato nulla.',
+      'size.cancelled': 'Annullato. Non è stato eliminato nulla.',
+
+      'age.today': 'Creato oggi',
+      'age.daysAgo': 'Creato {0} giorni fa',
     },
   };
 

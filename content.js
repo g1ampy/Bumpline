@@ -1268,7 +1268,7 @@
     return days;
   }
 
-  const ageLabel = days => (days <= 0 ? 'Created today' : `Created ${days} days ago`);
+  const ageLabel = days => (days <= 0 ? T('age.today') : T('age.daysAgo', days));
 
   async function loadWardrobePage(page) {
     const member = currentMemberId();
@@ -2176,33 +2176,31 @@
 
       // --- checks that can be made while the original is still safe
       if (!assigned.length) {
-        throw new Error('No photo could be uploaded. Nothing was deleted.');
+        throw new Error(T('relist.error.noPhoto'));
       }
       if (photoUrls.length && assigned.length < photoUrls.length) {
-        throw new Error(
-          `Only ${assigned.length} of ${photoUrls.length} photos uploaded ` +
-            `(${failures} failed). Nothing was deleted, so try again in a moment.`
-        );
+        throw new Error(T('relist.error.photosIncomplete', assigned.length, photoUrls.length, failures));
       }
       if (!item.title) {
-        throw new Error('The listing has no title. Nothing was deleted.');
+        throw new Error(T('relist.error.noTitle'));
       }
       if (conditionId == null) {
-        throw new Error(
-          'Could not read the item condition, and relisting it with the wrong one ' +
-            'would be worse than stopping. Nothing was deleted.'
-        );
+        throw new Error(T('relist.error.noCondition'));
       }
 
       setButtonLabel(button, T('button.checkingSize'));
       const size = await inspectSize(source, csrf);
       if (!size.ok) {
         if (!size.groups || !size.groups.length) {
+          // size.why is already translated by inspectSize; a bare English
+          // tail glued onto it here would have produced a mixed-language
+          // sentence, so the tail gets its own key (size.unavailable)
+          // instead of being appended as a literal.
           throw new Error(T('size.unavailable', size.why));
         }
         setButtonLabel(button, T('button.waitingSize'));
         const chosen = await askForSize(size.groups, item.title, size.why);
-        if (!chosen) throw new Error('Cancelled. Nothing was deleted.');
+        if (!chosen) throw new Error(T('size.cancelled'));
         item.size_id = chosen;
         item.item_attributes = withSize(item.item_attributes, chosen);
         snapshot.size_id = chosen;
@@ -2252,10 +2250,7 @@
       } catch (err) {
         trace('could not cache photos', err);
         if (!draft) {
-          throw new Error(
-            'The copy could not be saved on this device, and without it the ' +
-              'original cannot be deleted safely. Nothing was deleted.'
-          );
+          throw new Error(T('relist.error.copyNotSaved'));
         }
       }
       await savePending(itemId, record);
