@@ -23,7 +23,7 @@
   const ext = globalThis.browser ?? globalThis.chrome;
 
   // The words, in the seller's language. One letter because the file says it
-  // several hundred times.
+  // 15 times.
   const T = (key, ...subs) => BumplineText.t(key, ...subs);
 
   // Every request is derived from the page we are on, which is what makes the
