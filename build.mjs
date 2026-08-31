@@ -45,6 +45,11 @@ const PAYLOAD = [
   // Which store this copy came from, read by both the panel and the page shown
   // after install.
   'store.js',
+  // Both languages, and the two keys only the manifest can localise. Neither is
+  // named in a manifest key the packer follows, so an unlisted file would not
+  // ship and the extension would load without a word in it.
+  'strings.js',
+  '_locales',
   'welcome',
   // Inter, the typeface the shadcn preset asks for. Manifest v3 refuses a
   // remote font, so the two Latin subsets ship with the extension, and OFL.txt
@@ -229,9 +234,55 @@ function build(target, manifest) {
   console.log(`${target}: ${relative(ROOT, archive)} (${entries.length} files, ${size} kB)`);
 }
 
+// The two catalogues have to hold the same keys, and every key the code asks
+// for has to be in them. Nothing else in this repository is tested, so the
+// check runs where the package is made: a translation that drifted is caught
+// before it is uploaded rather than by a seller reading a key name on a button.
+function checkCatalogues() {
+  const source = readFileSync(join(ROOT, 'strings.js'), 'utf8');
+  const { CATALOG } = new Function(
+    'navigator', 'document',
+    source + '; return BumplineText;',
+  )({ language: 'en' }, { querySelectorAll: () => [], documentElement: {} });
+
+  const languages = Object.keys(CATALOG);
+  const complaints = [];
+
+  for (const lang of languages) {
+    for (const other of languages) {
+      for (const key of Object.keys(CATALOG[other])) {
+        if (!(key in CATALOG[lang])) complaints.push(`${lang} is missing ${key}`);
+      }
+    }
+  }
+
+  // Every t('…') written in the code, and every data-i18n attribute in the two
+  // pages, has to name a key that exists.
+  const CONSUMERS = [
+    'content.js', 'popup.js', 'popup.html',
+    join('welcome', 'script.js'), join('welcome', 'index.html'),
+  ];
+  for (const file of CONSUMERS) {
+    const text = readFileSync(join(ROOT, file), 'utf8');
+    const asked = [
+      ...text.matchAll(/\b[tT]\(\s*'([^']+)'/g),
+      ...text.matchAll(/data-i18n(?:-title|-label)?="([^"]+)"/g),
+    ].map(match => match[1]);
+    for (const key of asked) {
+      if (!(key in CATALOG.en)) complaints.push(`${file} asks for ${key}, which en does not have`);
+    }
+  }
+
+  if (complaints.length) {
+    throw new Error(`the catalogues disagree:\n  ${complaints.join('\n  ')}`);
+  }
+}
+
 const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const asked = process.argv.slice(2);
 const wanted = asked.length ? asked : Object.keys(TARGETS);
+
+checkCatalogues();
 
 for (const target of wanted) {
   if (!TARGETS[target]) {

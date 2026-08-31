@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Bumpline - Relister for Vinted",
+  "name": "__MSG_extName__",
   "version": "1.0.2",
-  "description": "One-click Vinted relister: copies photos and details. Nothing is deleted until the copy is ready. Your item goes back on top.",
+  "default_locale": "en",
+  "description": "__MSG_extDescription__",
   "minimum_chrome_version": "111",
   "icons": {
     "16": "icons/icon16.png",
@@ -130,6 +131,7 @@
         "https://www.vinted.com.au/member/*"
       ],
       "js": [
+        "strings.js",
         "content.js"
       ],
       "run_at": "document_idle"

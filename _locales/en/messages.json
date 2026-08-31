@@ -1,0 +1,9 @@
+{
+  "extName": {
+    "message": "Bumpline - Relister for Vinted",
+    "description": "The store name. Deliberately the same in every language: one searchable brand is worth more than a translated one, and the store caps it at 28 characters."
+  },
+  "extDescription": {
+    "message": "One-click Vinted relister: copies photos and details. Nothing is deleted until the copy is ready. Your item goes back on top."
+  }
+}
