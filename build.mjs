@@ -256,8 +256,9 @@ function checkCatalogues() {
     }
   }
 
-  // Every t('…') written in the code, and every data-i18n attribute in the two
-  // pages, has to name a key that exists.
+  // Every t('…') written in the code — single-quoted, double-quoted or
+  // backtick-quoted — and every data-i18n attribute in the two pages, has to
+  // name a key that exists.
   const CONSUMERS = [
     'content.js', 'popup.js', 'popup.html',
     join('welcome', 'script.js'), join('welcome', 'index.html'),
@@ -265,9 +266,9 @@ function checkCatalogues() {
   for (const file of CONSUMERS) {
     const text = readFileSync(join(ROOT, file), 'utf8');
     const asked = [
-      ...text.matchAll(/\b[tT]\(\s*'([^']+)'/g),
-      ...text.matchAll(/data-i18n(?:-title|-label)?="([^"]+)"/g),
-    ].map(match => match[1]);
+      ...[...text.matchAll(/\b[tT]\(\s*(['"`])([^'"`]+)\1/g)].map(match => match[2]),
+      ...[...text.matchAll(/data-i18n(?:-title|-label)?="([^"]+)"/g)].map(match => match[1]),
+    ];
     for (const key of asked) {
       if (!(key in CATALOG.en)) complaints.push(`${file} asks for ${key}, which en does not have`);
     }
