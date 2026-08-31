@@ -68,6 +68,7 @@
   const BLOCK_KEY = 'bumpline:blockedUntil';
   const REFUSAL_LOG_KEY = 'bumpline:refusalLog';
   const ENABLED_KEY = 'bumpline:enabled';
+  const LANG_KEY = 'bumpline:lang';
   const DB_NAME = 'bumpline';
   const DB_STORE = 'photos';
 
@@ -537,6 +538,29 @@
       // and so does broken.
       return true;
     }
+  }
+
+  // 'auto' is the default and the fallback: an unreadable storage is not a
+  // seller who asked for English, it is a question that could not be answered.
+  async function readLanguage() {
+    try {
+      const bag = await ext.storage.local.get(LANG_KEY);
+      return bag[LANG_KEY] || 'auto';
+    } catch (_) {
+      return 'auto';
+    }
+  }
+
+  // The words are already in memory, so the ordinary case — no override — has
+  // nothing to repaint: the buttons were born in the right language. Only a
+  // seller who overruled the browser pays for a second paint, and removeOurUi
+  // is what the switch uses for the same job.
+  function applyLanguage(lang) {
+    const before = BumplineText.locale();
+    BumplineText.use(lang);
+    if (BumplineText.locale() === before) return;
+    removeOurUi();
+    attachButtons();
   }
 
   // Everything this extension put on the page, taken back off it. A relist
@@ -2397,6 +2421,7 @@
     // The switch first: a pause repainted onto a page the extension has just
     // left would be the only thing on it.
     if (ENABLED_KEY in changes) applyEnabled(changes[ENABLED_KEY].newValue !== false);
+    if (LANG_KEY in changes) applyLanguage(changes[LANG_KEY].newValue || 'auto');
     if (BLOCK_KEY in changes) applyLock(changes[BLOCK_KEY].newValue);
   });
 
@@ -2409,6 +2434,10 @@
     subtree: true,
   });
 
+  // The language has to be settled before anything is drawn, or the first
+  // paint is in the wrong tongue and applyLanguage has to redo it a moment
+  // later.
+  readLanguage().then(applyLanguage);
   // The switch decides whether there is anything to draw at all, so it is read
   // before the first attempt rather than after it.
   readEnabled().then(applyEnabled);
