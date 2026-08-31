@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Bumpline - Relist for Vinted",
-  "version": "1.0.1",
-  "description": "Relist your own Vinted items in one click. Bumpline copies every field and photo, and the listing returns to the top of results.",
+  "name": "Bumpline - Relister for Vinted",
+  "version": "1.0.2",
+  "description": "One-click Vinted relister: copies photos and details. Nothing is deleted until the copy is ready. Your item goes back on top.",
   "minimum_chrome_version": "111",
   "icons": {
     "16": "icons/icon16.png",
@@ -53,6 +53,7 @@
     "https://www.vinted.se/*",
     "https://www.vinted.si/*",
     "https://www.vinted.sk/*",
+    "https://www.vinted.com.au/*",
     "https://*.vinted.com/*",
     "https://*.vinted.net/*"
   ],
