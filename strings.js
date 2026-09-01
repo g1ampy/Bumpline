@@ -225,9 +225,9 @@ const BumplineText = (() => {
 
       // The footer: two links that are always the same, and a rating link
       // that only appears once store.js has worked out where it goes.
-      'popup.footer.howItWorks': 'How it works',
-      'popup.footer.reportProblem': 'Report a problem',
-      'popup.footer.rate': 'Rate Bumpline',
+      'footer.howItWorks': 'How it works',
+      'footer.reportProblem': 'Report a problem',
+      'footer.rate': 'Rate Bumpline',
 
       // --- the page after the install -----------------------------------
       // Read once, by welcome/script.js, right after the extension is
@@ -245,12 +245,10 @@ const BumplineText = (() => {
       'welcome.step1.artLabel': 'A Chrome window on a Vinted page. The puzzle piece to the right of the address bar is open, and the extensions menu lists Bumpline with a pin beside it.',
 
       'welcome.step2.title': 'Go to your own wardrobe',
-      // The bold Relist / Relist as draft this sentence used to carry are
-      // written out in full here instead: paint() replaces a node's whole
-      // textContent, so a <b> nested inside it would be lost the moment the
-      // page is painted, English or Italian.
-      'welcome.step2.note': 'That is where the buttons turn up. Every item of yours still for sale gets a Relist and a Relist as draft, right beside it. Only on your things. Nobody else’s listings are touched.',
-      'welcome.step2.aside': 'Nothing is thrown away first. The copy is made before the old listing goes, so your item is never in limbo. Relist puts it straight back up; Relist as draft stops one step short of publishing, in case you want to look it over first.',
+      // Read through data-i18n-html, not data-i18n: these two carry their own
+      // <b>/<i> emphasis, which plain textContent painting would strip.
+      'welcome.step2.note': 'That is where the buttons turn up. Every item of yours still for sale gets a <b>Relist</b> and a <b>Relist as draft</b>, right beside it. Only on your things. Nobody else’s listings are touched.',
+      'welcome.step2.aside': 'Nothing is thrown away first. The copy is made <i>before</i> the old listing goes, so your item is never in limbo. <b>Relist</b> puts it straight back up; <b>Relist as draft</b> stops one step short of publishing, in case you want to look it over first.',
       'welcome.step2.artLabel': 'A listing on your own wardrobe, with a Relist button and a Relist as draft button below it.',
 
       'welcome.rate.title': 'If it saves you time, say so',
@@ -407,9 +405,9 @@ const BumplineText = (() => {
       'popup.pending.note.draft': 'La copia si trova anche nelle tue bozze di Vinted.',
       'popup.pending.note.device': 'La copia è salvata su questo dispositivo.',
 
-      'popup.footer.howItWorks': 'Come funziona',
-      'popup.footer.reportProblem': 'Segnala un problema',
-      'popup.footer.rate': 'Vota Bumpline',
+      'footer.howItWorks': 'Come funziona',
+      'footer.reportProblem': 'Segnala un problema',
+      'footer.rate': 'Vota Bumpline',
 
       'welcome.title': 'Benvenuto in Bumpline',
       'welcome.hero.title': 'Grazie per aver installato Bumpline',
@@ -421,8 +419,8 @@ const BumplineText = (() => {
       'welcome.step1.artLabel': 'Una finestra di Chrome su una pagina Vinted. Il pezzo di puzzle a destra della barra degli indirizzi è aperto, e il menu delle estensioni mostra Bumpline con una puntina accanto.',
 
       'welcome.step2.title': 'Vai al tuo armadio',
-      'welcome.step2.note': 'È lì che compaiono i pulsanti. Ogni tuo articolo ancora in vendita riceve un pulsante Ripubblica e uno Ripubblica come bozza, proprio accanto. Solo sulle tue cose. Nessun annuncio altrui viene toccato.',
-      'welcome.step2.aside': 'Niente viene buttato via prima. La copia viene creata prima che il vecchio annuncio venga eliminato, così il tuo articolo non resta mai in sospeso. Ripubblica lo rimette subito in vendita; Ripubblica come bozza si ferma un passo prima della pubblicazione, nel caso tu voglia ricontrollarlo prima.',
+      'welcome.step2.note': 'È lì che compaiono i pulsanti. Ogni tuo articolo ancora in vendita riceve un pulsante <b>Ripubblica</b> e uno <b>Ripubblica come bozza</b>, proprio accanto. Solo sulle tue cose. Nessun annuncio altrui viene toccato.',
+      'welcome.step2.aside': 'Niente viene buttato via prima. La copia viene creata <i>prima</i> che il vecchio annuncio venga eliminato, così il tuo articolo non resta mai in sospeso. <b>Ripubblica</b> lo rimette subito in vendita; <b>Ripubblica come bozza</b> si ferma un passo prima della pubblicazione, nel caso tu voglia ricontrollarlo prima.',
       'welcome.step2.artLabel': 'Un annuncio nel tuo armadio, con un pulsante Ripubblica e un pulsante Ripubblica come bozza sotto di esso.',
 
       'welcome.rate.title': 'Se ti ha fatto risparmiare tempo, dillo',
@@ -476,6 +474,14 @@ const BumplineText = (() => {
   function paint(root = document) {
     for (const node of root.querySelectorAll('[data-i18n]')) {
       node.textContent = t(node.dataset.i18n);
+    }
+    // innerHTML only ever runs on CATALOG's own values — authored in this
+    // file, never a page's, a seller's, or Vinted's — so there is nothing
+    // here for an attacker to inject. It exists for the handful of sentences
+    // that carry their own emphasis (a <b>, an <i>) that textContent would
+    // otherwise strip; data-i18n stays the default for everything else.
+    for (const node of root.querySelectorAll('[data-i18n-html]')) {
+      node.innerHTML = t(node.dataset.i18nHtml);
     }
     for (const node of root.querySelectorAll('[data-i18n-title]')) {
       node.title = t(node.dataset.i18nTitle);

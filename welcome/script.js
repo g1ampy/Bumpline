@@ -38,8 +38,7 @@ const ext = globalThis.browser ?? globalThis.chrome;
 
   // The version, so a bug report can say which build the reader is looking
   // at. A hand-built debug package sets version_name; a store one has none
-  // and falls back to the plain version. The number itself is never
-  // translated, only the word in front of it.
+  // and falls back to the plain version.
   const build = ext.runtime.getManifest();
   document.getElementById('version').textContent =
     BumplineText.t('welcome.version', build.version_name || build.version);

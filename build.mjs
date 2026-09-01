@@ -267,7 +267,7 @@ function checkCatalogues() {
     const text = readFileSync(join(ROOT, file), 'utf8');
     const asked = [
       ...[...text.matchAll(/\b[tT]\(\s*(['"`])([^'"`]+)\1/g)].map(match => match[2]),
-      ...[...text.matchAll(/data-i18n(?:-title|-label)?="([^"]+)"/g)].map(match => match[1]),
+      ...[...text.matchAll(/data-i18n(?:-title|-label|-html)?="([^"]+)"/g)].map(match => match[1]),
     ];
     for (const key of asked) {
       if (!(key in CATALOG.en)) complaints.push(`${file} asks for ${key}, which en does not have`);
