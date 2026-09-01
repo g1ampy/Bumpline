@@ -165,6 +165,20 @@
           <input class="toggle" type="checkbox" id="reload-toggle" role="switch" checked>
         </label>
 
+        <!-- The browser is asked first and is right nearly always; this is for
+             the seller it is wrong about — an Italian wardrobe read in a
+             browser someone else set up in English. -->
+        <p class="setting__group" data-i18n="popup.lang.group">Language</p>
+
+        <label class="switch">
+          <span class="switch__label" data-i18n="popup.lang.label">Language</span>
+          <select class="setting__select" id="lang-select">
+            <option value="auto" data-i18n="popup.lang.auto">Automatic (browser language)</option>
+            <option value="en">English</option>
+            <option value="it">Italiano</option>
+          </select>
+        </label>
+
         <!-- Out of sight, not out of the build. The switch is still wired and the
              stored value is still what the page reads on every relist; only the
              row is hidden. Take the hidden attribute off to bring it back. -->

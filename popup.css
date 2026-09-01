@@ -687,6 +687,19 @@ body {
    above a group heading stays, because that is where the subject changes. */
 .switch + .switch { margin-top: 20px; }
 
+/* The language row's control is a <select>, not a checkbox, so it needs its
+   own look rather than .toggle's. Same tokens as .button--quiet: the panel's
+   own border and background, so it reads as part of this drawer rather than
+   as a browser-default control dropped into it. */
+.setting__select {
+  font: inherit;
+  color: var(--foreground);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 8px;
+}
+
 /* --- the risk gate ------------------------------------------------------ */
 
 /* Two buttons side by side, and the safe one first: the reading order is the

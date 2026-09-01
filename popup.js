@@ -553,6 +553,9 @@ const SETTING_DEFAULTS = {
   reload: true,
   cooldown: true,
   paced: true,
+  // Automatic is the default, and a seller who set their own language does not
+  // need the drawer telling them so.
+  lang: 'auto',
 };
 
 // Writes the value and keeps the checkbox honest: if the write fails the box
@@ -637,6 +640,27 @@ function wireSettings(stored) {
     accept: BumplineText.t('popup.risk.pace.accept'),
     cancel: BumplineText.t('popup.risk.pace.cancel'),
   }, note('paced'), checked => (checked ? 'safe' : 'fast'));
+
+  // Not a toggle, so it wires itself: the value is the setting, and a failed
+  // write puts the box back where it was rather than showing a language the
+  // extension is not in.
+  const langBox = document.getElementById('lang-select');
+  langBox.value = stored.lang;
+  langBox.addEventListener('change', async () => {
+    const wanted = langBox.value;
+    const before = stored.lang;
+    try {
+      await ext.storage.local.set({ [LANG_KEY]: wanted });
+    } catch (_) {
+      langBox.value = before;
+      return;
+    }
+    stored.lang = wanted;
+    // The panel is the one page that does not hear its own storage change.
+    BumplineText.use(wanted);
+    BumplineText.paint();
+    paint();
+  });
 }
 
 // The master switch. Off is the safe direction — nothing is sent to Vinted

@@ -172,6 +172,13 @@ const BumplineText = (() => {
       'popup.settings.pace.hint': 'Recommended. Off shortens it to 0.25 to 0.7s, fast enough to read as an automated script.',
       'popup.settings.reload.label': 'Reload the page',
       'popup.settings.reload.hint': 'Off keeps your place on the page; the relisted copy appears at your next reload.',
+      // The browser is asked first and is right nearly always; this row is for
+      // the seller it is wrong about. The two language names in the list are
+      // not translated — a person scanning for their own language wants to
+      // see it written the way it is written, not the way English names it.
+      'popup.lang.group': 'Language',
+      'popup.lang.label': 'Language',
+      'popup.lang.auto': 'Automatic (browser language)',
       'popup.settings.localDrafts.label': 'Keep the copy on this device',
       'popup.settings.localDrafts.hint': 'Relist button only. Off saves a draft to your Vinted account first, as in versions before 1.0.1.',
 
@@ -330,6 +337,9 @@ const BumplineText = (() => {
       'popup.settings.pace.hint': 'Consigliato. Se lo disattivi, si riduce a 0,25-0,7 secondi: abbastanza veloce da sembrare uno script automatico.',
       'popup.settings.reload.label': 'Ricarica la pagina',
       'popup.settings.reload.hint': 'Se disattivato, resti dove sei sulla pagina; la copia ripubblicata appare al prossimo ricaricamento.',
+      'popup.lang.group': 'Lingua',
+      'popup.lang.label': 'Lingua',
+      'popup.lang.auto': 'Automatica (lingua del browser)',
       'popup.settings.localDrafts.label': 'Tieni la copia su questo dispositivo',
       'popup.settings.localDrafts.hint': 'Solo per il pulsante Ripubblica. Se disattivato, salva prima una bozza sul tuo account Vinted, come nelle versioni precedenti alla 1.0.1.',
 
