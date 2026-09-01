@@ -12,10 +12,9 @@ panel — the two relist buttons and their progress labels, the toasts in the
 corner, the recovery card, the size dialog, the budget-warning modal, the age
 line under each item, the whole toolbar panel including both of its warning
 dialogs, and the page shown once after install — exists in Italian as well as
-English now, held in one catalogue loaded before every page that draws from
-it. Nothing about the relist changed: the same fields, the same photos, the
-same two buttons, and the same rule that nothing is deleted before the copy
-exists.
+English now, one catalogue loaded by each page before it draws. Nothing about
+the relist changed: the same fields, the same photos, the same two buttons,
+and the same rule that nothing is deleted before the copy exists.
 
 Which language opens is decided by the browser's own language, the same
 signal Chrome and Firefox already hand every extension, and it can be
@@ -32,7 +31,7 @@ nothing needs a reload to catch up.
   that reads from it — the two extension pages read it through `data-i18n`
   attributes on their own markup, and the content script through direct calls.
   The manifest's name and description are translated too, through
-  `_locales/it`; the name itself is not — "Bumpline - Relist for Vinted"
+  `_locales/it`; the name itself is not — "Bumpline - Relister for Vinted"
   stays the same in every language, the way a product name does.
 - **A Lingua setting.** A new row in the panel's settings drawer lets a seller
   choose Italian or English regardless of what the browser reports, stored as
