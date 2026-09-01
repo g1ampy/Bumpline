@@ -228,6 +228,37 @@ const BumplineText = (() => {
       'popup.footer.howItWorks': 'How it works',
       'popup.footer.reportProblem': 'Report a problem',
       'popup.footer.rate': 'Rate Bumpline',
+
+      // --- the page after the install -----------------------------------
+      // Read once, by welcome/script.js, right after the extension is
+      // installed. It reuses button.relist, button.draft and the popup's
+      // footer keys rather than repeating them, so the illustration and the
+      // links always match what the panel itself says.
+
+      'welcome.title': 'Welcome to Bumpline',
+      'welcome.hero.title': 'Thanks for installing Bumpline',
+      'welcome.hero.lead': 'Relisting an item used to mean retyping the title, the description and every last photo. From now on it is one button. Nothing to set up here either: two quick steps and you can close this tab for good.',
+
+      'welcome.step1.title': 'Pin Bumpline to your toolbar',
+      'welcome.step1.note': 'Click the puzzle piece next to the address bar, then the little pin beside Bumpline. One click now, and you never have to go looking for it again.',
+      'welcome.step1.aside': 'After that the icon does the talking: in colour when there is something for Bumpline to do on the tab you are on, grey when there is not. You will not have to click it to find out.',
+      'welcome.step1.artLabel': 'A Chrome window on a Vinted page. The puzzle piece to the right of the address bar is open, and the extensions menu lists Bumpline with a pin beside it.',
+
+      'welcome.step2.title': 'Go to your own wardrobe',
+      // The bold Relist / Relist as draft this sentence used to carry are
+      // written out in full here instead: paint() replaces a node's whole
+      // textContent, so a <b> nested inside it would be lost the moment the
+      // page is painted, English or Italian.
+      'welcome.step2.note': 'That is where the buttons turn up. Every item of yours still for sale gets a Relist and a Relist as draft, right beside it. Only on your things. Nobody else’s listings are touched.',
+      'welcome.step2.aside': 'Nothing is thrown away first. The copy is made before the old listing goes, so your item is never in limbo. Relist puts it straight back up; Relist as draft stops one step short of publishing, in case you want to look it over first.',
+      'welcome.step2.artLabel': 'A listing on your own wardrobe, with a Relist button and a Relist as draft button below it.',
+
+      'welcome.rate.title': 'If it saves you time, say so',
+      'welcome.rate.note': 'Bumpline is free, open source, and there is no account to sign up for. A rating is the only thing it asks for, and it is how the next seller finds it. No rush: come back once you have actually used the thing.',
+
+      // Written by script.js next to the manifest's own version number, which
+      // is never translated.
+      'welcome.version': 'Version {0}',
     },
     it: {
       'button.relist': 'Ripubblica',
@@ -379,6 +410,25 @@ const BumplineText = (() => {
       'popup.footer.howItWorks': 'Come funziona',
       'popup.footer.reportProblem': 'Segnala un problema',
       'popup.footer.rate': 'Vota Bumpline',
+
+      'welcome.title': 'Benvenuto in Bumpline',
+      'welcome.hero.title': 'Grazie per aver installato Bumpline',
+      'welcome.hero.lead': 'Ripubblicare un articolo voleva dire riscrivere da capo il titolo, la descrizione e ogni singola foto. Da ora basta un pulsante. Niente da configurare neanche qui: due passaggi rapidi e puoi chiudere questa scheda per sempre.',
+
+      'welcome.step1.title': 'Fissa Bumpline nella barra degli strumenti',
+      'welcome.step1.note': 'Clicca sul pezzo di puzzle accanto alla barra degli indirizzi, poi sulla piccola puntina accanto a Bumpline. Un clic adesso, e non dovrai più andarlo a cercare.',
+      'welcome.step1.aside': 'Da quel momento parla l\'icona: a colori quando c\'è qualcosa da fare per Bumpline nella scheda che stai guardando, grigia quando non c\'è. Non dovrai cliccarci per saperlo.',
+      'welcome.step1.artLabel': 'Una finestra di Chrome su una pagina Vinted. Il pezzo di puzzle a destra della barra degli indirizzi è aperto, e il menu delle estensioni mostra Bumpline con una puntina accanto.',
+
+      'welcome.step2.title': 'Vai al tuo armadio',
+      'welcome.step2.note': 'È lì che compaiono i pulsanti. Ogni tuo articolo ancora in vendita riceve un pulsante Ripubblica e uno Ripubblica come bozza, proprio accanto. Solo sulle tue cose. Nessun annuncio altrui viene toccato.',
+      'welcome.step2.aside': 'Niente viene buttato via prima. La copia viene creata prima che il vecchio annuncio venga eliminato, così il tuo articolo non resta mai in sospeso. Ripubblica lo rimette subito in vendita; Ripubblica come bozza si ferma un passo prima della pubblicazione, nel caso tu voglia ricontrollarlo prima.',
+      'welcome.step2.artLabel': 'Un annuncio nel tuo armadio, con un pulsante Ripubblica e un pulsante Ripubblica come bozza sotto di esso.',
+
+      'welcome.rate.title': 'Se ti ha fatto risparmiare tempo, dillo',
+      'welcome.rate.note': 'Bumpline è gratuito, open source, e non serve nessun account per usarlo. Una valutazione è l\'unica cosa che chiede, ed è così che il prossimo venditore lo trova. Nessuna fretta: torna qui una volta che l\'hai davvero usato.',
+
+      'welcome.version': 'Versione {0}',
     },
   };
 

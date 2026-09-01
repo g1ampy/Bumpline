@@ -19,21 +19,42 @@
 // once for both.
 const ext = globalThis.browser ?? globalThis.chrome;
 
-// The version, so a bug report can say which build the reader is looking at. A
-// hand-built debug package sets version_name; a store one has none and falls
-// back to the plain version.
-const build = ext.runtime.getManifest();
-document.getElementById('version').textContent =
-  `Version ${build.version_name || build.version}`;
+// The page ships in English and is repainted before the first frame, so the
+// seller never reads a sentence twice in two languages. Everything else the
+// page does — including the version line below, which is BumplineText.t()
+// rather than a data-i18n attribute — waits inside this function too, so
+// nothing is written to the DOM in the wrong language while the seller's
+// override is still being read from storage.
+(async () => {
+  let lang = 'auto';
+  try {
+    const bag = await ext.storage.local.get('bumpline:lang');
+    lang = bag['bumpline:lang'] || 'auto';
+  } catch (_) {
+    // An unreadable storage leaves the browser's language, which is the default.
+  }
+  BumplineText.use(lang);
+  BumplineText.paint();
 
-// Where a rating would go, which depends on the store this copy came from:
-// store.js works that out, and returns null when that store has no listing yet.
-// The whole card goes with the link rather than the link alone — a heading
-// asking for a rating above nothing to click is worse than not asking.
-const review = document.getElementById('review');
-const url = BumplineStore.reviewUrl();
+  // The version, so a bug report can say which build the reader is looking
+  // at. A hand-built debug package sets version_name; a store one has none
+  // and falls back to the plain version. The number itself is never
+  // translated, only the word in front of it.
+  const build = ext.runtime.getManifest();
+  document.getElementById('version').textContent =
+    BumplineText.t('welcome.version', build.version_name || build.version);
 
-if (url) {
-  review.href = url;
-  document.getElementById('rate').hidden = false;
-}
+  // Where a rating would go, which depends on the store this copy came from:
+  // store.js works that out, and returns null when that store has no listing
+  // yet. The whole card goes with the link rather than the link alone — a
+  // heading asking for a rating above nothing to click is worse than not
+  // asking. The card's own title and note are already painted above, via
+  // their data-i18n attributes; only the link's destination is set here.
+  const review = document.getElementById('review');
+  const url = BumplineStore.reviewUrl();
+
+  if (url) {
+    review.href = url;
+    document.getElementById('rate').hidden = false;
+  }
+})();

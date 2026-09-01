@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Welcome to Bumpline</title>
+<title data-i18n="welcome.title">Welcome to Bumpline</title>
 <link rel="stylesheet" href="style.css">
 
 <!-- Opened once, by the service worker, right after the extension is installed.
@@ -16,8 +16,8 @@
 
 <header class="hero">
   <img class="hero__logo" src="../icons/logo.svg" alt="" width="56" height="56">
-  <h1 class="hero__title">Thanks for installing Bumpline</h1>
-  <p class="hero__lead">
+  <h1 class="hero__title" data-i18n="welcome.hero.title">Thanks for installing Bumpline</h1>
+  <p class="hero__lead" data-i18n="welcome.hero.lead">
     Relisting an item used to mean retyping the title, the description and
     every last photo. From now on it is one button. Nothing to set up here
     either: two quick steps and you can close this tab for good.
@@ -30,14 +30,14 @@
       <div class="step__body">
         <h2 class="card__title">
           <span class="step__number" aria-hidden="true">1</span>
-          Pin Bumpline to your toolbar
+          <span data-i18n="welcome.step1.title">Pin Bumpline to your toolbar</span>
         </h2>
-        <p class="card__note">
+        <p class="card__note" data-i18n="welcome.step1.note">
           Click the puzzle piece next to the address bar, then the little pin
           beside Bumpline. One click now, and you never have to go looking for
           it again.
         </p>
-        <p class="card__note step__aside">
+        <p class="card__note step__aside" data-i18n="welcome.step1.aside">
           After that the icon does the talking: in colour when there is
           something for Bumpline to do on the tab you are on, grey when there
           is not. You will not have to click it to find out.
@@ -46,6 +46,7 @@
 
       <figure class="shot">
         <svg class="shot__art" viewBox="0 0 360 214" role="img"
+             data-i18n-label="welcome.step1.artLabel"
              aria-label="A Chrome window on a Vinted page. The puzzle piece to the right of the address bar is open, and the extensions menu lists Bumpline with a pin beside it.">
           <!-- The window itself. Everything above the page area is browser
                chrome, so it is drawn on the card colour and the page on the
@@ -138,23 +139,24 @@
       <div class="step__body">
         <h2 class="card__title">
           <span class="step__number" aria-hidden="true">2</span>
-          Go to your own wardrobe
+          <span data-i18n="welcome.step2.title">Go to your own wardrobe</span>
         </h2>
-        <p class="card__note">
+        <p class="card__note" data-i18n="welcome.step2.note">
           That is where the buttons turn up. Every item of yours still for sale
-          gets a <b>Relist</b> and a <b>Relist as draft</b>, right beside it.
-          Only on your things. Nobody else&rsquo;s listings are touched.
+          gets a Relist and a Relist as draft, right beside it. Only on your
+          things. Nobody else&rsquo;s listings are touched.
         </p>
-        <p class="card__note step__aside">
-          Nothing is thrown away first. The copy is made <i>before</i> the old
-          listing goes, so your item is never in limbo. <b>Relist</b> puts it
-          straight back up; <b>Relist as draft</b> stops one step short of
+        <p class="card__note step__aside" data-i18n="welcome.step2.aside">
+          Nothing is thrown away first. The copy is made before the old
+          listing goes, so your item is never in limbo. Relist puts it
+          straight back up; Relist as draft stops one step short of
           publishing, in case you want to look it over first.
         </p>
       </div>
 
       <figure class="shot">
         <svg class="shot__art" viewBox="60 0 360 216" role="img"
+             data-i18n-label="welcome.step2.artLabel"
              aria-label="A listing on your own wardrobe, with a Relist button and a Relist as draft button below it.">
           <rect class="art-panel" x="132" y="8" width="216" height="200" rx="12"/>
           <rect class="art-field" x="144" y="20" width="192" height="84" rx="8"/>
@@ -168,10 +170,10 @@
           <rect class="art-bar art-bar--faint" x="144" y="131" width="72" height="7" rx="3.5"/>
 
           <rect class="art-cta" x="144" y="146" width="192" height="22" rx="6"/>
-          <text class="art-label art-label--onCta" x="240" y="161" text-anchor="middle">Relist</text>
+          <text class="art-label art-label--onCta" x="240" y="161" text-anchor="middle" data-i18n="button.relist">Relist</text>
 
           <rect class="art-cta art-cta--ghost" x="144" y="174" width="192" height="22" rx="6"/>
-          <text class="art-label art-label--accent" x="240" y="189" text-anchor="middle">Relist as draft</text>
+          <text class="art-label art-label--accent" x="240" y="189" text-anchor="middle" data-i18n="button.draft">Relist as draft</text>
         </svg>
       </figure>
     </li>
@@ -189,25 +191,29 @@
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>
       </svg>
-      <span>If it saves you time, say so</span>
+      <span data-i18n="welcome.rate.title">If it saves you time, say so</span>
     </h2>
-    <p class="card__note">
+    <p class="card__note" data-i18n="welcome.rate.note">
       Bumpline is free, open source, and there is no account to sign up for. A
       rating is the only thing it asks for, and it is how the next seller finds
       it. No rush: come back once you have actually used the thing.
     </p>
-    <a class="button rate__button" id="review" href="#" target="_blank" rel="noreferrer">
+    <a class="button rate__button" id="review" href="#" target="_blank" rel="noreferrer" data-i18n="popup.footer.rate">
       Rate Bumpline
     </a>
   </section>
 </main>
 
 <footer class="foot">
-  <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer">How it works</a>
-  <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer">Report a problem</a>
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer" data-i18n="popup.footer.howItWorks">How it works</a>
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer" data-i18n="popup.footer.reportProblem">Report a problem</a>
   <span class="foot__version" id="version"></span>
 </footer>
 
+<!-- The words, both languages, read by paint() below and by script.js. Loaded
+     first, the same way popup.html loads it before store.js, because
+     everything this page shows is text. -->
+<script src="../strings.js"></script>
 <!-- Which store this copy came from, and so where a rating would go. Shared
      with the toolbar panel, which asks the same question. -->
 <script src="../store.js"></script>
