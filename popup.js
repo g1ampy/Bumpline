@@ -16,6 +16,7 @@ const STORE_PREFIX = 'bumpline:pending:';
 const LAST_PROFILE_KEY = 'bumpline:lastProfile';
 const RELOAD_KEY = 'bumpline:reloadAfterRelist';
 const PACE_KEY = 'bumpline:pace';
+const LANG_KEY = 'bumpline:lang';
 const HARD_COOLDOWN_KEY = 'bumpline:hardCooldown';
 const LOCAL_DRAFTS_KEY = 'bumpline:localDrafts';
 const RELIST_LOG_KEY = 'bumpline:relistLog';
@@ -100,33 +101,33 @@ function describePage(page, url) {
       return {
         tone: 'ok',
         glyph: GLYPH.ready,
-        title: 'Ready on this page',
-        detail:
-          page.relistable === 1
-            ? 'One item can be relisted, under its Bump button.'
-            : `${page.relistable} items can be relisted, under their Bump buttons.`,
+        title: BumplineText.t('popup.status.ready.title'),
+        detail: BumplineText.t(
+          page.relistable === 1 ? 'popup.status.ready.detail.one' : 'popup.status.ready.detail',
+          page.relistable,
+        ),
       };
     }
     return {
       tone: 'plain',
       glyph: GLYPH.elsewhere,
-      title: 'Nothing to relist here',
-      detail: 'Relist buttons appear on your own items that are still on sale.',
+      title: BumplineText.t('popup.status.empty.title'),
+      detail: BumplineText.t('popup.status.empty.detail'),
     };
   }
   if (onVinted(url)) {
     return {
       tone: 'plain',
       glyph: GLYPH.elsewhere,
-      title: 'Not a profile page',
-      detail: 'Relist buttons only appear on your own wardrobe.',
+      title: BumplineText.t('popup.status.notProfile.title'),
+      detail: BumplineText.t('popup.status.notProfile.detail'),
     };
   }
   return {
     tone: 'plain',
     glyph: GLYPH.elsewhere,
-    title: 'Not on Vinted',
-    detail: 'Open your Vinted wardrobe to relist an item.',
+    title: BumplineText.t('popup.status.notVinted.title'),
+    detail: BumplineText.t('popup.status.notVinted.detail'),
   };
 }
 
@@ -216,14 +217,6 @@ const whenOf = at => {
   });
 };
 
-// Said in the page and in this panel both, so the two cannot disagree about
-// what a restricted account can do.
-const RESTRICTION_NOTE =
-  'The message Vinted sent you says why. You cannot relist until Vinted ' +
-  'lifts the restriction. Vinted can lift one earlier than the date it ' +
-  'published: the next wardrobe page you open will notice, or you can clear ' +
-  'this here and let that page decide afresh.';
-
 // A pause that has already run out is no pause at all.
 function standingPause(record) {
   if (!record || typeof record !== 'object') return null;
@@ -263,11 +256,15 @@ async function readStored() {
     enabled: bag[ENABLED_KEY] !== false,
     relists: recentRelists(bag[RELIST_LOG_KEY]),
     paused: standingPause(bag[BLOCK_KEY]),
+    // 'auto' is a stored value here too, and BumplineText.use already knows
+    // what to do with it: ask the browser.
+    lang: bag[LANG_KEY] || 'auto',
   };
 }
 
 const nameOf = record =>
-  (record.snapshot && record.snapshot.title) || `Item ${record.itemId || '?'}`;
+  (record.snapshot && record.snapshot.title) ||
+  BumplineText.t('popup.pending.itemFallback', record.itemId || '?');
 
 // Records written before 1.0.0 carry no profileUrl; the country domain is the
 // best guess left, and it at least lands on the right site.
@@ -282,8 +279,8 @@ function renderPending(records, enabled) {
 
   document.getElementById('pending-title').textContent =
     records.length === 1
-      ? '1 relist has not finished'
-      : `${records.length} relists have not finished`;
+      ? BumplineText.t('popup.pending.title.one')
+      : BumplineText.t('popup.pending.title', records.length);
 
   // A long list would push the answer off screen; four names are enough to
   // recognise what is stuck.
@@ -304,21 +301,21 @@ function renderPending(records, enabled) {
   }
   if (records.length > 4) {
     const rest = document.createElement('li');
-    rest.textContent = `and ${records.length - 4} more`;
+    rest.textContent = BumplineText.t('popup.pending.more', records.length - 4);
     list.appendChild(rest);
   }
 
   // Where the copy is depends on how the relist was started, and telling
   // someone to look in their Vinted drafts when there is nothing there is worse
   // than saying nothing. A record that reached the draft stage carries its id.
+  // The two halves are separate sentences, so each is its own key and the first
+  // carries the second as its {0} — the same shape content.js uses for
+  // toast.reloading.
   const onVintedToo = records.some(record => record.draft && record.draft.id);
-  document.getElementById('pending-note').textContent =
-    (enabled
-      ? 'Bumpline retries these each time you open a Vinted profile page. '
-      : 'Bumpline is off, so nothing is being retried. ') +
-    (onVintedToo
-      ? 'The copy is also in your Vinted drafts.'
-      : 'The copy is saved on this device.');
+  document.getElementById('pending-note').textContent = BumplineText.t(
+    enabled ? 'popup.pending.note.enabled' : 'popup.pending.note.disabled',
+    BumplineText.t(onVintedToo ? 'popup.pending.note.draft' : 'popup.pending.note.device'),
+  );
 
   box.hidden = false;
 }
@@ -328,11 +325,11 @@ function renderPending(records, enabled) {
 function chooseAction({ pending, lastProfile }, page, here) {
   const stuck = pending.length ? profileOf(pending[0]) : null;
   if (stuck && stuck !== here) {
-    return { label: 'Open the profile page', url: stuck };
+    return { label: BumplineText.t('popup.action.openProfilePage'), url: stuck };
   }
   // A wardrobe with buttons on it is already the destination.
   if (!(page && page.relistable > 0) && lastProfile && lastProfile !== here) {
-    return { label: 'Open your Vinted profile', url: lastProfile };
+    return { label: BumplineText.t('popup.action.openProfile'), url: lastProfile };
   }
   return null;
 }
@@ -353,18 +350,18 @@ function renderPause(stored) {
   const lift = document.getElementById('paused-lift');
 
   document.getElementById('paused-title').textContent = fromVinted
-    ? 'Vinted has restricted this account'
-    : 'Relisting is paused';
+    ? BumplineText.t('popup.paused.titleRestricted')
+    : BumplineText.t('popup.paused.title');
 
   // The title already names the restriction, and when it lifts is Vinted's to
   // say, not this extension's to guess at: the message Vinted sent the account
   // is the only place either the reason or the end of it actually exists.
+  // Said in the page and in this panel both, so the two cannot disagree about
+  // what a restricted account can do.
   const detail = document.getElementById('paused-detail');
   detail.textContent = fromVinted
-    ? RESTRICTION_NOTE
-    : `${stored.paused.why} Nothing is sent until ` +
-      `${whenOf(stored.paused.until)}, on any tab. The buttons come back on ` +
-      'their own.';
+    ? BumplineText.t('popup.paused.restrictionNote')
+    : BumplineText.t('popup.paused.detail', stored.paused.why, whenOf(stored.paused.until));
 
   // Folded to two lines, because the title has already said the thing that
   // matters and the rest is where to go looking. The pause the extension sets
@@ -390,7 +387,7 @@ function renderPause(stored) {
     // The chevron turns over on its own; the name is for anyone who cannot see
     // it turn.
     reveal.setAttribute('aria-expanded', String(!folded));
-    reveal.setAttribute('aria-label', folded ? 'Show more' : 'Show less');
+    reveal.setAttribute('aria-label', BumplineText.t(folded ? 'popup.paused.more' : 'popup.paused.less'));
     // max-height rather than height, because that is the property the fold is
     // made of: the animation covers the distance and the class holds the end.
     grow(detail, 'maxHeight', from, folded ? shut : full);
@@ -404,21 +401,19 @@ function renderPause(stored) {
   // back if it is still in force. That is the only way out of a restriction
   // Vinted lifted early, and without it the record stood until a date that had
   // stopped meaning anything.
-  lift.textContent = fromVinted ? 'Vinted has lifted it' : 'Lift the pause early';
+  lift.textContent = fromVinted
+    ? BumplineText.t('popup.paused.liftRestriction')
+    : BumplineText.t('popup.paused.lift');
   lift.hidden = false;
   card.hidden = false;
 
   lift.addEventListener('click', async () => {
     if (!fromVinted) {
       const agreed = await askRisk({
-        title: 'Vinted asked for this pause',
-        detail:
-          'The pause is there because Vinted refused a request, and being ' +
-          'refused again is what turns a rate limit into a block on the ' +
-          'account. Lift it only if you are sure the refusal was something ' +
-          'else, like a logged-out session or a one-off network failure.',
-        accept: 'Lift it anyway',
-        cancel: 'Keep the pause',
+        title: BumplineText.t('popup.risk.liftPause.title'),
+        detail: BumplineText.t('popup.risk.liftPause.detail'),
+        accept: BumplineText.t('popup.risk.liftPause.accept'),
+        cancel: BumplineText.t('popup.risk.liftPause.cancel'),
       });
       if (!agreed) return;
     }
@@ -452,7 +447,10 @@ function renderVolume({ relists, cooldown }) {
   const owed = cooldown && today
     ? Math.max(0, HARD_COOLDOWN_MS - (Date.now() - Math.max(...relists)))
     : 0;
-  const wait = owed > 0 ? ` The next one waits ${Math.ceil(owed / 1000)}s.` : '';
+  // Its own sentence, and its own key, embedded as {0} in whichever of the
+  // three below it is talking to — the same shape content.js uses for
+  // toast.reloading, so two sentences never get glued together as a literal.
+  const wait = owed > 0 ? BumplineText.t('popup.volume.wait', Math.ceil(owed / 1000)) : '';
 
   // Nothing relisted is nothing to say. The two noughts and an empty bar are
   // the whole answer, and a sentence about limits nobody is near was being read
@@ -464,26 +462,17 @@ function renderVolume({ relists, cooldown }) {
 
   if (today >= DAY_ALARM_AT) {
     card.classList.add('card--alert');
-    detail.textContent =
-      'A whole wardrobe in a day looks like a bulk operation from where ' +
-      'Vinted is standing, and Vinted answers those with a day-long block ' +
-      'on editing and publishing, or a longer restriction. The next relist ' +
-      'will ask you to confirm.' + wait;
+    detail.textContent = BumplineText.t('popup.volume.dayAlarm', wait);
     return;
   }
 
   if (thisHour >= HOUR_ALARM_AT) {
     card.classList.add('card--alert');
-    detail.textContent =
-      'That is the volume Vinted reads as automated activity, and Vinted ' +
-      'answers it with a day-long block on editing and publishing, or a ' +
-      'longer restriction. The next relist will ask you to confirm.' + wait;
+    detail.textContent = BumplineText.t('popup.volume.hourAlarm', wait);
     return;
   }
 
-  detail.textContent =
-    `The warning appears at ${HOUR_ALARM_AT} in an hour or ${DAY_ALARM_AT} in ` +
-    `a day.` + wait;
+  detail.textContent = BumplineText.t('popup.volume.normal', HOUR_ALARM_AT, DAY_ALARM_AT, wait);
 }
 
 // --- settings ---------------------------------------------------------------
@@ -494,7 +483,7 @@ let closeGate = null;
 
 // The cancel names what staying put means, so it changes with the question:
 // keeping a setting is not the same act as keeping a pause Vinted asked for.
-function askRisk({ title, detail, accept, cancel = 'Keep this setting' }) {
+function askRisk({ title, detail, accept, cancel = BumplineText.t('popup.risk.keep') }) {
   if (closeGate) closeGate(false);
 
   const modal = document.getElementById('risk');
@@ -597,7 +586,13 @@ function wireSettings(stored) {
   const paint = () => {
     const changed = Object.keys(SETTING_DEFAULTS)
       .filter(name => stored[name] !== SETTING_DEFAULTS[name]).length;
-    count.textContent = changed ? `${changed} changed` : '';
+    // '{0} changed' reads as '1 changed' in English at one, which is already
+    // fine, but the same shape in Italian ('1 modificate') is plural where it
+    // needs to be singular — so one gets its own key rather than sharing the
+    // count's placeholder.
+    count.textContent = changed
+      ? BumplineText.t(changed === 1 ? 'popup.settings.changed.one' : 'popup.settings.changed', changed)
+      : '';
   };
   const note = name => value => {
     stored[name] = value;
@@ -612,26 +607,17 @@ function wireSettings(stored) {
   wireToggle('local-drafts-toggle', LOCAL_DRAFTS_KEY, stored.localDrafts, note('localDrafts'));
 
   wireGuarded('cooldown-toggle', HARD_COOLDOWN_KEY, stored.cooldown, false, {
-    title: 'This is the only hard stop',
-    detail:
-      'Deleting and re-publishing back to back is the pattern Vinted matches ' +
-      'on. Without the ten seconds, a run of relists goes out as fast as the ' +
-      'network allows. A 24-hour block on editing and publishing is the ' +
-      'mildest answer to that, and Vinted can restrict the account for ' +
-      'longer.',
-    accept: 'Turn it off',
-    cancel: 'Keep the cooldown',
+    title: BumplineText.t('popup.risk.cooldown.title'),
+    detail: BumplineText.t('popup.risk.cooldown.detail'),
+    accept: BumplineText.t('popup.risk.cooldown.accept'),
+    cancel: BumplineText.t('popup.risk.cooldown.cancel'),
   }, note('cooldown'));
 
   wireGuarded('pace-toggle', PACE_KEY, stored.paced, false, {
-    title: 'This keeps a relist from arriving as one burst',
-    detail:
-      'The random 0.9 to 2.4 seconds between requests spread a relist out ' +
-      'over its twenty or so API calls. At 0.25 to 0.7 seconds the traffic ' +
-      'looks far more like a script, and that is what Vinted blocks accounts ' +
-      'for.',
-    accept: 'Shorten it',
-    cancel: 'Keep the pause',
+    title: BumplineText.t('popup.risk.pace.title'),
+    detail: BumplineText.t('popup.risk.pace.detail'),
+    accept: BumplineText.t('popup.risk.pace.accept'),
+    cancel: BumplineText.t('popup.risk.pace.cancel'),
   }, note('paced'), checked => (checked ? 'safe' : 'fast'));
 }
 
@@ -644,7 +630,7 @@ function wirePower(stored, tab, repaint, notePage) {
 
   const paint = () => {
     box.checked = stored.enabled;
-    word.textContent = stored.enabled ? 'On' : 'Off';
+    word.textContent = BumplineText.t(stored.enabled ? 'popup.power.on' : 'popup.power.off');
   };
   paint();
 
@@ -692,6 +678,12 @@ async function main() {
 
   const url = currentUrl(tab);
   const [initial, stored] = await Promise.all([askPage(tab), readStored()]);
+
+  // Before anything is read out of the DOM or written into it: the markup
+  // ships in English, and this is what makes the page Italian.
+  BumplineText.use(stored.lang);
+  BumplineText.paint();
+
   const here = url ? `${url.origin}${url.pathname}` : null;
 
   // What the page holds is asked for again when the switch is thrown, so it

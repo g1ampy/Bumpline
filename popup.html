@@ -9,8 +9,8 @@
   <!-- The switch is the first thing in reach and the last thing that can go
        wrong: everything below it stops when it is off. The word beside it says
        the state in text as well as in colour and knob position. -->
-  <span class="power__state" id="power-state" aria-hidden="true">On</span>
-  <input class="toggle" type="checkbox" id="power" role="switch" aria-label="Bumpline" checked>
+  <span class="power__state" id="power-state" aria-hidden="true" data-i18n="popup.power.on">On</span>
+  <input class="toggle" type="checkbox" id="power" role="switch" data-i18n-label="popup.power.label" aria-label="Bumpline" checked>
 </header>
 
 <main>
@@ -21,8 +21,8 @@
        because a message that only says "off" leaves the reader looking for the
        switch it is already sitting under. -->
   <p class="offline" id="offline" hidden>
-    Bumpline is switched off
-    <span class="offline__hint">Turn it back on to relist your items.</span>
+    <span data-i18n="popup.offline.title">Bumpline is switched off</span>
+    <span class="offline__hint" data-i18n="popup.offline.hint">Turn it back on to relist your items.</span>
   </p>
 
   <!-- An unfinished relist outranks everything else, so it is first in the
@@ -46,7 +46,7 @@
         <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
         <path d="M10 15V9M14 15V9"/>
       </svg>
-      <span id="paused-title">Relisting is paused</span>
+      <span id="paused-title" data-i18n="popup.paused.title">Relisting is paused</span>
     </h2>
     <!-- Only the restriction is long enough to be worth folding; the pause the
          extension sets itself is three short sentences and stays open. The
@@ -55,19 +55,20 @@
     <div class="fold">
       <p class="card__note" id="paused-detail"></p>
       <button class="reveal" id="paused-reveal" type="button" aria-controls="paused-detail"
-              aria-expanded="false" aria-label="Show more" hidden>
+              aria-expanded="false" data-i18n-label="popup.paused.more" aria-label="Show more" hidden>
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
     </div>
-    <button class="button button--quiet" id="paused-lift" type="button">Lift the pause early</button>
+    <button class="button button--quiet" id="paused-lift" type="button"
+            data-i18n="popup.paused.lift">Lift the pause early</button>
   </section>
 
   <section class="card" id="status" role="status" aria-live="polite">
     <h2 class="card__title">
       <svg class="icon" id="status-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
-      <span id="status-title">Checking this tab</span>
+      <span id="status-title" data-i18n="popup.status.checking.title">Checking this tab</span>
     </h2>
-    <p class="card__note" id="status-detail">One moment…</p>
+    <p class="card__note" id="status-detail" data-i18n="popup.status.checking.detail">One moment…</p>
   </section>
 
   <button class="button" id="action" type="button" hidden></button>
@@ -82,16 +83,16 @@
         <path d="M12 6v6l4 2"/>
         <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
       </svg>
-      <span>Relisting volume</span>
+      <span data-i18n="popup.volume.title">Relisting volume</span>
     </h2>
     <div class="stats">
       <div class="stat">
         <span class="stat__value" id="volume-hour">0</span>
-        <span class="stat__label">this hour</span>
+        <span class="stat__label" data-i18n="popup.volume.hour">this hour</span>
       </div>
       <div class="stat">
         <span class="stat__value" id="volume-day">0</span>
-        <span class="stat__label">today</span>
+        <span class="stat__label" data-i18n="popup.volume.today">today</span>
       </div>
     </div>
     <!-- The bar repeats what the numbers and the note already say, so it is
@@ -109,7 +110,7 @@
        moment it can change a mind. -->
   <details class="drawer">
     <summary class="drawer__summary">
-      Settings
+      <span data-i18n="popup.settings.title">Settings</span>
       <!-- What is not at its default, said without opening the section. Three
            switches all sitting where they were left is the common case, and it
            should not need reading. -->
@@ -127,12 +128,12 @@
         <!-- The two that decide how the traffic looks come first. Both are
              guarded, and both guard the same direction: turning either off is
              what needs agreeing to. -->
-        <p class="setting__group">Pacing</p>
+        <p class="setting__group" data-i18n="popup.settings.group.pacing">Pacing</p>
 
         <label class="switch">
           <span class="switch__label">
-            Wait 10 seconds between relists
-            <span class="switch__hint">
+            <span data-i18n="popup.settings.cooldown.label">Wait 10 seconds between relists</span>
+            <span class="switch__hint" data-i18n="popup.settings.cooldown.hint">
               Recommended. Off sends them back to back, the pattern Vinted blocks
               accounts for.
             </span>
@@ -142,8 +143,8 @@
 
         <label class="switch">
           <span class="switch__label">
-            Pause 0.9 to 2.4s between requests
-            <span class="switch__hint">
+            <span data-i18n="popup.settings.pace.label">Pause 0.9 to 2.4s between requests</span>
+            <span class="switch__hint" data-i18n="popup.settings.pace.hint">
               Recommended. Off shortens it to 0.25 to 0.7s, fast enough to read as
               an automated script.
             </span>
@@ -151,12 +152,12 @@
           <input class="toggle" type="checkbox" id="pace-toggle" role="switch" checked>
         </label>
 
-        <p class="setting__group">After a relist</p>
+        <p class="setting__group" data-i18n="popup.settings.group.afterRelist">After a relist</p>
 
         <label class="switch">
           <span class="switch__label">
-            Reload the page
-            <span class="switch__hint">
+            <span data-i18n="popup.settings.reload.label">Reload the page</span>
+            <span class="switch__hint" data-i18n="popup.settings.reload.hint">
               Off keeps your place on the page; the relisted copy appears at
               your next reload.
             </span>
@@ -169,8 +170,8 @@
              row is hidden. Take the hidden attribute off to bring it back. -->
         <label class="switch" hidden>
           <span class="switch__label">
-            Keep the copy on this device
-            <span class="switch__hint">
+            <span data-i18n="popup.settings.localDrafts.label">Keep the copy on this device</span>
+            <span class="switch__hint" data-i18n="popup.settings.localDrafts.hint">
               Relist button only. Off saves a draft to your Vinted account
               first, as in versions before 1.0.1.
             </span>
@@ -203,14 +204,14 @@
   <!-- Stacked, and each on the full width, because side by side the two labels
        had to be short enough to fit rather than clear enough to read. -->
   <div class="risk__actions">
-    <button class="button button--quiet" id="risk-cancel" type="button">Keep this setting</button>
-    <button class="button" id="risk-accept" type="button">Change it anyway</button>
+    <button class="button button--quiet" id="risk-cancel" type="button" data-i18n="popup.risk.keep">Keep this setting</button>
+    <button class="button" id="risk-accept" type="button" data-i18n="popup.risk.change">Change it anyway</button>
   </div>
 </dialog>
 
 <footer class="foot">
-  <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer">How it works</a>
-  <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer">Report a problem</a>
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline#readme" target="_blank" rel="noreferrer" data-i18n="popup.footer.howItWorks">How it works</a>
+  <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer" data-i18n="popup.footer.reportProblem">Report a problem</a>
   <span class="foot__version" id="version"></span>
 
   <!-- A rating is the one thing an extension cannot write for itself, and the
@@ -221,9 +222,12 @@
        On a line of its own below the other two, which is what buys it the room
        to say the whole name: the two links above are where you go when
        something is unclear or broken, and this is not that. -->
-  <a class="foot__link foot__rate" id="review" href="#" target="_blank" rel="noreferrer">Rate Bumpline</a>
+  <a class="foot__link foot__rate" id="review" href="#" target="_blank" rel="noreferrer" data-i18n="popup.footer.rate">Rate Bumpline</a>
 </footer>
 
+<!-- The words, both languages, read by paint() below and by popup.js. Loaded
+     before store.js only because everything this page shows is text. -->
+<script src="strings.js"></script>
 <!-- Which store this copy came from, and so where a rating would go. Loaded
      first because popup.js reads it, and kept out of popup.js because the page
      shown after install asks the same question. -->
