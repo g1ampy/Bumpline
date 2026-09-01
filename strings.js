@@ -101,6 +101,13 @@ const BumplineText = (() => {
       'age.today': 'Created today',
       'age.daysAgo': 'Created {0} days ago',
 
+      // Why a pause is standing, written by content.js as a code rather than a
+      // sentence and translated here by popup.js — the record can outlive a
+      // language switch, and a sentence saved in one language would not.
+      'pause.why.rateLimit': 'Vinted answered "too many requests".',
+      'pause.why.botCheck': 'Vinted answered with a bot challenge.',
+      'pause.why.restricted': 'Vinted has restricted this account from listing or editing items.',
+
       // --- the toolbar popup -------------------------------------------
       // Everything below is read by popup.html's own paint() call and by
       // popup.js: the panel that lives in the toolbar, not on a Vinted page.
@@ -278,6 +285,10 @@ const BumplineText = (() => {
       'age.today': 'Creato oggi',
       'age.daysAgo': 'Creato {0} giorni fa',
 
+      'pause.why.rateLimit': 'Vinted ha risposto «troppe richieste».',
+      'pause.why.botCheck': 'Vinted ha risposto con una verifica anti-bot.',
+      'pause.why.restricted': 'Vinted ha limitato questo account, impedendogli di pubblicare o modificare articoli.',
+
       'popup.power.on': 'Attivo',
       'popup.power.off': 'Spento',
       'popup.power.label': 'Bumpline',
@@ -288,8 +299,8 @@ const BumplineText = (() => {
       'popup.status.checking.title': 'Controllo di questa scheda',
       'popup.status.checking.detail': 'Un momento…',
       'popup.status.ready.title': 'Pronto su questa pagina',
-      'popup.status.ready.detail.one': 'Un articolo può essere ripubblicato, con il pulsante Ripubblica.',
-      'popup.status.ready.detail': '{0} articoli possono essere ripubblicati, con il pulsante Ripubblica su ciascuno.',
+      'popup.status.ready.detail.one': 'Un articolo può essere ripubblicato, sotto il suo pulsante «Metti in evidenza».',
+      'popup.status.ready.detail': '{0} articoli possono essere ripubblicati, sotto i rispettivi pulsanti «Metti in evidenza».',
       'popup.status.empty.title': 'Niente da ripubblicare qui',
       'popup.status.empty.detail': 'I pulsanti Ripubblica compaiono sui tuoi articoli ancora in vendita.',
       'popup.status.notProfile.title': 'Non è una pagina di profilo',

@@ -217,6 +217,21 @@ const whenOf = at => {
   });
 };
 
+// content.js writes why as one of these codes rather than a finished
+// sentence, because this panel is its only reader and a sentence saved in one
+// language would still be sitting in storage.local, in that language, the
+// moment the seller switched to another one.
+const WHY_KEYS = {
+  rateLimit: 'pause.why.rateLimit',
+  botCheck: 'pause.why.botCheck',
+  restricted: 'pause.why.restricted',
+};
+
+// A record written before this version carries a finished English sentence
+// instead of a code, and it can still be sitting in storage.local with hours
+// left on it — read it unchanged rather than mistranslate or blank it out.
+const whyOf = why => (WHY_KEYS[why] ? BumplineText.t(WHY_KEYS[why]) : why);
+
 // A pause that has already run out is no pause at all.
 function standingPause(record) {
   if (!record || typeof record !== 'object') return null;
@@ -361,7 +376,7 @@ function renderPause(stored) {
   const detail = document.getElementById('paused-detail');
   detail.textContent = fromVinted
     ? BumplineText.t('popup.paused.restrictionNote')
-    : BumplineText.t('popup.paused.detail', stored.paused.why, whenOf(stored.paused.until));
+    : BumplineText.t('popup.paused.detail', whyOf(stored.paused.why), whenOf(stored.paused.until));
 
   // Folded to two lines, because the title has already said the thing that
   // matters and the rest is where to go looking. The pause the extension sets
@@ -483,7 +498,10 @@ let closeGate = null;
 
 // The cancel names what staying put means, so it changes with the question:
 // keeping a setting is not the same act as keeping a pause Vinted asked for.
-function askRisk({ title, detail, accept, cancel = BumplineText.t('popup.risk.keep') }) {
+// Every call site names its own cancel, so there is no default left to fall
+// back to — popup.risk.keep lives on only as the risk-cancel button's markup
+// fallback in popup.html, painted before any dialog is ever shown.
+function askRisk({ title, detail, accept, cancel }) {
   if (closeGate) closeGate(false);
 
   const modal = document.getElementById('risk');
@@ -679,8 +697,9 @@ async function main() {
   const url = currentUrl(tab);
   const [initial, stored] = await Promise.all([askPage(tab), readStored()]);
 
-  // Before anything is read out of the DOM or written into it: the markup
-  // ships in English, and this is what makes the page Italian.
+  // The version string is the only thing already on screen, and it is not
+  // translatable — everything after this point is, and the markup ships in
+  // English, so this is what makes the page Italian.
   BumplineText.use(stored.lang);
   BumplineText.paint();
 

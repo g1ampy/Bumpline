@@ -397,13 +397,14 @@
     const wait = Math.min(Math.max(retryAfterMs(reply), escalated), BLOCK_CAP_MS);
 
     strikes.push(Date.now());
+    // A code, not a sentence: the popup is the only reader of this record, and
+    // a sentence written in one language would still be sitting in
+    // storage.local, in that language, the moment the seller switched to
+    // another one.
     const record = {
       until: Date.now() + wait,
       status: kind,
-      why:
-        kind === 429
-          ? 'Vinted answered "too many requests".'
-          : 'Vinted answered with a bot challenge.',
+      why: kind === 429 ? 'rateLimit' : 'botCheck',
     };
 
     try {
@@ -504,7 +505,7 @@
     const record = {
       until,
       source: 'vinted',
-      why: 'Vinted has restricted this account from listing or editing items.',
+      why: 'restricted',
     };
 
     try {
