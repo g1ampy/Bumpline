@@ -5,6 +5,59 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-01
+
+Bumpline now speaks Italian. Every string a seller reads on the page or in the
+panel — the two relist buttons and their progress labels, the toasts in the
+corner, the recovery card, the size dialog, the budget-warning modal, the age
+line under each item, the whole toolbar panel including both of its warning
+dialogs, and the page shown once after install — exists in Italian as well as
+English now, held in one catalogue loaded before every page that draws from
+it. Nothing about the relist changed: the same fields, the same photos, the
+same two buttons, and the same rule that nothing is deleted before the copy
+exists.
+
+Which language opens is decided by the browser's own language, the same
+signal Chrome and Firefox already hand every extension, and it can be
+overruled from a new **Lingua** row in the panel's settings drawer for the
+seller whose browser and whose Vinted are not set to the same language.
+Switching it repaints an open wardrobe page in every open tab on the spot;
+nothing needs a reload to catch up.
+
+### Added
+
+- **Italian.** The extension speaks it wherever the browser's own language is
+  Italian, and can be told to regardless from the panel. `strings.js` is one
+  catalogue holding both languages, loaded as a plain script before every page
+  that reads from it — the two extension pages read it through `data-i18n`
+  attributes on their own markup, and the content script through direct calls.
+  The manifest's name and description are translated too, through
+  `_locales/it`; the name itself is not — "Bumpline - Relist for Vinted"
+  stays the same in every language, the way a product name does.
+- **A Lingua setting.** A new row in the panel's settings drawer lets a seller
+  choose Italian or English regardless of what the browser reports, stored as
+  `bumpline:lang`. Left on **Automatic**, the browser's own language keeps
+  deciding, exactly as it did before this row existed.
+- **A build that refuses to ship a half-finished translation.** `node
+  build.mjs` now fails the build outright if the English and Italian
+  catalogues disagree — a key present in one and missing from the other — or
+  if a page asks for a key that exists in neither. A silent gap would have
+  reached a seller as English words sitting inside an otherwise Italian page,
+  or as the raw key left on screen; the build stops it before it ships
+  instead.
+
+### Changed
+
+- **A pause's reason is now a code, not a sentence.** `content.js` used to
+  write the reason a relist was paused — a rate limit, a bot check, a
+  restriction — into storage as a finished English sentence, which the panel
+  could only ever show back in English. It now writes one of three short
+  codes, and the panel translates whichever one it finds. A pause recorded by
+  1.0.2 or earlier, if it is still standing, carries the old English sentence
+  rather than a code, and is shown exactly as written until it expires — the
+  panel reads what is actually in storage rather than guessing at a
+  translation for words that were never coded in the first place.
+
 ## [1.0.2] - 2026-08-31
 
 Vinted opened an Australian site on a domain of its own, `vinted.com.au`, and
@@ -551,6 +604,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.0
 [1.0.2]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.2
 [1.0.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.1
 [1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
