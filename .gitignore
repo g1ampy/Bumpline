@@ -4,3 +4,4 @@ Thumbs.db
 build/
 .claude/
 store/listing.md
+/listing*.txt
