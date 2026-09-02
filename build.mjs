@@ -45,9 +45,9 @@ const PAYLOAD = [
   // Which store this copy came from, read by both the panel and the page shown
   // after install.
   'store.js',
-  // Both languages, and the two keys only the manifest can localise. Neither is
-  // named in a manifest key the packer follows, so an unlisted file would not
-  // ship and the extension would load without a word in it.
+  // Every language, and the two keys only the manifest can localise. Neither
+  // is named in a manifest key the packer follows, so an unlisted file would
+  // not ship and the extension would load without a word in it.
   'strings.js',
   '_locales',
   'welcome',
