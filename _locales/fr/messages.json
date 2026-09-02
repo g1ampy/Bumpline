@@ -4,6 +4,6 @@
     "description": "Same string as in en on purpose. The manifest has no way to say that a key is not translated, so it is repeated rather than left out; leaving it out would fall back to en anyway, but silently."
   },
   "extDescription": {
-    "message": "Republiez sur Vinted en un clic : photos et détails copiés. Rien n'est supprimé avant que la copie soit prête. Retour en tête."
+    "message": "Republiez sur Vinted en un clic: photos et détails copiés. Rien n'est supprimé avant que la copie soit prête. Retour en tête."
   }
 }
