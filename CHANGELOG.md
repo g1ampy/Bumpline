@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.1] - 2026-09-02
 
-Nothing a seller sees is different. This release removes the one place the
-extension wrote markup into a page instead of building it, and moves the rule
-that made it safe out of a comment and into the code.
+One thing a seller sees is different, and only on Firefox: the rating link now
+goes to the add-on's listing rather than to a page that does not exist. The rest
+of the release removes the one place the extension wrote markup into a page
+instead of building it, and moves the rule that made it safe out of a comment
+and into the code.
 
 Mozilla's add-on linter flags an assignment to `innerHTML`, and it was right to.
 Two sentences on the page shown after install carry their own emphasis, a `<b>`
@@ -39,6 +41,20 @@ kept nowhere but in the comment.
   `data-i18n` attribute names a real key learned the new name in the same
   commit: had it not, it would have gone on passing while checking two keys
   fewer.
+
+### Fixed
+
+- **The Firefox rating link went to a 404.** The slug the link is built from
+  held the add-on's name in the order the name is written,
+  `bumpline-relist-for-vinted`, which is not the slug AMO gave the listing. It
+  is `bumpline-vinted-relister`, and both were checked against the site: the
+  old one answers 404 on the listing and on the reviews tab, the new one
+  answers 200 on both. Chrome was never affected — its id is the one in the
+  listing URL and has been right since 1.0.0. The comment beside the value
+  claimed it was empty until there was a listing to point at, which stopped
+  being true the moment something was typed there; it now says what the three
+  states are worth, and that a wrong slug is the only one of them that fails in
+  front of a seller.
 
 ## [1.1.0] - 2026-09-02
 
