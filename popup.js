@@ -417,6 +417,11 @@ function renderPause(stored) {
   // itself is short enough to stay open.
   const reveal = document.getElementById('paused-reveal');
   detail.classList.toggle('card__note--clamped', fromVinted);
+  // Set beside the class it describes, not left for reveal.onclick alone to
+  // maintain: renderPause runs again on a language change and re-folds a note
+  // the seller had expanded, and if aria-expanded were only ever touched by a
+  // click it would still say "true" over a note the class has just folded.
+  reveal.setAttribute('aria-expanded', String(!fromVinted));
   reveal.hidden = !fromVinted;
   // The folded height belongs to the stylesheet. Read here, while the fold is
   // still on, rather than repeated in two places that could drift apart.
@@ -472,6 +477,12 @@ function renderPause(stored) {
     try {
       await ext.storage.local.remove(BLOCK_KEY);
       card.hidden = true;
+      // The record removed from storage has to be removed from stored too:
+      // repaintAll() calls renderPause(stored) on every language change, and
+      // without this stored.paused would still hold the lifted record, so that
+      // re-render would put the card straight back up over a pause that no
+      // longer exists anywhere but here.
+      stored.paused = null;
     } catch (_) {
       // The card stays up, which is the honest outcome: nothing was cleared.
     }
@@ -627,6 +638,12 @@ function wireToggle(id, key, on, after, valueOf = checked => checked) {
 // being blocked. The box springs back the instant it is clicked and only the
 // second, deliberate click in the warning commits it — so the warning cannot be
 // got past by ignoring it, and cancelling leaves the setting untouched.
+//
+// warning is a function, not an object, and is called here rather than by the
+// caller: these are the two dialogs standing between a seller and getting their
+// account blocked, so they read the catalogue at the moment the click actually
+// raises them, the same way renderPause's lift handler does, rather than once
+// when wireSettings ran and the panel might since have changed language.
 function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => checked) {
   const box = document.getElementById(id);
   box.checked = on;
@@ -638,7 +655,7 @@ function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => ch
       return;
     }
     box.checked = !risky;
-    const agreed = await askRisk(warning);
+    const agreed = await askRisk(warning());
     if (!agreed) return;
     box.checked = risky;
     await commit(box, key, valueOf(risky));
@@ -675,19 +692,19 @@ function wireSettings(stored, repaint) {
 
   wireToggle('local-drafts-toggle', LOCAL_DRAFTS_KEY, stored.localDrafts, note('localDrafts'));
 
-  wireGuarded('cooldown-toggle', HARD_COOLDOWN_KEY, stored.cooldown, false, {
+  wireGuarded('cooldown-toggle', HARD_COOLDOWN_KEY, stored.cooldown, false, () => ({
     title: BumplineText.t('popup.risk.cooldown.title'),
     detail: BumplineText.t('popup.risk.cooldown.detail'),
     accept: BumplineText.t('popup.risk.cooldown.accept'),
     cancel: BumplineText.t('popup.risk.cooldown.cancel'),
-  }, note('cooldown'));
+  }), note('cooldown'));
 
-  wireGuarded('pace-toggle', PACE_KEY, stored.paced, false, {
+  wireGuarded('pace-toggle', PACE_KEY, stored.paced, false, () => ({
     title: BumplineText.t('popup.risk.pace.title'),
     detail: BumplineText.t('popup.risk.pace.detail'),
     accept: BumplineText.t('popup.risk.pace.accept'),
     cancel: BumplineText.t('popup.risk.pace.cancel'),
-  }, note('paced'), checked => (checked ? 'safe' : 'fast'));
+  }), note('paced'), checked => (checked ? 'safe' : 'fast'));
 
   // Not a toggle, so it wires itself: the value is the setting, and a failed
   // write puts the box back where it was rather than showing a language the
@@ -719,6 +736,11 @@ function wireSettings(stored, repaint) {
     // aria-live, so a screen reader would announce the placeholder as though it
     // were news. Everything script drew is therefore drawn again, in the new
     // language, before the seller sees the panel.
+    //
+    // The two guarded settings' warning dialogs are not on that list and need
+    // no redraw here: wireGuarded calls its warning function at the moment the
+    // dialog is raised, not when this function wired it, so those four strings
+    // are never a placeholder left over from an earlier language to begin with.
     repaint();
   });
 }
