@@ -17,7 +17,7 @@ Bumpline
 | :-----: | ---------------- | ------ |
 | <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg" height="50" alt="Get Bumpline for Chrome"> | <a href="https://chromewebstore.google.com/detail/bumpline/bckdngndomabedcpciejiojhjfheolkn">Chrome&nbsp;Web&nbsp;Store</a> | Published. Installs in one click and updates itself. |
 | <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/Microsoft_Edge_logo_%282019%29.svg" height="50" alt="Get Bumpline for Edge"> | <a href="https://chromewebstore.google.com/detail/bumpline/bckdngndomabedcpciejiojhjfheolkn">Chrome&nbsp;Web&nbsp;Store</a> | Edge runs Chromium and can install from the Chrome Web Store. No separate Edge Add-ons listing. |
-| <img src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Firefox_logo%2C_2019.svg" height="50" alt="Build Bumpline for Firefox"> | <a href="#firefox">Build&nbsp;from&nbsp;source</a> | Supported from 140. `node build.mjs firefox` writes the package; an Add-ons listing is not up yet. |
+| <img src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Firefox_logo%2C_2019.svg" height="50" alt="Get Bumpline for Firefox"> | <a href="https://addons.mozilla.org/firefox/addon/bumpline-vinted-relister/">Firefox&nbsp;Add-ons</a> | Published. Installs in one click and updates itself. Firefox 140 or newer. |
 | <img src="https://upload.wikimedia.org/wikipedia/commons/c/c2/GitHub_Invertocat_Logo.svg" height="50" alt="Get Bumpline from GitHub Releases"> | <a href="https://github.com/g1ampy/Bumpline/releases">GitHub&nbsp;-&nbsp;Releases</a> | The packaged build. Must be unzipped and loaded by hand; it will not auto-update. |
 
 ***
@@ -125,9 +125,13 @@ open the same link and allow extensions from other stores when prompted.
 
 #### Firefox
 
-Firefox needs a manifest of its own — it runs the background as an event page
-rather than a service worker, and every add-on it installs must carry an id. The
-build script writes that manifest; the code is the same code.
+[Install Bumpline](https://addons.mozilla.org/firefox/addon/bumpline-vinted-relister/) — one click there too, and it
+keeps itself up to date. Firefox 140 or newer.
+
+To run a build the listing does not carry yet, Firefox needs a manifest of its
+own — it runs the background as an event page rather than a service worker, and
+every add-on it installs must carry an id. The build script writes that
+manifest; the code is the same code.
 
 ```bash
 node build.mjs firefox
@@ -136,7 +140,7 @@ node build.mjs firefox
 1. Open `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on** and pick `build/bumpline-<version>-firefox/manifest.json`.
 
-A temporary add-on lasts until Firefox closes. Firefox 140 or newer.
+A temporary add-on lasts until Firefox closes.
 
 #### From source
 
