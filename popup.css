@@ -246,6 +246,67 @@ body {
   font-size: 14px;
 }
 
+/* --- the language ------------------------------------------------------- */
+
+/* The globe and the code are what you see; the <select> is a real one, laid
+   over both at zero opacity. Styling a select's closed state down to two
+   letters while its options stay full language names is not something CSS can
+   do, and the alternative — shortening the options to "IT" — would take away
+   the one word on that list a reader is scanning for. So the native control
+   keeps its menu and its keyboard, and gives up only its appearance. */
+.lang {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  color: var(--muted-foreground);
+}
+
+.lang:hover { color: var(--foreground); }
+
+/* The select is invisible, so the ring it would have drawn has to be drawn by
+   the box around it, or a keyboard reaches this control and nothing says so. */
+.lang:has(.lang__select:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* .icon nudges itself down two pixels to sit level with a line of card text.
+   This row is centred, so the nudge is two pixels of error. */
+.lang .icon { margin-top: 0; }
+
+/* Two letters in every language, so the switch beside it never moves. Uppercase
+   is a display choice and not the value: `lang` is stored as the subtag the
+   catalogue uses, and text-transform leaves that alone. */
+.lang__code {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Left on Automatic the code is the language the browser resolved to, which is
+   a report rather than a choice, and it stays the muted colour the row already
+   carries. An explicit pick is the seller's own and reads at full strength. */
+.lang--picked { color: var(--foreground); }
+
+.lang__select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  /* Safari and Firefox both draw their own control inside the box even at zero
+     opacity, which on some builds is enough to change the box's size. */
+  appearance: none;
+}
+
 /* --- switch ------------------------------------------------------------- */
 
 /* switch.tsx: h-5 w-11 with a two-pixel border, and a thumb that is h-4 w-6 —
@@ -691,28 +752,6 @@ body {
    own look rather than .toggle's. Same tokens as .button--quiet: the panel's
    own border and background, so it reads as part of this drawer rather than
    as a browser-default control dropped into it. */
-/* .switch aligns its children to flex-start, which is right for every other row
-   in the drawer: the control there is a checkbox about as tall as one line of
-   its own label. This is the one row whose control is taller than that, and
-   left at flex-start the select's own padding pushes its text about six pixels
-   below the label it belongs to. align-self on the select alone would not fix
-   it — the select is the taller of the two, so it defines the row's height and
-   has nowhere to move — so the row is centred instead, which puts the two lines
-   of text back on the same one. :has() rather than a modifier class, because
-   the difference is the control and not the row. */
-.switch:has(.setting__select) {
-  align-items: center;
-}
-
-.setting__select {
-  font: inherit;
-  color: var(--foreground);
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 6px 8px;
-}
-
 /* --- the risk gate ------------------------------------------------------ */
 
 /* Two buttons side by side, and the safe one first: the reading order is the

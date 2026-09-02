@@ -207,11 +207,10 @@ const BumplineText = (() => {
       'popup.settings.pace.hint': 'Recommended. Off shortens it to 0.25 to 0.7s, fast enough to read as an automated script.',
       'popup.settings.reload.label': 'Reload the page',
       'popup.settings.reload.hint': 'Off keeps your place on the page; the relisted copy appears at your next reload.',
-      // The browser is asked first and is right nearly always; this row is for
-      // the seller it is wrong about. The language names in the list are
-      // not translated — a person scanning for their own language wants to
-      // see it written the way it is written, not the way English names it.
-      'popup.lang.group': 'Language',
+      // The language names in the list are not translated — a person scanning
+      // for their own language wants to see it written the way it is written,
+      // not the way English names it. The row itself is in the header now,
+      // which is why there is no group heading here to name it.
       'popup.lang.label': 'Language',
       'popup.lang.auto': 'Automatic (browser language)',
       'popup.settings.localDrafts.label': 'Keep the copy on this device',
@@ -433,7 +432,6 @@ const BumplineText = (() => {
       'popup.settings.pace.hint': 'Consigliato. Se lo disattivi, si riduce a 0,25-0,7 secondi: abbastanza veloce da sembrare uno script automatico.',
       'popup.settings.reload.label': 'Ricarica la pagina',
       'popup.settings.reload.hint': 'Se disattivato, resti dove sei sulla pagina; la copia ripubblicata appare al prossimo ricaricamento.',
-      'popup.lang.group': 'Lingua',
       'popup.lang.label': 'Lingua',
       'popup.lang.auto': 'Automatica (lingua del browser)',
       'popup.settings.localDrafts.label': 'Tieni la copia su questo dispositivo',
@@ -625,7 +623,6 @@ const BumplineText = (() => {
       'popup.settings.pace.hint': 'Recommandé. Désactivé, la pause tombe à 0,25-0,7 s, assez rapide pour ressembler à un script automatisé.',
       'popup.settings.reload.label': 'Recharger la page',
       'popup.settings.reload.hint': 'Désactivé, tu gardes ta place sur la page ; la copie republiée apparaît au prochain rechargement.',
-      'popup.lang.group': 'Langue',
       'popup.lang.label': 'Langue',
       'popup.lang.auto': 'Automatique (langue du navigateur)',
       'popup.settings.localDrafts.label': 'Garder la copie sur cet appareil',

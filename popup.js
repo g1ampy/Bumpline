@@ -696,11 +696,9 @@ function fillLanguages(box) {
   }
 }
 
-// repaint is everything this panel draws from something other than the
-// catalogue, handed in the way wirePower is handed paintTab. Changing the
-// language is the one action in here that invalidates the whole panel rather
-// than one row of it.
-function wireSettings(stored, repaint) {
+// Returns the painter for its own count badge, which is the one thing in here
+// the language can change from outside.
+function wireSettings(stored) {
   const count = document.getElementById('settings-count');
   const paint = () => {
     const changed = Object.keys(SETTING_DEFAULTS)
@@ -739,12 +737,45 @@ function wireSettings(stored, repaint) {
     cancel: BumplineText.t('popup.risk.pace.cancel'),
   }), note('paced'), checked => (checked ? 'safe' : 'fast'));
 
-  // Not a toggle, so it wires itself: the value is the setting, and a failed
-  // write puts the box back where it was rather than showing a language the
-  // extension is not in.
+  // The badge is the one thing in the drawer written in the language rather
+  // than in switch positions, so whoever changes the language has to be able to
+  // draw it again. It is handed out rather than reached for, because the
+  // language no longer lives in this drawer.
+  return paint;
+}
+
+// The language, which sits in the header rather than in the drawer: it is not a
+// setting about relisting, it is which language the panel is in, and the answer
+// is legible in every word around it.
+//
+// Not a toggle, so it wires itself: the value is the setting, and a failed
+// write puts the box back where it was rather than showing a language the
+// extension is not in.
+//
+// repaint is everything this panel draws from something other than the
+// catalogue, handed in the way wirePower is handed paintTab; paintCount is
+// wireSettings' own badge. Changing the language is the one action in the panel
+// that invalidates all of it rather than one row.
+function wireLanguage(stored, repaint, paintCount) {
   const langBox = document.getElementById('lang-select');
+  const code = document.getElementById('lang-code');
+  const box = code.parentElement;
+
+  // Two letters, and which two is not always the stored value: on 'auto' the
+  // stored value is the question rather than the answer, and the answer is the
+  // language the catalogue actually resolved to. locale() carries the region
+  // the clock is formatted with — it-CH, fr-BE — and the code is the language,
+  // so it is the subtag in front that gets drawn.
+  const paint = () => {
+    const picked = stored.lang !== 'auto';
+    code.textContent = (picked ? stored.lang : BumplineText.locale().split('-')[0]);
+    box.classList.toggle('lang--picked', picked);
+  };
+
   fillLanguages(langBox);
   langBox.value = stored.lang;
+  paint();
+
   langBox.addEventListener('change', async () => {
     const wanted = langBox.value;
     const before = stored.lang;
@@ -759,6 +790,7 @@ function wireSettings(stored, repaint) {
     BumplineText.use(wanted);
     BumplineText.paint();
     paint();
+    paintCount();
     // BumplineText.paint() has just rewritten every [data-i18n] node straight
     // from the catalogue, and four of those nodes do not belong to it: the
     // status title and detail, the paused title, and the lift button were all
@@ -904,7 +936,7 @@ async function main() {
 
   wirePower(stored, tab, paintTab, fresh => { page = fresh; });
   repaintAll();
-  wireSettings(stored, repaintAll);
+  wireLanguage(stored, repaintAll, wireSettings(stored));
   wireDrawer();
   wireReview();
 }

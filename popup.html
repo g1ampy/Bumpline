@@ -6,6 +6,35 @@
   <img class="head__logo" src="icons/icon32.png" alt="" width="20" height="20">
   <h1 class="head__name">Bumpline</h1>
 
+  <!-- The browser is asked first and is right nearly always; this is for the
+       seller it is wrong about — an Italian wardrobe read in a browser someone
+       else set up in English.
+
+       A real <select>, laid transparent over the globe and the code: the menu
+       that opens is the browser's own, with every language written under its
+       own name, and a screen reader reads the selected option in full
+       ("Automatic (browser language)"), not the two letters. Only the closed
+       state is abbreviated, and only visually — two letters wide in every
+       language, so switching one never moves the switch beside it.
+
+       The code is aria-hidden because the select already says the same thing
+       out loud, and better. -->
+  <span class="lang">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
+      <path d="M2 12h20"/>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/>
+    </svg>
+    <span class="lang__code" id="lang-code" aria-hidden="true"></span>
+    <!-- Only Automatic is written here. The languages themselves are added by
+         popup.js from the catalogue, each under its own name, so a language
+         added to strings.js needs no edit in this file. -->
+    <select class="lang__select" id="lang-select"
+            data-i18n-label="popup.lang.label" aria-label="Language">
+      <option value="auto" data-i18n="popup.lang.auto">Automatic (browser language)</option>
+    </select>
+  </span>
+
   <!-- The switch is the first thing in reach and the last thing that can go
        wrong: everything below it stops when it is off. The word beside it says
        the state in text as well as in colour and knob position. -->
@@ -163,21 +192,6 @@
             </span>
           </span>
           <input class="toggle" type="checkbox" id="reload-toggle" role="switch" checked>
-        </label>
-
-        <!-- The browser is asked first and is right nearly always; this is for
-             the seller it is wrong about — an Italian wardrobe read in a
-             browser someone else set up in English. -->
-        <p class="setting__group" data-i18n="popup.lang.group">Language</p>
-
-        <label class="switch">
-          <span class="switch__label" data-i18n="popup.lang.label">Language</span>
-          <!-- Only Automatic is written here. The languages themselves are
-               added by popup.js from the catalogue, each under its own name, so
-               a language added to strings.js needs no edit in this file. -->
-          <select class="setting__select" id="lang-select">
-            <option value="auto" data-i18n="popup.lang.auto">Automatic (browser language)</option>
-          </select>
         </label>
 
         <!-- Out of sight, not out of the build. The switch is still wired and the
