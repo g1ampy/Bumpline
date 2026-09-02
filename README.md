@@ -316,9 +316,12 @@ run to, so a wardrobe that no longer carries one clears the record. Overriding
 that restriction is not on offer — the refusal would come from Vinted whether or
 not the extension stood down — but the popup can clear the record it holds, and
 the next wardrobe page you open decides afresh.
-If the category now requires a size your old listing never had, a window shows
-the real size list pulled from Vinted and asks you to pick one. Nothing is
-deleted until you choose.
+If the size your listing carries is no longer one the category accepts, a window
+shows the real size list pulled from Vinted and asks you to pick one. Nothing is
+deleted until you choose. A listing with no size at all is left alone: Vinted
+accepted it that way, and nothing it answers before the publish says whether the
+category insists on one. If it turns out to insist, the publish is refused in
+those words and the same window opens then, with the copy already saved here.
 
 ## Why your item cannot get lost
 
@@ -404,9 +407,12 @@ drafts and publish it yourself. Both work.
 
 #### It asks for a size the old listing never had
 
-Vinted made the size mandatory for that category after you posted the item. Bags
-and backpacks are the usual case. Pick a size and it goes through; cancel and
-nothing is deleted.
+Vinted refused to publish the copy without one: the category has been made to
+require a size since you posted the item. Pick a size and the publish is tried
+again; cancel and the copy stays here, with **Retry now** on the card to ask
+again. Before 1.1.2 this window also opened for categories that never wanted a
+size — earrings, necklaces, bags — because Vinted offers every category under
+Women the same clothing sizes whether it needs them or not.
 
 ## How it works
 

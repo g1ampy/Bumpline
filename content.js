@@ -788,6 +788,22 @@
     return `${status} ${String(body).slice(0, 200)}`;
   }
 
+  // The field names Vinted put in a refusal, and nothing else from it. A
+  // refusal that names `size` is the only trustworthy statement that the
+  // category demands one — see inspectSize for why nothing readable beforehand
+  // is.
+  function fieldsRefused(body) {
+    try {
+      const parsed = JSON.parse(body);
+      if (Array.isArray(parsed.errors)) {
+        return parsed.errors.map(error => error && error.field).filter(Boolean);
+      }
+    } catch (_) {
+      // not JSON; no fields to name
+    }
+    return [];
+  }
+
   // The editor endpoint is the only one that still returns an item in a shape
   // that can be copied. The public /api/v2/items/<id> route answers 404 with an
   // HTML body and is of no use here.
@@ -917,6 +933,7 @@
       await noteRefusal(reply, body);
       const failure = fail('relist.error.publishFailed', explainFailure(reply.status, body));
       failure.status = reply.status;
+      failure.fields = fieldsRefused(body);
       // Field names only, never values: enough to see which shape was sent
       // when a refusal has to be reported, and nothing of the listing itself.
       failure.sentKeys = Object.keys(full);
@@ -1615,7 +1632,7 @@
         toast(T('toast.publishPausedUntil', clockOf(paused.until)), 'bad');
         return;
       }
-      const done = await advancePending(itemId, await readPending(itemId));
+      const done = await advancePending(itemId, await readPending(itemId), null, true);
       retry.disabled = false;
       if (done) await settle(itemId, T('toast.published'));
     });
@@ -1688,8 +1705,36 @@
     return assigned.length ? { sessionId, assigned } : null;
   }
 
-  async function attemptPublish(itemId, record, onAttempt) {
+  // Vinted has refused the publish over the size. The listing had none and
+  // nothing said beforehand that this category insists on one, so the size is
+  // asked for now, with the original already gone: the copy is on this device
+  // and the answer goes straight into it, so backing out loses nothing but
+  // leaves the relist unfinished. Resolves to the chosen id, or null.
+  async function askForMissingSize(record, csrf) {
+    if (!record.item || !record.item.catalog_id) return null;
+    let groups;
+    try {
+      groups = await loadSizeGroups(record.item.catalog_id, csrf);
+    } catch (err) {
+      trace('size lookup failed', err);
+      return null;
+    }
+    if (!groups.length) return null;
+    return askForSize(groups, record.item.title, T('size.why.required'), 'size.body.pending');
+  }
+
+  function refusedOverSize(err) {
+    return ((err && err.fields) || []).some(field => field === 'size' || field === 'size_id');
+  }
+
+  // canAsk is what separates a relist the seller is watching from a resume that
+  // ran on its own as a page loaded: only the first may put a window in front
+  // of them. A resume that meets the refusal stores it and raises the banner,
+  // and the retry button there asks.
+  async function attemptPublish(itemId, record, onAttempt, canAsk) {
     let lastError = null;
+    let sizeAsked = false;
+    let allowed = PUBLISH_ATTEMPTS;
     const pace = await paceProfile();
 
     // A relist stuck from before the size fix carries the size as an attribute
@@ -1703,8 +1748,8 @@
       }
     }
 
-    for (let attempt = 1; attempt <= PUBLISH_ATTEMPTS; attempt++) {
-      if (onAttempt) onAttempt(attempt, PUBLISH_ATTEMPTS);
+    for (let attempt = 1; attempt <= allowed; attempt++) {
+      if (onAttempt) onAttempt(attempt, allowed);
 
       let csrf = null;
       try {
@@ -1760,13 +1805,39 @@
             } catch (retryErr) {
               trace('photo refresh failed', retryErr);
             }
+          } else if (canAsk && !sizeAsked && refusedOverSize(err)) {
+            // Asked once. A second refusal naming the size means the answer was
+            // not the problem, and asking again would only walk the seller
+            // round the same window.
+            sizeAsked = true;
+            const chosen = await askForMissingSize(record, csrf);
+            if (chosen == null) {
+              // Vinted's own refusal is what stays on the record: the banner
+              // reads it back as the reason, and "size: Fill in size to
+              // continue" is both true and the thing to act on. Backing out of
+              // the window is said here instead, where it is not mistaken for
+              // something Vinted said.
+              toast(T('size.cancelled.pending'), 'bad');
+              break;
+            }
+            record.item = {
+              ...record.item,
+              size_id: chosen,
+              item_attributes: withSize(record.item.item_attributes, chosen),
+            };
+            if (record.snapshot) record.snapshot.size_id = chosen;
+            await savePending(itemId, record);
+            // The refusal has been answered rather than waited out, so the
+            // publish it needs is an extra attempt: on the last one otherwise,
+            // the seller would pick a size and watch nothing happen.
+            allowed = attempt + 1;
           }
         }
       }
 
       // One wait, and a long one. If the refusal was really a rate limit, the
       // second attempt has to land well clear of the first to be worth making.
-      if (attempt < PUBLISH_ATTEMPTS) await pause(between(4000, 9000));
+      if (attempt < allowed) await pause(between(4000, 9000));
     }
 
     throw lastError || fail('relist.error.publishGaveUp');
@@ -1774,10 +1845,10 @@
 
   // Safe to call as often as you like; it either finishes the job or records
   // why it could not.
-  async function advancePending(itemId, record, onAttempt) {
+  async function advancePending(itemId, record, onAttempt, canAsk) {
     if (!record) return false;
     try {
-      const published = await attemptPublish(itemId, record, onAttempt);
+      const published = await attemptPublish(itemId, record, onAttempt, canAsk);
       const newId = published.id;
       await forgetPending(itemId);
       hideBanner(itemId);
@@ -1888,9 +1959,19 @@
 
     const current = sizeOf(item);
     if (current == null) {
-      // Listings predating a catalog that has since made the size mandatory.
-      // Publishing them unchanged fails with "Fill in size to continue".
-      return { ok: false, groups, why: T('size.why.required') };
+      // Offered is not required. size_groups answers with the default group of
+      // the branch the catalog sits in, not with the catalog's own rule:
+      // earrings, necklaces, backpacks and sunglasses under Women all come back
+      // holding the women's clothing sizes, the same single group a dress does.
+      // So a listing without a size proves nothing here, and treating the group
+      // as a demand stopped every accessory relist to ask for a clothing size
+      // the category never wanted.
+      //
+      // The listing is the better witness: Vinted accepted it without a size.
+      // Where the category has since made one mandatory, completion says so in
+      // as many words, and that refusal — not a guess made beforehand — is
+      // where the size is asked for. See attemptPublish.
+      return { ok: true, required: false };
     }
 
     const accepted = new Set();
@@ -1950,9 +2031,12 @@
     });
   }
 
-  // Resolves to the chosen size id, or null if the person backs out. Always
-  // shown before anything is deleted, so backing out costs nothing.
-  function askForSize(groups, title, why) {
+  // Resolves to the chosen size id, or null if the person backs out. Shown
+  // before anything is deleted when the size the listing carries has stopped
+  // being valid, and after the deletion when Vinted refuses the publish over a
+  // size the listing never had. The two moments differ in what backing out
+  // costs, so the sentence explaining them is the caller's to choose.
+  function askForSize(groups, title, why, bodyKey) {
     return new Promise(resolve => {
       const overlay = document.createElement('div');
       overlay.className = 'bumpline-modal';
@@ -1966,7 +2050,7 @@
 
       const body = document.createElement('div');
       body.className = 'bumpline-modal__body';
-      body.textContent = T('size.body', title, why);
+      body.textContent = T(bodyKey || 'size.body', title, why);
 
       const picker = document.createElement('select');
       picker.className = 'bumpline-modal__picker';
@@ -2160,7 +2244,7 @@
     const outstanding = await readPending(itemId);
     if (outstanding) {
       toast(T('toast.resumingUnfinished'), 'bad');
-      await advancePending(itemId, outstanding);
+      await advancePending(itemId, outstanding, null, true);
       return;
     }
 
@@ -2380,9 +2464,14 @@
 
       setButtonLabel(button, T('button.publishing'));
       await step(pace);
-      const newId = await advancePending(itemId, record, (attempt, total) => {
-        setButtonLabel(button, attempt === 1 ? T('button.publishing') : T('button.retrying', attempt, total));
-      });
+      const newId = await advancePending(
+        itemId,
+        record,
+        (attempt, total) => {
+          setButtonLabel(button, attempt === 1 ? T('button.publishing') : T('button.retrying', attempt, total));
+        },
+        true,
+      );
       if (newId) await settle(itemId, T('toast.relisted'));
       // On failure advancePending has already stored the record and raised the
       // banner, and the next page load will try again.

@@ -70,6 +70,7 @@ const BumplineText = (() => {
       // size Vinted will still accept.
       'size.title': 'Pick a size to continue',
       'size.body': '"{0}" cannot be relisted as it is: {1}. Choose the size the new listing should carry. Nothing has been deleted yet.',
+      'size.body.pending': 'Vinted refused to publish "{0}": {1}. Choose the size the new listing should carry. The original is gone and the copy is saved on this device, so it is only publishing that is waiting on this.',
       'size.blank': 'Select a size',
       'size.cancel': 'Cancel relist',
       'size.accept': 'Use this size',
@@ -118,6 +119,7 @@ const BumplineText = (() => {
       'relist.error.publishedNoId': 'Vinted published the draft but returned no id.',
       'relist.error.publishGaveUp': 'Publishing failed after several attempts.',
       'size.cancelled': 'Cancelled. Nothing was deleted.',
+      'size.cancelled.pending': 'No size was chosen, so the copy is still unpublished. It is kept, and publishing can be retried from the card above.',
 
       // The age line painted under every wardrobe item. One day gets its own
       // key rather than the count's placeholder: "1 days ago" was wrong in
@@ -347,6 +349,7 @@ const BumplineText = (() => {
 
       'size.title': 'Scegli una taglia per continuare',
       'size.body': '«{0}» non può essere ripubblicato così com\'è: {1}. Scegli la taglia che dovrà avere il nuovo annuncio. Non è stato ancora eliminato nulla.',
+      'size.body.pending': 'Vinted ha rifiutato di pubblicare «{0}»: {1}. Scegli la taglia che dovrà avere il nuovo annuncio. L\'originale non c\'è più e la copia è salvata su questo dispositivo: manca solo la pubblicazione.',
       'size.blank': 'Seleziona una taglia',
       'size.cancel': 'Annulla la ripubblicazione',
       'size.accept': 'Usa questa taglia',
@@ -379,6 +382,7 @@ const BumplineText = (() => {
       'relist.error.publishedNoId': 'Vinted ha pubblicato la bozza ma non ha restituito un id.',
       'relist.error.publishGaveUp': 'La pubblicazione non è riuscita dopo diversi tentativi.',
       'size.cancelled': 'Annullato. Non è stato eliminato nulla.',
+      'size.cancelled.pending': 'Nessuna taglia scelta, quindi la copia resta non pubblicata. È conservata e la pubblicazione si può ritentare dalla scheda qui sopra.',
 
       'age.today': 'Creato oggi',
       'age.dayAgo': 'Creato 1 giorno fa',
@@ -538,6 +542,7 @@ const BumplineText = (() => {
 
       'size.title': 'Choisis une taille pour continuer',
       'size.body': '« {0} » ne peut pas être republié tel quel : {1}. Choisis la taille que portera la nouvelle annonce. Rien n\'a encore été supprimé.',
+      'size.body.pending': 'Vinted a refusé de publier « {0} » : {1}. Choisis la taille que portera la nouvelle annonce. L\'originale a été supprimée et la copie est enregistrée sur cet appareil : il ne manque que la publication.',
       'size.blank': 'Sélectionne une taille',
       'size.cancel': 'Annuler la republication',
       'size.accept': 'Utiliser cette taille',
@@ -570,6 +575,7 @@ const BumplineText = (() => {
       'relist.error.publishedNoId': 'Vinted a publié le brouillon mais n\'a renvoyé aucun identifiant.',
       'relist.error.publishGaveUp': 'La publication a échoué après plusieurs tentatives.',
       'size.cancelled': 'Annulé. Rien n\'a été supprimé.',
+      'size.cancelled.pending': 'Aucune taille choisie, la copie reste donc non publiée. Elle est conservée et la publication peut être retentée depuis la carte ci-dessus.',
 
       'age.today': 'Créé aujourd\'hui',
       'age.dayAgo': 'Créé il y a 1 jour',
