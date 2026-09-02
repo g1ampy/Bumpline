@@ -23,6 +23,12 @@ seller whose browser and whose Vinted are not set to the same language.
 Switching it repaints an open wardrobe page in every open tab on the spot;
 nothing needs a reload to catch up.
 
+The same release carries the Australian site. Vinted opened `vinted.com.au` on
+a domain of its own, after every list of country domains in the extension was
+written, and the catch-all patterns do not stretch to it: `*.vinted.com`
+matches a subdomain of `vinted.com`, which `vinted.com.au` is not. On the
+Australian site the buttons simply never appeared.
+
 ### Added
 
 - **Italian.** The extension speaks it wherever the browser's own language is
@@ -44,6 +50,12 @@ nothing needs a reload to catch up.
   reached a seller as English words sitting inside an otherwise Italian page,
   or as the raw key left on screen; the build stops it before it ships
   instead.
+- **Australia (`www.vinted.com.au`).** The domain is now named in all four
+  places a country site has to be named for a relist to work: the host
+  permissions, the pages `bridge.js` may be loaded into, the wardrobe pages
+  `content.js` runs on, and the request filter the service worker reads the
+  Vinted tokens from. Everything a relist does on the Australian site is what it
+  does everywhere else; nothing about the relist itself changed.
 
 ### Changed
 
@@ -52,27 +64,15 @@ nothing needs a reload to catch up.
   restriction — into storage as a finished English sentence, which the panel
   could only ever show back in English. It now writes one of three short
   codes, and the panel translates whichever one it finds. A pause recorded by
-  1.0.2 or earlier, if it is still standing, carries the old English sentence
+  1.0.1 or earlier, if it is still standing, carries the old English sentence
   rather than a code, and is shown exactly as written until it expires — the
   panel reads what is actually in storage rather than guessing at a
   translation for words that were never coded in the first place.
-
-## [1.0.2] - 2026-08-31
-
-Vinted opened an Australian site on a domain of its own, `vinted.com.au`, and
-every list of country domains in the extension was written before that domain
-existed. The catch-all patterns do not stretch to it either: `*.vinted.com`
-matches a subdomain of `vinted.com`, which `vinted.com.au` is not. On the
-Australian site the buttons simply never appeared.
-
-### Added
-
-- **Australia (`www.vinted.com.au`).** The domain is now named in all four
-  places a country site has to be named for a relist to work: the host
-  permissions, the pages `bridge.js` may be loaded into, the wardrobe pages
-  `content.js` runs on, and the request filter the service worker reads the
-  Vinted tokens from. Everything a relist does on the Australian site is what it
-  does everywhere else; nothing about the relist itself changed.
+- **The extension is a relister, and says so.** The store name reads
+  "Bumpline - Relister for Vinted" rather than "Bumpline - Relist for Vinted",
+  and the description leads with what one click does before it explains why
+  nothing can be lost. The word on the button is unchanged; this is the name
+  above the listing, which was reading as an instruction rather than a thing.
 
 ## [1.0.1] - 2026-08-30
 
@@ -604,7 +604,6 @@ three to five minutes an item, and one distraction can lose the item entirely.
   no network calls to anything except Vinted itself.
 
 [1.1.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.0
-[1.0.2]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.2
 [1.0.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.1
 [1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
 [0.3.0]: https://github.com/g1ampy/Bumpline/releases/tag/v0.3.0

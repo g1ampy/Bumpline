@@ -38,7 +38,7 @@
   // into storage in one language is the defect the pause-reason ruling was
   // written to prevent, and this is the same ruling applied to refusals.
   //
-  // Every record written by 1.0.2 carries a finished English sentence in
+  // Every record written by 1.0.1 carries a finished English sentence in
   // lastError instead, and some of those are still on disk with a live pending
   // relist. A string is a string: it comes back out exactly as it went in.
   function sayReason(reason) {

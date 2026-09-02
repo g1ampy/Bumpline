@@ -250,7 +250,7 @@ const whyOf = why => (WHY_KEYS[why] ? BumplineText.t(WHY_KEYS[why]) : why);
 // The same rule, applied to why a relist failed rather than to why a pause is
 // standing. content.js writes record.lastError as { code, args } when the
 // sentence is Bumpline's own, and as a string when it is Vinted's — and every
-// record written by 1.0.2 holds a finished English string there whatever the
+// record written by 1.0.1 holds a finished English string there whatever the
 // sentence was. A string comes back exactly as it went in; only a code is
 // written out, and it is written out now, in the language being read.
 function sayReason(reason) {
