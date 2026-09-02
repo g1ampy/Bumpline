@@ -349,7 +349,7 @@ function checkCatalogues() {
     const text = readFileSync(join(ROOT, file), 'utf8');
     const asked = [
       ...[...text.matchAll(/\b[tT]\(\s*(['"`])([^'"`]+)\1/g)].map(match => match[2]),
-      ...[...text.matchAll(/data-i18n(?:-title|-label|-html)?="([^"]+)"/g)].map(match => match[1]),
+      ...[...text.matchAll(/data-i18n(?:-title|-label|-em)?="([^"]+)"/g)].map(match => match[1]),
       ...[...text.matchAll(KEY_SHAPED)].map(match => match[2]).filter(key => !FILE_LIKE.test(key)),
     ];
     for (const key of asked) {

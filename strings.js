@@ -296,7 +296,7 @@ const BumplineText = (() => {
       'welcome.step1.art.manage': 'Manage extensions',
 
       'welcome.step2.title': 'Go to your own wardrobe',
-      // Read through data-i18n-html, not data-i18n: these two carry their own
+      // Read through data-i18n-em, not data-i18n: these two carry their own
       // <b>/<i> emphasis, which plain textContent painting would strip.
       'welcome.step2.note': 'That is where the buttons turn up. Every item of yours still for sale gets a <b>Relist</b> and a <b>Relist as draft</b>, right beside it. Only on your things. Nobody else’s listings are touched.',
       'welcome.step2.aside': 'Nothing is thrown away first. The copy is made <i>before</i> the old listing goes, so your item is never in limbo. <b>Relist</b> puts it straight back up; <b>Relist as draft</b> stops one step short of publishing, in case you want to look it over first.',
@@ -795,8 +795,8 @@ const BumplineText = (() => {
     // argument was true and the invariant it rested on was written nowhere but
     // in that comment, which is a poor place to keep a thing that has to stay
     // true for as long as the file exists.
-    for (const node of root.querySelectorAll('[data-i18n-html]')) {
-      node.replaceChildren(...emphasised(t(node.dataset.i18nHtml)));
+    for (const node of root.querySelectorAll('[data-i18n-em]')) {
+      node.replaceChildren(...emphasised(t(node.dataset.i18nEm)));
     }
     for (const node of root.querySelectorAll('[data-i18n-title]')) {
       node.title = t(node.dataset.i18nTitle);
