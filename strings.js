@@ -16,7 +16,7 @@
 
 // Chrome's own i18n reads the browser's UI language and nothing else, so an
 // Italian seller running Chrome in English would have no way back. The words
-// live here instead, both languages at once, and the seller can overrule the
+// live here instead, every language at once, and the seller can overrule the
 // browser from the panel.
 //
 // Held in memory rather than fetched, because the buttons are drawn the moment
@@ -208,7 +208,7 @@ const BumplineText = (() => {
       'popup.settings.reload.label': 'Reload the page',
       'popup.settings.reload.hint': 'Off keeps your place on the page; the relisted copy appears at your next reload.',
       // The browser is asked first and is right nearly always; this row is for
-      // the seller it is wrong about. The two language names in the list are
+      // the seller it is wrong about. The language names in the list are
       // not translated — a person scanning for their own language wants to
       // see it written the way it is written, not the way English names it.
       'popup.lang.group': 'Language',
@@ -501,6 +501,198 @@ const BumplineText = (() => {
       'welcome.rate.note': 'Bumpline è gratuito, open source, e non serve nessun account per usarlo. Una valutazione è l\'unica cosa che chiede, ed è così che il prossimo venditore lo trova. Nessuna fretta: torna qui una volta che l\'hai davvero usato.',
 
       'welcome.version': 'Versione {0}',
+    },
+    fr: {
+      'button.relist': 'Republier',
+      'button.draft': 'Republier en brouillon',
+      'button.draft.title': 'Supprime l\'original et laisse la copie non publiée dans tes brouillons Vinted',
+      'button.cooldown': 'Pause {0} s…',
+      'button.waiting': 'En attente…',
+      'button.relisting': 'Republication…',
+      'button.checkingSize': 'Vérification de la taille…',
+      'button.waitingSize': 'En attente de la taille…',
+      'button.checking': 'Vérification…',
+      'button.savingDraft': 'Enregistrement du brouillon…',
+      'button.savingCopy': 'Enregistrement de la copie…',
+      'button.deleting': 'Suppression…',
+      'button.publishing': 'Publication…',
+      'button.retrying': 'Nouvelle tentative {0}/{1}…',
+
+      'toast.pausedUntil': 'La republication est en pause jusqu\'à {0}.',
+      'toast.publishPausedUntil': 'La publication est en pause jusqu\'à {0}.',
+      'toast.published': 'Publié.',
+      'toast.relisted': 'Republié.',
+      'toast.relistedNoPhotos': 'Republié, mais la copie n\'a aucune photo. Ajoute-les sur Vinted.',
+      'toast.originalDeletedDraft': 'Original supprimé. La copie se trouve dans tes brouillons Vinted.',
+      'toast.reloading': '{0} Rechargement…',
+      'toast.reloadToSee': '{0} Recharge la page pour le voir.',
+      'toast.cantFindItem': 'Impossible de savoir à quel article ce bouton appartient.',
+      'toast.resumingUnfinished': 'Une republication de cet article n\'a pas abouti. Reprise en cours.',
+      'toast.stopped': 'Arrêté. Rien n\'a été supprimé.',
+      'toast.relistStopped': 'Republication arrêtée : {0}',
+
+      'card.recovery.message.draft': '« {0} » a été supprimé et n\'est pas encore publié. La copie se trouve dans tes brouillons Vinted. La publication est retentée à chaque page Vinted que tu ouvres.',
+      'card.recovery.message.device': '« {0} » a été supprimé et n\'est pas encore publié. La copie est enregistrée sur cet appareil. La publication est retentée à chaque page Vinted que tu ouvres.',
+      'card.recovery.reason': 'Vinted l\'a refusé : {0}',
+      'card.recovery.retry': 'Réessayer maintenant',
+      'card.recovery.download': 'Télécharger les données',
+      'card.recovery.discard': 'Abandonner',
+
+      'size.title': 'Choisis une taille pour continuer',
+      'size.body': '« {0} » ne peut pas être republié tel quel : {1}. Choisis la taille que portera la nouvelle annonce. Rien n\'a encore été supprimé.',
+      'size.blank': 'Sélectionne une taille',
+      'size.cancel': 'Annuler la republication',
+      'size.accept': 'Utiliser cette taille',
+      'size.group': 'Groupe {0}',
+      'size.why.required': 'cette catégorie exige désormais une taille et l\'annonce n\'en a aucune',
+      'size.why.invalid': 'la taille {0} n\'est plus valable pour cette catégorie',
+      'size.unavailable': '{0}. Rien n\'a été supprimé.',
+
+      'budget.title.day': 'Tu as republié beaucoup d\'articles aujourd\'hui',
+      'budget.title.hour': 'Tu republies beaucoup d\'articles',
+      'budget.body.day': '{0} articles ont été republiés depuis ce navigateur au cours des dernières 24 heures : c\'est un dressing entier qui repasse, pas quelques annonces rafraîchies. C\'est ce que Vinted lit comme une activité automatisée, et ce qu\'il fait alors, c\'est empêcher le compte de modifier ou de publier quoi que ce soit pendant environ un jour. Rien n\'a encore été supprimé.',
+      'budget.body.hour': '{0} articles ont été republiés depuis ce navigateur au cours de la dernière heure. C\'est ce que Vinted lit comme une activité automatisée, et ce qu\'il fait alors, c\'est empêcher le compte de modifier ou de publier quoi que ce soit pendant environ un jour. Rien n\'a encore été supprimé.',
+      'budget.proceed': 'Republier quand même',
+      'budget.cancel': 'Arrêter pour l\'instant',
+
+      'relist.error.noPhoto': 'Aucune photo n\'a pu être envoyée. Rien n\'a été supprimé.',
+      'relist.error.photosIncomplete': 'Seulement {0} photos sur {1} ont été envoyées ({2} en échec). Rien n\'a été supprimé, réessaie dans un instant.',
+      'relist.error.noTitle': 'L\'annonce n\'a pas de titre. Rien n\'a été supprimé.',
+      'relist.error.noCondition': 'Impossible de lire l\'état de l\'article, et le republier avec le mauvais état serait pire que de s\'arrêter. Rien n\'a été supprimé.',
+      'relist.error.copyNotSaved': 'La copie n\'a pas pu être enregistrée sur cet appareil, et sans elle l\'original ne peut pas être supprimé sans risque. Rien n\'a été supprimé.',
+      'relist.error.itemGone': 'L\'article {0} ne peut pas être modifié : il est vendu, réservé ou déjà parti.',
+      'relist.error.itemNoData': 'L\'article {0} n\'a renvoyé aucune donnée.',
+      'relist.error.deleteFailed': 'Impossible de supprimer l\'original : {0}',
+      'relist.error.noAnswer': 'Vinted n\'a pas répondu à temps. Rien n\'a été envoyé deux fois, réessaie.',
+      'relist.error.noToken': 'Impossible de lire le jeton de sécurité Vinted. Recharge la page et réessaie.',
+      'relist.error.automated': 'Vinted a bloqué la requête comme trafic automatisé. Déconnecte-toi, reconnecte-toi, puis réessaie.',
+      'relist.error.draftNotSaved': 'Impossible d\'enregistrer le brouillon : {0}',
+      'relist.error.draftNoId': 'Vinted a accepté le brouillon mais n\'a renvoyé aucun identifiant.',
+      'relist.error.publishFailed': 'Impossible de publier le brouillon : {0}',
+      'relist.error.publishedNoId': 'Vinted a publié le brouillon mais n\'a renvoyé aucun identifiant.',
+      'relist.error.publishGaveUp': 'La publication a échoué après plusieurs tentatives.',
+      'size.cancelled': 'Annulé. Rien n\'a été supprimé.',
+
+      'age.today': 'Créé aujourd\'hui',
+      'age.dayAgo': 'Créé il y a 1 jour',
+      'age.daysAgo': 'Créé il y a {0} jours',
+
+      'pause.why.rateLimit': 'Vinted a répondu « trop de requêtes ».',
+      'pause.why.botCheck': 'Vinted a répondu par un contrôle anti-robot.',
+      'pause.why.restricted': 'Vinted a restreint ce compte : il ne peut plus publier ni modifier d\'articles.',
+
+      'popup.tooltip.off': 'Bumpline : désactivé',
+      'popup.tooltip.notVinted': 'Bumpline : ce n\'est pas une page Vinted',
+
+      'popup.power.on': 'Activé',
+      'popup.power.off': 'Désactivé',
+      'popup.power.label': 'Bumpline',
+
+      'popup.offline.title': 'Bumpline est désactivé',
+      'popup.offline.hint': 'Réactive-le pour republier tes articles.',
+
+      'popup.status.checking.title': 'Vérification de cet onglet',
+      'popup.status.checking.detail': 'Un instant…',
+      'popup.status.ready.title': 'Prêt sur cette page',
+      'popup.status.ready.detail.one': 'Un article peut être republié, sous son bouton « Booster ».',
+      'popup.status.ready.detail': '{0} articles peuvent être republiés, sous leurs boutons « Booster ».',
+      'popup.status.empty.title': 'Rien à republier ici',
+      'popup.status.empty.detail': 'Les boutons Republier apparaissent sur tes propres articles encore en vente.',
+      'popup.status.notProfile.title': 'Ce n\'est pas une page de profil',
+      'popup.status.notProfile.detail': 'Les boutons Republier n\'apparaissent que dans ton propre dressing.',
+      'popup.status.notVinted.title': 'Tu n\'es pas sur Vinted',
+      'popup.status.notVinted.detail': 'Ouvre ton dressing Vinted pour republier un article.',
+
+      'popup.action.openProfilePage': 'Ouvrir la page de profil',
+      'popup.action.openProfile': 'Ouvrir ton profil Vinted',
+
+      'popup.volume.title': 'Volume de republication',
+      'popup.volume.hour': 'cette heure',
+      'popup.volume.today': 'aujourd\'hui',
+      'popup.volume.wait': ' La prochaine attend {0} s.',
+      'popup.volume.normal': 'L\'avertissement apparaît à {0} en une heure ou {1} en un jour.{2}',
+      'popup.volume.dayAlarm': 'Un dressing entier en une journée ressemble à une opération de masse vue de là où Vinted se tient, et Vinted répond à cela par un blocage d\'une journée sur les modifications et les publications, voire une restriction plus longue. La prochaine republication te demandera de confirmer.{0}',
+      'popup.volume.hourAlarm': 'C\'est le volume que Vinted lit comme une activité automatisée, et Vinted y répond par un blocage d\'une journée sur les modifications et les publications, voire une restriction plus longue. La prochaine republication te demandera de confirmer.{0}',
+
+      'popup.settings.title': 'Paramètres',
+      'popup.settings.group.pacing': 'Rythme',
+      'popup.settings.group.afterRelist': 'Après une republication',
+      'popup.settings.changed.one': '1 modifié',
+      'popup.settings.changed': '{0} modifiés',
+      'popup.settings.cooldown.label': 'Attendre 10 secondes entre deux republications',
+      'popup.settings.cooldown.hint': 'Recommandé. Désactivé, elles partent l\'une après l\'autre sans pause : c\'est le schéma pour lequel Vinted bloque les comptes.',
+      'popup.settings.pace.label': 'Pause de 0,9 à 2,4 s entre les requêtes',
+      'popup.settings.pace.hint': 'Recommandé. Désactivé, la pause tombe à 0,25-0,7 s, assez rapide pour ressembler à un script automatisé.',
+      'popup.settings.reload.label': 'Recharger la page',
+      'popup.settings.reload.hint': 'Désactivé, tu gardes ta place sur la page ; la copie republiée apparaît au prochain rechargement.',
+      'popup.lang.group': 'Langue',
+      'popup.lang.label': 'Langue',
+      'popup.lang.auto': 'Automatique (langue du navigateur)',
+      'popup.settings.localDrafts.label': 'Garder la copie sur cet appareil',
+      'popup.settings.localDrafts.hint': 'Bouton Republier uniquement. Désactivé, un brouillon est d\'abord enregistré sur ton compte Vinted, comme dans les versions antérieures à la 1.0.1.',
+
+      'popup.risk.keep': 'Garder ce réglage',
+      'popup.risk.change': 'Le modifier quand même',
+      'popup.risk.cooldown.title': 'C\'est la seule limite stricte',
+      'popup.risk.cooldown.detail': 'Supprimer et republier l\'un après l\'autre sans pause, c\'est le schéma que Vinted repère. Sans les dix secondes, une série de republications part aussi vite que le réseau le permet. Un blocage de 24 heures sur les modifications et les publications est la réponse la plus douce à cela, et Vinted peut restreindre le compte plus longtemps.',
+      'popup.risk.cooldown.accept': 'Désactiver',
+      'popup.risk.cooldown.cancel': 'Garder les dix secondes',
+      'popup.risk.pace.title': 'Cela évite qu\'une republication arrive d\'un seul coup',
+      'popup.risk.pace.detail': 'Les 0,9 à 2,4 secondes aléatoires entre les requêtes étalent une republication sur sa vingtaine d\'appels d\'API. À 0,25-0,7 seconde, le trafic ressemble bien davantage à un script, et c\'est pour cela que Vinted bloque des comptes.',
+      'popup.risk.pace.accept': 'La raccourcir',
+      'popup.risk.pace.cancel': 'Garder la pause',
+      'popup.risk.liftPause.title': 'C\'est Vinted qui a demandé cette pause',
+      'popup.risk.liftPause.detail': 'La pause est là parce que Vinted a refusé une requête, et se faire refuser une seconde fois est ce qui transforme une limite de débit en blocage du compte. Ne la lève que si tu es sûr que le refus venait d\'autre chose, comme une session déconnectée ou une panne réseau isolée.',
+      'popup.risk.liftPause.accept': 'La lever quand même',
+      'popup.risk.liftPause.cancel': 'Garder la pause',
+
+      'popup.paused.title': 'La republication est en pause',
+      'popup.paused.titleRestricted': 'Vinted a restreint ce compte',
+      'popup.paused.detail': '{0} Aucune requête n\'est envoyée, depuis aucun onglet, jusqu\'à {1}. Les boutons reviennent d\'eux-mêmes.',
+      'popup.paused.detail.dated': '{0} Aucune requête n\'est envoyée, depuis aucun onglet, jusqu\'au {1}. Les boutons reviennent d\'eux-mêmes.',
+      'popup.paused.until.dated': '{0} à {1}',
+      'popup.paused.restrictionNote': 'Le message que Vinted t\'a envoyé en dit la raison. Tu ne peux pas republier tant que Vinted ne lève pas la restriction. Vinted peut la lever avant la date qu\'il a annoncée : la prochaine page de dressing que tu ouvres s\'en apercevra, ou tu peux effacer ceci ici et laisser cette page trancher à nouveau.',
+      'popup.paused.more': 'Afficher plus',
+      'popup.paused.less': 'Afficher moins',
+      'popup.paused.lift': 'Lever la pause maintenant',
+      'popup.paused.liftRestriction': 'Vinted l\'a levée',
+
+      'popup.pending.title.one': '1 republication n\'a pas abouti',
+      'popup.pending.title': '{0} republications n\'ont pas abouti',
+      'popup.pending.itemFallback': 'Article {0}',
+      'popup.pending.more': 'et {0} de plus',
+      'popup.pending.note.enabled': 'Bumpline les retente chaque fois que tu ouvres une page de profil Vinted. {0}',
+      'popup.pending.note.disabled': 'Bumpline est désactivé, donc rien n\'est retenté. {0}',
+      'popup.pending.note.draft': 'La copie se trouve aussi dans tes brouillons Vinted.',
+      'popup.pending.note.device': 'La copie est enregistrée sur cet appareil.',
+
+      'footer.howItWorks': 'Comment ça marche',
+      'footer.reportProblem': 'Signaler un problème',
+      'footer.rate': 'Noter Bumpline',
+
+      'welcome.title': 'Bienvenue dans Bumpline',
+      'welcome.hero.title': 'Merci d\'avoir installé Bumpline',
+      'welcome.hero.lead': 'Republier un article, c\'était retaper le titre, la description et chaque photo. À partir de maintenant, c\'est un bouton. Rien à configurer ici non plus : deux étapes rapides et tu peux fermer cet onglet pour de bon.',
+
+      'welcome.step1.title': 'Épingle Bumpline dans ta barre d\'outils',
+      'welcome.step1.note': 'Clique sur la pièce de puzzle à côté de la barre d\'adresse, puis sur la petite épingle à côté de Bumpline. Un clic maintenant, et tu n\'auras plus jamais à le chercher.',
+      'welcome.step1.aside': 'Ensuite, c\'est l\'icône qui parle : en couleur quand Bumpline a quelque chose à faire dans l\'onglet où tu es, grise quand ce n\'est pas le cas. Tu n\'auras pas besoin de cliquer pour le savoir.',
+      'welcome.step1.artLabel': 'Une fenêtre Chrome sur une page Vinted. La pièce de puzzle à droite de la barre d\'adresse est ouverte, et le menu des extensions montre Bumpline avec une épingle à côté.',
+      // Chrome's own wording in French, which is what the reader will find in
+      // the menu the picture is of.
+      'welcome.step1.art.extensions': 'Extensions',
+      'welcome.step1.art.access': 'Accès complet',
+      'welcome.step1.art.manage': 'Gérer les extensions',
+
+      'welcome.step2.title': 'Va dans ton propre dressing',
+      'welcome.step2.note': 'C\'est là que les boutons apparaissent. Chacun de tes articles encore en vente reçoit un <b>Republier</b> et un <b>Republier en brouillon</b>, juste à côté. Uniquement sur tes affaires. Aucune annonce de quelqu\'un d\'autre n\'est touchée.',
+      'welcome.step2.aside': 'Rien n\'est jeté en premier. La copie est faite <i>avant</i> que l\'ancienne annonce disparaisse, donc ton article n\'est jamais dans le vide. <b>Republier</b> le remet directement en ligne ; <b>Republier en brouillon</b> s\'arrête un pas avant la publication, au cas où tu voudrais le relire.',
+      'welcome.step2.artLabel': 'Une annonce dans ton propre dressing, avec un bouton Republier et un bouton Republier en brouillon en dessous.',
+
+      'welcome.rate.title': 'Si ça t\'a fait gagner du temps, dis-le',
+      'welcome.rate.note': 'Bumpline est gratuit, open source, et il n\'y a aucun compte à créer. Une note est la seule chose qu\'il demande, et c\'est comme ça que le prochain vendeur le trouve. Rien ne presse : reviens ici quand tu l\'auras vraiment utilisé.',
+
+      'welcome.version': 'Version {0}',
     },
   };
 
