@@ -5,6 +5,41 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-09-02
+
+Nothing a seller sees is different. This release removes the one place the
+extension wrote markup into a page instead of building it, and moves the rule
+that made it safe out of a comment and into the code.
+
+Mozilla's add-on linter flags an assignment to `innerHTML`, and it was right to.
+Two sentences on the page shown after install carry their own emphasis, a `<b>`
+or an `<i>` around a button's name, and the loop that drew them handed the line
+to `innerHTML`. The comment above it argued the line could only ever be a
+catalogue string written in the repo, because it is fetched with no
+substitutions, and said in as many words that a version of that loop passing
+substitutions through would break the argument. All of it true, and all of it
+kept nowhere but in the comment.
+
+### Changed
+
+- **Emphasis is built rather than assigned.** `paint()` now walks a catalogue
+  line itself: a `<b>` or an `<i>` becomes an element carrying its text, and
+  everything else becomes text. An unknown tag, a half-open one, a `{0}` that
+  was never substituted, an angle bracket a translator typed — each reaches the
+  page as the characters it is written with, because there is no longer a path
+  by which it could arrive as anything else. The welcome page draws the same
+  nodes it drew before, in all three languages.
+- **The build refuses markup `paint()` cannot draw.** A catalogue line carrying
+  any tag but `<b>` or `<i>`, or leaving one of those unclosed, now fails
+  `node build.mjs`. The drawing code would have shown a stray `<span>` as its
+  own angle brackets mid-paragraph, in one language only, which is the kind of
+  mistake that reaches a seller rather than a test.
+- **`data-i18n-html` is now `data-i18n-em`.** The attribute was named after the
+  mechanism it used, and it no longer uses it. The scan that proves every
+  `data-i18n` attribute names a real key learned the new name in the same
+  commit: had it not, it would have gone on passing while checking two keys
+  fewer.
+
 ## [1.1.0] - 2026-09-02
 
 Bumpline now speaks Italian and French. Every string a seller reads on the page
@@ -613,6 +648,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.1
 [1.1.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.0
 [1.0.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.1
 [1.0.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.0
