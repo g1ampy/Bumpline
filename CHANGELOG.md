@@ -5,7 +5,7 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-09-01
+## [1.1.0] - 2026-09-02
 
 Bumpline now speaks Italian and French. Every string a seller reads on the page
 or in the panel — the two relist buttons and their progress labels, the toasts
