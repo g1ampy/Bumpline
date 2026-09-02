@@ -231,8 +231,10 @@ body {
 
 .head__logo { display: block; border-radius: var(--radius-sm); }
 
+/* Not flex: 1. The name is as wide as the word, so the language sits against it
+   rather than across the header from it; the gap is pushed onto the power pair
+   instead, further down. */
 .head__name {
-  flex: 1;
   margin: 0;
   font-size: 16px;
   font-weight: 500;
@@ -241,7 +243,11 @@ body {
 
 /* The state in a word, for anyone who reads the panel rather than the switch.
    A screen reader gets the same from the switch role and skips this. */
+/* The header's only spacer, now that the name is no wider than the word: this
+   is where the empty middle goes, which leaves the language beside the name and
+   the switch and its word together on the right edge. */
 .power__state {
+  margin-left: auto;
   color: var(--muted-foreground);
   font-size: 14px;
 }
