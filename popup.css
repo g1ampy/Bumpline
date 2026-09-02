@@ -691,6 +691,19 @@ body {
    own look rather than .toggle's. Same tokens as .button--quiet: the panel's
    own border and background, so it reads as part of this drawer rather than
    as a browser-default control dropped into it. */
+/* .switch aligns its children to flex-start, which is right for every other row
+   in the drawer: the control there is a checkbox about as tall as one line of
+   its own label. This is the one row whose control is taller than that, and
+   left at flex-start the select's own padding pushes its text about six pixels
+   below the label it belongs to. align-self on the select alone would not fix
+   it — the select is the taller of the two, so it defines the row's height and
+   has nowhere to move — so the row is centred instead, which puts the two lines
+   of text back on the same one. :has() rather than a modifier class, because
+   the difference is the control and not the row. */
+.switch:has(.setting__select) {
+  align-items: center;
+}
+
 .setting__select {
   font: inherit;
   color: var(--foreground);

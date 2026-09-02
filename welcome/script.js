@@ -19,12 +19,29 @@
 // once for both.
 const ext = globalThis.browser ?? globalThis.chrome;
 
-// The page ships in English and is repainted before the first frame, so the
-// seller never reads a sentence twice in two languages. Everything else the
-// page does — including the version line below, which is BumplineText.t()
-// rather than a data-i18n attribute — waits inside this function too, so
-// nothing is written to the DOM in the wrong language while the seller's
-// override is still being read from storage.
+// The catalogue is in memory and has already read the browser's language, so
+// the page can be painted now, synchronously, on the first script tick — which
+// is the same shape content.js uses, and for the same reason: waiting on
+// storage first would mean an await, and an await cannot promise to land before
+// the first frame. The seller whose browser language is right — nearly all of
+// them — therefore never sees English at all.
+BumplineText.paint();
+
+// The version, so a bug report can say which build the reader is looking at.
+// A hand-built debug package sets version_name; a store one has none and falls
+// back to the plain version. It is BumplineText.t() rather than a data-i18n
+// attribute, so it is written here and again in the repaint below.
+const build = ext.runtime.getManifest();
+const paintVersion = () => {
+  document.getElementById('version').textContent =
+    BumplineText.t('welcome.version', build.version_name || build.version);
+};
+paintVersion();
+
+// Only now the stored override, which is the case the paint above cannot cover:
+// a seller reading Italian in a browser somebody else set up in English. If it
+// names the language the page is already in — the ordinary case, including
+// 'auto' — nothing is repainted and nothing flickers.
 (async () => {
   let lang = 'auto';
   try {
@@ -33,15 +50,12 @@ const ext = globalThis.browser ?? globalThis.chrome;
   } catch (_) {
     // An unreadable storage leaves the browser's language, which is the default.
   }
+  const before = BumplineText.locale();
   BumplineText.use(lang);
-  BumplineText.paint();
-
-  // The version, so a bug report can say which build the reader is looking
-  // at. A hand-built debug package sets version_name; a store one has none
-  // and falls back to the plain version.
-  const build = ext.runtime.getManifest();
-  document.getElementById('version').textContent =
-    BumplineText.t('welcome.version', build.version_name || build.version);
+  if (BumplineText.locale() !== before) {
+    BumplineText.paint();
+    paintVersion();
+  }
 
   // Where a rating would go, which depends on the store this copy came from:
   // store.js works that out, and returns null when that store has no listing

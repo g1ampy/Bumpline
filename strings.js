@@ -87,18 +87,43 @@ const BumplineText = (() => {
       'budget.proceed': 'Relist anyway',
       'budget.cancel': 'Stop for now',
 
-      // Pre-flight guard checks inside relist(): none of these are Vinted's
-      // text (contrast record.lastError), so they reach the seller through
-      // the toast.relistStopped wrapper same as any other Bumpline copy.
+      // What stops a relist, in Bumpline's own words. Vinted's words are never
+      // in here: a refusal it sent is quoted as it arrived, in whatever
+      // language it arrived in, and only the sentence around it is ours.
+      //
+      // The first group are the pre-flight checks inside relist(). They are
+      // raised before anything is written to storage.local and reach the seller
+      // through the toast.relistStopped wrapper, so they are finished here and
+      // now.
       'relist.error.noPhoto': 'No photo could be uploaded. Nothing was deleted.',
       'relist.error.photosIncomplete': 'Only {0} of {1} photos uploaded ({2} failed). Nothing was deleted, so try again in a moment.',
       'relist.error.noTitle': 'The listing has no title. Nothing was deleted.',
       'relist.error.noCondition': 'Could not read the item condition, and relisting it with the wrong one would be worse than stopping. Nothing was deleted.',
       'relist.error.copyNotSaved': 'The copy could not be saved on this device, and without it the original cannot be deleted safely. Nothing was deleted.',
+      'relist.error.itemGone': 'Item {0} cannot be edited: it is sold, reserved or already gone.',
+      'relist.error.itemNoData': 'Item {0} returned no data.',
+      'relist.error.deleteFailed': 'Could not delete the original: {0}',
+      //
+      // The second group can end up in record.lastError, which is written to
+      // storage.local and read back on a later page load — possibly by a seller
+      // who has changed language in between. Those travel as a code and its
+      // arguments and are written out at the moment they are read, which is why
+      // content.js raises them through fail() rather than through T().
+      'relist.error.noAnswer': 'Vinted did not answer in time. Nothing was sent twice, so try again.',
+      'relist.error.noToken': 'Could not read the Vinted security token. Reload the page and try again.',
+      'relist.error.automated': 'Vinted blocked the request as automated traffic. Log out, log back in, then retry.',
+      'relist.error.draftNotSaved': 'Could not save the draft: {0}',
+      'relist.error.draftNoId': 'Vinted accepted the draft but returned no id.',
+      'relist.error.publishFailed': 'Could not publish the draft: {0}',
+      'relist.error.publishedNoId': 'Vinted published the draft but returned no id.',
+      'relist.error.publishGaveUp': 'Publishing failed after several attempts.',
       'size.cancelled': 'Cancelled. Nothing was deleted.',
 
-      // The age line painted under every wardrobe item.
+      // The age line painted under every wardrobe item. One day gets its own
+      // key rather than the count's placeholder: "1 days ago" was wrong in
+      // English before it was ever wrong in Italian.
       'age.today': 'Created today',
+      'age.dayAgo': 'Created 1 day ago',
       'age.daysAgo': 'Created {0} days ago',
 
       // Why a pause is standing, written by content.js as a code rather than a
@@ -110,7 +135,17 @@ const BumplineText = (() => {
 
       // --- the toolbar popup -------------------------------------------
       // Everything below is read by popup.html's own paint() call and by
-      // popup.js: the panel that lives in the toolbar, not on a Vinted page.
+      // popup.js — the panel that lives in the toolbar, not on a Vinted page —
+      // with the two exceptions immediately below, which belong to the button
+      // the panel hangs off rather than to the panel.
+
+      // The toolbar button's tooltip, set by background.js. It is the only
+      // thing the extension says while no panel is open, and the welcome page
+      // points at it by name, so it is functional text and not decoration.
+      // Colour needs no tooltip beyond the product name, which is the same word
+      // in every language and is therefore not a key.
+      'popup.tooltip.off': 'Bumpline: off',
+      'popup.tooltip.notVinted': 'Bumpline: not a Vinted page',
 
       // The switch at the top, and the word beside it that says the same
       // thing the knob position already shows.
@@ -206,7 +241,16 @@ const BumplineText = (() => {
       // stand-down share a card but say different things.
       'popup.paused.title': 'Relisting is paused',
       'popup.paused.titleRestricted': 'Vinted has restricted this account',
+      // Two sentences for one fact, because a pause that ends today ends at a
+      // time and one that ends later ends on a date, and Italian takes a
+      // different preposition for each — "fino alle 14:05", but "fino al 02/09
+      // alle 14:05". English happens to say "until" both times; that is not a
+      // reason to make Italian share the sentence. The dated form's {1} is
+      // popup.paused.until.dated, joined there rather than glued together in
+      // popup.js, so no language is stuck with the English word order.
       'popup.paused.detail': '{0} Nothing is sent until {1}, on any tab. The buttons come back on their own.',
+      'popup.paused.detail.dated': '{0} Nothing is sent until {1}, on any tab. The buttons come back on their own.',
+      'popup.paused.until.dated': '{0} at {1}',
       'popup.paused.restrictionNote': 'The message Vinted sent you says why. You cannot relist until Vinted lifts the restriction. Vinted can lift one earlier than the date it published: the next wardrobe page you open will notice, or you can clear this here and let that page decide afresh.',
       'popup.paused.more': 'Show more',
       'popup.paused.less': 'Show less',
@@ -243,6 +287,14 @@ const BumplineText = (() => {
       'welcome.step1.note': 'Click the puzzle piece next to the address bar, then the little pin beside Bumpline. One click now, and you never have to go looking for it again.',
       'welcome.step1.aside': 'After that the icon does the talking: in colour when there is something for Bumpline to do on the tab you are on, grey when there is not. You will not have to click it to find out.',
       'welcome.step1.artLabel': 'A Chrome window on a Vinted page. The puzzle piece to the right of the address bar is open, and the extensions menu lists Bumpline with a pin beside it.',
+      // The three words drawn inside that picture. They are Chrome's own menu,
+      // and Chrome translates its menu: an Italian reader looking for
+      // "Extensions" in a browser that says "Estensioni" is being sent to find
+      // something that is not there. The drawing has to show what the reader
+      // will actually see.
+      'welcome.step1.art.extensions': 'Extensions',
+      'welcome.step1.art.access': 'Full access',
+      'welcome.step1.art.manage': 'Manage extensions',
 
       'welcome.step2.title': 'Go to your own wardrobe',
       // Read through data-i18n-html, not data-i18n: these two carry their own
@@ -316,14 +368,29 @@ const BumplineText = (() => {
       'relist.error.noTitle': 'L\'annuncio non ha un titolo. Non è stato eliminato nulla.',
       'relist.error.noCondition': 'Non è stato possibile leggere le condizioni dell\'articolo, e ripubblicarlo con quelle sbagliate sarebbe peggio che fermarsi. Non è stato eliminato nulla.',
       'relist.error.copyNotSaved': 'Non è stato possibile salvare la copia su questo dispositivo, e senza di essa l\'originale non può essere eliminato in sicurezza. Non è stato eliminato nulla.',
+      'relist.error.itemGone': 'L\'articolo {0} non può essere modificato: è venduto, riservato o non esiste più.',
+      'relist.error.itemNoData': 'L\'articolo {0} non ha restituito alcun dato.',
+      'relist.error.deleteFailed': 'Non è stato possibile eliminare l\'originale: {0}',
+      'relist.error.noAnswer': 'Vinted non ha risposto in tempo. Niente è stato inviato due volte, quindi riprova.',
+      'relist.error.noToken': 'Non è stato possibile leggere il token di sicurezza di Vinted. Ricarica la pagina e riprova.',
+      'relist.error.automated': 'Vinted ha bloccato la richiesta considerandola traffico automatizzato. Esci dall\'account, rientra e riprova.',
+      'relist.error.draftNotSaved': 'Non è stato possibile salvare la bozza: {0}',
+      'relist.error.draftNoId': 'Vinted ha accettato la bozza ma non ha restituito un id.',
+      'relist.error.publishFailed': 'Non è stato possibile pubblicare la bozza: {0}',
+      'relist.error.publishedNoId': 'Vinted ha pubblicato la bozza ma non ha restituito un id.',
+      'relist.error.publishGaveUp': 'La pubblicazione non è riuscita dopo diversi tentativi.',
       'size.cancelled': 'Annullato. Non è stato eliminato nulla.',
 
       'age.today': 'Creato oggi',
+      'age.dayAgo': 'Creato 1 giorno fa',
       'age.daysAgo': 'Creato {0} giorni fa',
 
       'pause.why.rateLimit': 'Vinted ha risposto «troppe richieste».',
       'pause.why.botCheck': 'Vinted ha risposto con una verifica anti-bot.',
       'pause.why.restricted': 'Vinted ha limitato questo account, impedendogli di pubblicare o modificare articoli.',
+
+      'popup.tooltip.off': 'Bumpline: spento',
+      'popup.tooltip.notVinted': 'Bumpline: questa non è una pagina Vinted',
 
       'popup.power.on': 'Attivo',
       'popup.power.off': 'Spento',
@@ -390,6 +457,8 @@ const BumplineText = (() => {
       'popup.paused.title': 'La ripubblicazione è in pausa',
       'popup.paused.titleRestricted': 'Vinted ha limitato questo account',
       'popup.paused.detail': '{0} Non viene inviata alcuna richiesta, da nessuna scheda, fino alle {1}. I pulsanti tornano da soli.',
+      'popup.paused.detail.dated': '{0} Non viene inviata alcuna richiesta, da nessuna scheda, fino al {1}. I pulsanti tornano da soli.',
+      'popup.paused.until.dated': '{0} alle {1}',
       'popup.paused.restrictionNote': 'Il messaggio che Vinted ti ha inviato ne spiega il motivo. Non puoi ripubblicare finché Vinted non revoca la restrizione. Vinted può revocarla prima della data indicata: la prossima pagina dell\'armadio che apri se ne accorgerà, oppure puoi cancellarla qui e lasciare che sia quella pagina a deciderlo di nuovo.',
       'popup.paused.more': 'Mostra altro',
       'popup.paused.less': 'Mostra meno',
@@ -417,6 +486,11 @@ const BumplineText = (() => {
       'welcome.step1.note': 'Clicca sul pezzo di puzzle accanto alla barra degli indirizzi, poi sulla piccola puntina accanto a Bumpline. Un clic adesso, e non dovrai più andarlo a cercare.',
       'welcome.step1.aside': 'Da quel momento parla l\'icona: a colori quando c\'è qualcosa da fare per Bumpline nella scheda che stai guardando, grigia quando non c\'è. Non dovrai cliccarci per saperlo.',
       'welcome.step1.artLabel': 'Una finestra di Chrome su una pagina Vinted. Il pezzo di puzzle a destra della barra degli indirizzi è aperto, e il menu delle estensioni mostra Bumpline con una puntina accanto.',
+      // Chrome's own wording in Italian, which is what the reader will find in
+      // the menu the picture is of.
+      'welcome.step1.art.extensions': 'Estensioni',
+      'welcome.step1.art.access': 'Accesso completo',
+      'welcome.step1.art.manage': 'Gestisci estensioni',
 
       'welcome.step2.title': 'Vai al tuo armadio',
       'welcome.step2.note': 'È lì che compaiono i pulsanti. Ogni tuo articolo ancora in vendita riceve un pulsante <b>Ripubblica</b> e uno <b>Ripubblica come bozza</b>, proprio accanto. Solo sulle tue cose. Nessun annuncio altrui viene toccato.',
@@ -450,8 +524,16 @@ const BumplineText = (() => {
     active = lang && lang !== 'auto' && lang in CATALOG ? lang : fromBrowser();
   }
 
+  // The tag the clock and the date are formatted with, which is not the same
+  // question as which catalogue to read. 'en' is not 'en-GB': it resolves to US
+  // conventions, so returning the bare subtag would turn a British seller's
+  // 24-hour clock into a 12-hour one without them touching anything. The
+  // browser's own tag is the right answer whenever it names the language being
+  // read; only an override that disagrees with the browser falls back to the
+  // bare subtag, which is the one case where there is nothing better to say.
   function locale() {
-    return active;
+    const tag = navigator.language || BASE;
+    return tag.toLowerCase().split('-')[0] === active ? tag : active;
   }
 
   // A key missing from the active language is a translation that has not been
@@ -471,15 +553,29 @@ const BumplineText = (() => {
   // The two extension pages are HTML, so their words are attributes on the
   // markup rather than calls in a script: data-i18n for the text, and one
   // attribute each for the two places a string is read out but not shown.
+  //
+  // For the two extension pages, and only those. This file also loads into the
+  // content-script world on every Vinted page, and Vinted is a translated site
+  // that may well carry data-i18n attributes of its own — a paint(document)
+  // there would walk Vinted's markup and overwrite whatever it found with
+  // Bumpline's catalogue, or with the attribute's own name where no key
+  // matched. content.js never calls this, and must not start: it writes its
+  // words through T() into nodes it built itself. A content script that one day
+  // does need it passes the root it owns, never the document.
   function paint(root = document) {
     for (const node of root.querySelectorAll('[data-i18n]')) {
       node.textContent = t(node.dataset.i18n);
     }
-    // innerHTML only ever runs on CATALOG's own values — authored in this
-    // file, never a page's, a seller's, or Vinted's — so there is nothing
-    // here for an attacker to inject. It exists for the handful of sentences
-    // that carry their own emphasis (a <b>, an <i>) that textContent would
-    // otherwise strip; data-i18n stays the default for everything else.
+    // innerHTML is safe here because of what this loop does, not because of
+    // where the strings came from: it calls t() with no substitutions, so the
+    // only thing that can reach the DOM is a catalogue line exactly as it is
+    // written in this file, with every {0} left standing as literal text. No
+    // runtime value — a page's, a seller's, or Vinted's — has a path into it.
+    // That is the property to keep: a paint() that ever passed subs through
+    // here would break it, and the provenance argument alone would not have
+    // caught that. It exists for the handful of sentences that carry their own
+    // emphasis (a <b>, an <i>) that textContent would otherwise strip;
+    // data-i18n stays the default for everything else.
     for (const node of root.querySelectorAll('[data-i18n-html]')) {
       node.innerHTML = t(node.dataset.i18nHtml);
     }

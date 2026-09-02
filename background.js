@@ -22,6 +22,14 @@
 //   2. Fetch image bytes from the CDN when a cross-origin read from the page is
 //      refused.
 
+// The words for the one thing this file puts on screen: the toolbar button's
+// tooltip. Chrome's background is a classic service worker, which brings its
+// own dependencies in with importScripts. Firefox's is an event page, where the
+// manifest lists strings.js ahead of this file — build.mjs writes that array —
+// and importScripts does not exist at all. Asking which of the two this is
+// covers both without either needing to know about the other.
+if (typeof importScripts === 'function') importScripts('strings.js');
+
 // Firefox answers to `browser` and only that namespace returns promises there;
 // Chrome answers to `chrome`. One alias, and the rest of the file is written
 // once for both.
@@ -134,6 +142,7 @@ ext.runtime.onMessage.addListener((message, _sender, respond) => {
 // Vinted page. Grey means no, for either reason, and the tooltip says which.
 // Same drawing, luma only.
 const ENABLED_KEY = 'bumpline:enabled';
+const LANG_KEY = 'bumpline:lang';
 
 const ACTION_ICONS = {
   on: { 16: 'icons/icon16.png', 24: 'icons/icon24.png', 32: 'icons/icon32.png' },
@@ -161,9 +170,13 @@ function onVinted(url) {
 // have to wait on storage for it.
 let switchedOn = true;
 
+// Colour needs no explaining, so it says the product name and nothing else —
+// the same word in every language, and therefore not a catalogue key. The two
+// grey states do need explaining, and the welcome page tells the seller to read
+// them, which makes them functional text and not decoration.
 function titleFor(colour) {
-  if (!switchedOn) return 'Bumpline: off';
-  return colour ? 'Bumpline' : 'Bumpline: not a Vinted page';
+  if (!switchedOn) return BumplineText.t('popup.tooltip.off');
+  return colour ? 'Bumpline' : BumplineText.t('popup.tooltip.notVinted');
 }
 
 // Without a tabId this is the default every tab starts from; with one it is an
@@ -216,10 +229,16 @@ async function paintActiveTab() {
 // The worker is torn down between events and the browser forgets a set icon at
 // the end of a session, so the switch is read on the way up rather than
 // remembered. Absent means on, the same rule the popup and the page use.
+//
+// The language is read in the same breath and for the same reason: the words
+// live in memory, so the catalogue is already in the browser's language by the
+// time this runs, and only a seller who overruled the browser costs anything.
+// Absent means 'auto', which BumplineText.use reads as "ask the browser".
 async function paintIconFromStore() {
   try {
-    const bag = await ext.storage.local.get(ENABLED_KEY);
+    const bag = await ext.storage.local.get([ENABLED_KEY, LANG_KEY]);
     switchedOn = bag[ENABLED_KEY] !== false;
+    BumplineText.use(bag[LANG_KEY] || 'auto');
   } catch (_) {
     switchedOn = true;
   }
@@ -232,10 +251,15 @@ ext.runtime.onStartup.addListener(paintIconFromStore);
 
 // The switch is thrown in the popup, which writes it here. Storage is what the
 // content scripts already listen to, so the icon follows the same signal rather
-// than needing a message of its own.
+// than needing a message of its own. The language is chosen in the same panel
+// and written the same way, so it arrives here the same way: either one changes
+// what the tooltip should say, and both are answered by repainting it.
 ext.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local' || !changes[ENABLED_KEY]) return;
-  switchedOn = changes[ENABLED_KEY].newValue !== false;
+  if (area !== 'local' || !changes) return;
+  const touched = ENABLED_KEY in changes || LANG_KEY in changes;
+  if (!touched) return;
+  if (ENABLED_KEY in changes) switchedOn = changes[ENABLED_KEY].newValue !== false;
+  if (LANG_KEY in changes) BumplineText.use(changes[LANG_KEY].newValue || 'auto');
   paintDefault();
   paintActiveTab();
 });

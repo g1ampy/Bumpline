@@ -34,6 +34,10 @@ const HARD_COOLDOWN_MS = 10000;
 // vinted.it, vinted.com, vinted.co.uk … one domain per country.
 const VINTED_HOST = /(^|\.)vinted\.[a-z]{2,3}(\.[a-z]{2})?$/i;
 
+// The three values the language <select> offers, which are also the three the
+// stored key is allowed to hold.
+const LANGS = ['auto', 'en', 'it'];
+
 // Lucide paths. Stroke, width and colour come from the .icon rule, so the two
 // glyphs stay the same weight as each other.
 const GLYPH = {
@@ -201,20 +205,31 @@ const countWithin = (log, window) => {
   return log.filter(at => at > cutoff).length;
 };
 
+// BumplineText.locale(), not []: [] is the browser's locale, which is the wrong
+// one the moment the seller has overruled it, and the same instant would then be
+// written one way here and another way on the Vinted page. content.js formats
+// its clock from the same source for the same reason.
 const clockOf = at =>
-  new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  new Date(at).toLocaleTimeString(BumplineText.locale(), { hour: '2-digit', minute: '2-digit' });
+
+const dayOf = at =>
+  new Date(at).toLocaleDateString(BumplineText.locale(), { day: '2-digit', month: '2-digit' });
 
 // A refusal is measured in hours, a restriction in days, and "until 23:59"
 // with no date is a lie about the second kind.
+//
+// Which of the two it is decides the sentence as well as the text that fills
+// it: Italian says "fino alle 14:05" but "fino al 02/09 alle 14:05", and a
+// single sentence with a placeholder cannot be right for both. So this hands
+// back the key to use along with the words to put in it.
 const whenOf = at => {
-  const when = new Date(at);
-  if (when.toDateString() === new Date().toDateString()) return clockOf(at);
-  return when.toLocaleString([], {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  if (new Date(at).toDateString() === new Date().toDateString()) {
+    return { key: 'popup.paused.detail', text: clockOf(at) };
+  }
+  return {
+    key: 'popup.paused.detail.dated',
+    text: BumplineText.t('popup.paused.until.dated', dayOf(at), clockOf(at)),
+  };
 };
 
 // content.js writes why as one of these codes rather than a finished
@@ -231,6 +246,19 @@ const WHY_KEYS = {
 // instead of a code, and it can still be sitting in storage.local with hours
 // left on it — read it unchanged rather than mistranslate or blank it out.
 const whyOf = why => (WHY_KEYS[why] ? BumplineText.t(WHY_KEYS[why]) : why);
+
+// The same rule, applied to why a relist failed rather than to why a pause is
+// standing. content.js writes record.lastError as { code, args } when the
+// sentence is Bumpline's own, and as a string when it is Vinted's — and every
+// record written by 1.0.2 holds a finished English string there whatever the
+// sentence was. A string comes back exactly as it went in; only a code is
+// written out, and it is written out now, in the language being read.
+function sayReason(reason) {
+  if (!reason || typeof reason !== 'object' || !reason.code) return String(reason);
+  // A refusal of Vinted's quoted inside a sentence of ours arrives as an
+  // argument, so the arguments are resolved the same way before substitution.
+  return BumplineText.t(reason.code, ...(reason.args || []).map(sayReason));
+}
 
 // A pause that has already run out is no pause at all.
 function standingPause(record) {
@@ -272,8 +300,13 @@ async function readStored() {
     relists: recentRelists(bag[RELIST_LOG_KEY]),
     paused: standingPause(bag[BLOCK_KEY]),
     // 'auto' is a stored value here too, and BumplineText.use already knows
-    // what to do with it: ask the browser.
-    lang: bag[LANG_KEY] || 'auto',
+    // what to do with it: ask the browser. Anything this panel does not offer
+    // — a key written by a later version and then rolled back, a hand-edited
+    // storage — is read as 'auto' rather than passed through. use() would fall
+    // back to the browser for it anyway, but the <select> has no option with
+    // that value and would sit blank, saying nothing about the language the
+    // page is actually in.
+    lang: LANGS.includes(bag[LANG_KEY]) ? bag[LANG_KEY] : 'auto',
   };
 }
 
@@ -309,7 +342,7 @@ function renderPending(records, enabled) {
     if (record.lastError) {
       const why = document.createElement('span');
       why.className = 'card__why';
-      why.textContent = record.lastError;
+      why.textContent = sayReason(record.lastError);
       row.appendChild(why);
     }
     list.appendChild(row);
@@ -374,9 +407,10 @@ function renderPause(stored) {
   // Said in the page and in this panel both, so the two cannot disagree about
   // what a restricted account can do.
   const detail = document.getElementById('paused-detail');
+  const until = whenOf(stored.paused.until);
   detail.textContent = fromVinted
     ? BumplineText.t('popup.paused.restrictionNote')
-    : BumplineText.t('popup.paused.detail', whyOf(stored.paused.why), whenOf(stored.paused.until));
+    : BumplineText.t(until.key, whyOf(stored.paused.why), until.text);
 
   // Folded to two lines, because the title has already said the thing that
   // matters and the rest is where to go looking. The pause the extension sets
@@ -422,7 +456,10 @@ function renderPause(stored) {
   lift.hidden = false;
   card.hidden = false;
 
-  lift.addEventListener('click', async () => {
+  // .onclick, not addEventListener: this whole function runs again when the
+  // seller changes language, and a listener added each time would stack, so the
+  // second pass would ask the same question twice. Assigning replaces.
+  lift.onclick = async () => {
     if (!fromVinted) {
       const agreed = await askRisk({
         title: BumplineText.t('popup.risk.liftPause.title'),
@@ -438,7 +475,7 @@ function renderPause(stored) {
     } catch (_) {
       // The card stays up, which is the honest outcome: nothing was cleared.
     }
-  });
+  };
 }
 
 // The numbers Vinted is actually watching, which are the ones the seller cannot
@@ -547,15 +584,22 @@ function askRisk({ title, detail, accept, cancel }) {
 // many are off their default without being opened, because every switch sitting
 // where it was left is the common case and should not need reading.
 //
-// localDrafts is absent on purpose: its row is hidden, and a count that points
-// at a switch nobody can find is worse than no count.
+// Two settings are absent on purpose, and absence is the whole mechanism: this
+// object is the list of settings the count is taken over, so a setting left out
+// of it is a setting the badge never mentions.
+//
+// localDrafts, because its row is hidden, and a count that points at a switch
+// nobody can find is worse than no count.
+//
+// lang, because the count exists to flag a switch left somewhere risky, and
+// picking Italiano is not that. It is the seller telling the panel which
+// language to be in, they can see the answer in every word around the badge,
+// and "1 changed" — in Italian, on a panel that is visibly in Italian — reads
+// as a warning about a choice that needs no warning.
 const SETTING_DEFAULTS = {
   reload: true,
   cooldown: true,
   paced: true,
-  // Automatic is the default, and a seller who set their own language does not
-  // need the drawer telling them so.
-  lang: 'auto',
 };
 
 // Writes the value and keeps the checkbox honest: if the write fails the box
@@ -602,7 +646,11 @@ function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => ch
   });
 }
 
-function wireSettings(stored) {
+// repaint is everything this panel draws from something other than the
+// catalogue, handed in the way wirePower is handed paintTab. Changing the
+// language is the one action in here that invalidates the whole panel rather
+// than one row of it.
+function wireSettings(stored, repaint) {
   const count = document.getElementById('settings-count');
   const paint = () => {
     const changed = Object.keys(SETTING_DEFAULTS)
@@ -660,6 +708,18 @@ function wireSettings(stored) {
     BumplineText.use(wanted);
     BumplineText.paint();
     paint();
+    // BumplineText.paint() has just rewritten every [data-i18n] node straight
+    // from the catalogue, and four of those nodes do not belong to it: the
+    // status title and detail, the paused title, and the lift button were all
+    // filled by script with text worked out from this tab and this record.
+    // Painting the markup put its placeholders back — "checking this tab", "one
+    // moment", a pause title that says nothing about Vinted having restricted
+    // the account, and a button offering to end a pause early while its handler
+    // still knows it is clearing a restriction instead. The status card is
+    // aria-live, so a screen reader would announce the placeholder as though it
+    // were news. Everything script drew is therefore drawn again, in the new
+    // language, before the seller sees the panel.
+    repaint();
   });
 }
 
@@ -719,7 +779,14 @@ async function main() {
   }
 
   const url = currentUrl(tab);
-  const [initial, stored] = await Promise.all([askPage(tab), readStored()]);
+
+  // The language comes out of storage, which answers in about a millisecond.
+  // askPage is a round trip to a content script on a page that may be busy, and
+  // it has no timeout — waiting on both would leave an Italian seller reading
+  // English markup for as long as Vinted takes to answer. So the words are
+  // settled on the first of the two, and the tab's own answer is awaited below,
+  // where it is actually needed.
+  const stored = await readStored();
 
   // The version string is the only thing already on screen, and it is not
   // translatable — everything after this point is, and the markup ships in
@@ -731,7 +798,7 @@ async function main() {
 
   // What the page holds is asked for again when the switch is thrown, so it
   // cannot be a constant.
-  let page = initial;
+  let page = await askPage(tab);
 
   const status = document.getElementById('status');
   const button = document.getElementById('action');
@@ -770,11 +837,18 @@ async function main() {
     }
   };
 
+  // Everything on the panel that script wrote rather than the catalogue, drawn
+  // from the top. paintTab covers the status card, the pending list and the
+  // action button; the other two own a card each.
+  const repaintAll = () => {
+    paintTab();
+    renderPause(stored);
+    renderVolume(stored);
+  };
+
   wirePower(stored, tab, paintTab, fresh => { page = fresh; });
-  paintTab();
-  renderPause(stored);
-  renderVolume(stored);
-  wireSettings(stored);
+  repaintAll();
+  wireSettings(stored, repaintAll);
   wireDrawer();
   wireReview();
 }

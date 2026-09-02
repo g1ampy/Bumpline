@@ -101,8 +101,11 @@
 
           <!-- the menu the puzzle piece opens -->
           <rect class="art-menu" x="180" y="70" width="168" height="126" rx="10"/>
-          <text class="art-label art-label--sm" x="192" y="90">Extensions</text>
-          <text class="art-label art-label--xs art-label--muted" x="192" y="106">Full access</text>
+          <!-- Chrome's own menu, and Chrome translates it: an Italian reader
+               is looking at a browser that says "Estensioni", so a picture
+               labelled "Extensions" is a picture of somebody else's screen. -->
+          <text class="art-label art-label--sm" x="192" y="90" data-i18n="welcome.step1.art.extensions">Extensions</text>
+          <text class="art-label art-label--xs art-label--muted" x="192" y="106" data-i18n="welcome.step1.art.access">Full access</text>
 
           <rect class="art-row" x="186" y="112" width="156" height="26" rx="6"/>
           <g transform="translate(194 117) scale(0.125)">
@@ -130,7 +133,7 @@
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </g>
-          <text class="art-label art-label--xs art-label--muted" x="216" y="187">Manage extensions</text>
+          <text class="art-label art-label--xs art-label--muted" x="216" y="187" data-i18n="welcome.step1.art.manage">Manage extensions</text>
         </svg>
       </figure>
     </li>

@@ -22,9 +22,42 @@
   // once for both.
   const ext = globalThis.browser ?? globalThis.chrome;
 
-  // The words, in the seller's language. One letter because the file says it
-  // 15 times.
+  // The words, in the seller's language. One letter because this file says it
+  // on nearly every line that puts something on screen, and a count written
+  // here would be wrong again by the next commit.
   const T = (key, ...subs) => BumplineText.t(key, ...subs);
+
+  // A refusal as it is read rather than as it was thrown.
+  //
+  // Vinted's own words arrive as a string and are shown as they arrived: they
+  // are Vinted's in every language, and this extension has no business
+  // translating them. Bumpline's own sentences arrive as { code, args } and are
+  // written out here, at the moment they are read — which matters because some
+  // of them are stored in record.lastError and read back on a later page load,
+  // possibly by a seller who has changed language in between. A sentence frozen
+  // into storage in one language is the defect the pause-reason ruling was
+  // written to prevent, and this is the same ruling applied to refusals.
+  //
+  // Every record written by 1.0.2 carries a finished English sentence in
+  // lastError instead, and some of those are still on disk with a live pending
+  // relist. A string is a string: it comes back out exactly as it went in.
+  function sayReason(reason) {
+    if (!reason || typeof reason !== 'object' || !reason.code) return String(reason);
+    // args may hold reasons of their own — a refusal quoted inside a sentence
+    // of ours — so each is resolved the same way before it is substituted.
+    return T(reason.code, ...(reason.args || []).map(sayReason));
+  }
+
+  // An Error that carries its own key and arguments as well as its message, so
+  // the same throw can be shown at once in a toast and stored for later without
+  // being written twice. The message is finished here because that is what the
+  // console, the trace log and the toast all read; the code is what survives.
+  function fail(code, ...args) {
+    const failure = new Error(sayReason({ code, args }));
+    failure.code = code;
+    failure.args = args;
+    return failure;
+  }
 
   // Every request is derived from the page we are on, which is what makes the
   // extension work unchanged across all of Vinted's country domains.
@@ -253,7 +286,7 @@
           return;
         }
         trace('bridge timeout on a write; not repeating it', method, url);
-        reject(new Error('Vinted did not answer in time. Nothing was sent twice, so try again.'));
+        reject(fail('relist.error.noAnswer'));
       }, 15000);
 
       function handler(event) {
@@ -556,11 +589,20 @@
   // nothing to repaint: the buttons were born in the right language. Only a
   // seller who overruled the browser pays for a second paint, and removeOurUi
   // is what the switch uses for the same job.
+  //
+  // locale() is a formatting tag rather than the catalogue's name, but it
+  // answers this question exactly: it is either the browser's tag, which begins
+  // with the active language, or the active language itself, so two different
+  // catalogues can never produce the same string and the same catalogue always
+  // produces the same one.
   function applyLanguage(lang) {
     const before = BumplineText.locale();
     BumplineText.use(lang);
     if (BumplineText.locale() === before) return;
     removeOurUi();
+    // Puts the buttons back, and paintAgeLabels puts the age lines back with
+    // them — worded from ageDays, so they come back in the new language rather
+    // than the one they were first written in.
     attachButtons();
   }
 
@@ -688,7 +730,7 @@
     const page = await bridgedFetch(`${SITE}/items/new`, { credentials: 'include' });
     const captured = tokenFromMarkup(await page.text());
     if (!captured) {
-      throw new Error('Could not read the Vinted security token. Reload the page and try again.');
+      throw fail('relist.error.noToken');
     }
     return captured;
   }
@@ -725,10 +767,14 @@
     };
   }
 
-  // Turn a failed response body into something worth showing a person.
+  // Turn a failed response body into something worth showing a person: a reason
+  // in the sense sayReason means. Vinted's own words come back as the string
+  // they arrived as; the one sentence below is Bumpline's, so it comes back as
+  // a code and is written out only when it is read. Callers that store the
+  // result therefore store no English.
   function explainFailure(status, body) {
     if (status === 403 && /captcha-delivery|__cf_chl|cf_chl|datadome/i.test(body || '')) {
-      return 'Vinted blocked the request as automated traffic. Log out, log back in, then retry.';
+      return { code: 'relist.error.automated', args: [] };
     }
     try {
       const parsed = JSON.parse(body);
@@ -754,9 +800,9 @@
       const body = await reply.text();
       await noteRefusal(reply, body);
       if (reply.status === 404) {
-        throw new Error(`Item ${itemId} cannot be edited: it is sold, reserved or already gone.`);
+        throw new Error(T('relist.error.itemGone', itemId));
       }
-      throw new Error(explainFailure(reply.status, body));
+      throw new Error(sayReason(explainFailure(reply.status, body)));
     }
     const parsed = await reply.json();
     return parsed.item || parsed || {};
@@ -766,7 +812,7 @@
   // challenge. Used as the last check before anything destructive.
   async function assertItemReachable(itemId, csrf) {
     const item = await loadEditableItem(itemId, csrf);
-    if (!item || !item.id) throw new Error(`Item ${itemId} returned no data.`);
+    if (!item || !item.id) throw new Error(T('relist.error.itemNoData', itemId));
     return item;
   }
 
@@ -816,7 +862,7 @@
     const body = await reply.text();
     if (!reply.ok) {
       await noteRefusal(reply, body);
-      const failure = new Error(`Could not save the draft: ${explainFailure(reply.status, body)}`);
+      const failure = fail('relist.error.draftNotSaved', explainFailure(reply.status, body));
       failure.status = reply.status;
       throw failure;
     }
@@ -827,7 +873,7 @@
       // handled below
     }
     const draft = parsed && (parsed.draft || parsed.item || parsed);
-    if (!draft || !draft.id) throw new Error('Vinted accepted the draft but returned no id.');
+    if (!draft || !draft.id) throw fail('relist.error.draftNoId');
     return draft;
   }
 
@@ -869,7 +915,7 @@
     const body = await reply.text();
     if (!reply.ok) {
       await noteRefusal(reply, body);
-      const failure = new Error(`Could not publish the draft: ${explainFailure(reply.status, body)}`);
+      const failure = fail('relist.error.publishFailed', explainFailure(reply.status, body));
       failure.status = reply.status;
       // Field names only, never values: enough to see which shape was sent
       // when a refusal has to be reported, and nothing of the listing itself.
@@ -911,7 +957,7 @@
     if (!reply.ok) {
       const body = await reply.text().catch(() => '');
       await noteRefusal(reply, body);
-      throw new Error(`Could not delete the original: ${explainFailure(reply.status, body)}`);
+      throw new Error(T('relist.error.deleteFailed', sayReason(explainFailure(reply.status, body))));
     }
     try {
       return await reply.json();
@@ -1261,7 +1307,14 @@
   // ===========================================================================
 
   const itemIndex = new Map();
-  const ageLabels = new Map();
+  // Item id to a number of days, not to the line that number reads as. The
+  // wardrobe is indexed once and the labels are painted many times — after
+  // every mutation, and again after a language change, which repaints them for
+  // the language that change was made to. A cached sentence would come back in
+  // the language it was first written in and stay there until the page was
+  // reloaded, so what is cached is the fact and the wording is made on the way
+  // to the screen.
+  const ageDays = new Map();
   // busy is what keeps the two readers below off each other. Both are fired,
   // unawaited, by every run of attachButtons, and attachButtons runs on every
   // mutation of the page — so while the first page is in the air, lastPage is
@@ -1293,7 +1346,13 @@
     return days;
   }
 
-  const ageLabel = days => (days <= 0 ? T('age.today') : T('age.daysAgo', days));
+  // One day is its own sentence rather than the count's placeholder. "Created 1
+  // days ago" was wrong in English long before there was an Italian to get
+  // wrong; both are right now.
+  const ageLabel = days => {
+    if (days <= 0) return T('age.today');
+    return days === 1 ? T('age.dayAgo') : T('age.daysAgo', days);
+  };
 
   async function loadWardrobePage(page) {
     const member = currentMemberId();
@@ -1338,7 +1397,7 @@
         const key = String(item.id);
         itemIndex.set(key, item);
         const days = ageOf(item);
-        if (days != null) ageLabels.set(key, ageLabel(days));
+        if (days != null) ageDays.set(key, days);
       }
       return items;
     } catch (err) {
@@ -1396,8 +1455,11 @@
     dropButtonsOnClosedItems();
   }
 
+  // Called from attachButtons, so a language change repaints these along with
+  // the buttons: applyLanguage takes the old lines off with removeOurUi and
+  // this puts them back, worded afresh from the days held in ageDays.
   function paintAgeLabels() {
-    for (const [id, label] of ageLabels) {
+    for (const [id, days] of ageDays) {
       const slot = descriptionSlotFor(id);
       if (!slot || slot.querySelector(`.${CLASS.ageLine}`)) continue;
       const line = document.createElement('div');
@@ -1405,7 +1467,7 @@
       const text = document.createElement('p');
       text.className =
         'web_ui__Text__text web_ui__Text__caption web_ui__Text__left web_ui__Text__truncated';
-      text.textContent = label;
+      text.textContent = ageLabel(days);
       line.appendChild(text);
       slot.appendChild(line);
     }
@@ -1535,7 +1597,7 @@
     if (record.lastError) {
       const reason = document.createElement('div');
       reason.className = 'bumpline-card__why';
-      reason.textContent = T('card.recovery.reason', record.lastError);
+      reason.textContent = T('card.recovery.reason', sayReason(record.lastError));
       body.appendChild(reason);
     }
 
@@ -1570,7 +1632,10 @@
         version: ext.runtime.getManifest().version,
         startedAt: record.startedAt || null,
         attempts: record.attempts || 0,
-        lastError: record.lastError || null,
+        // Written out rather than passed through: whoever reads the report is a
+        // person, and a { code, args } pair would ask them to look the sentence
+        // up in a file they do not have.
+        lastError: record.lastError ? sayReason(record.lastError) : null,
         lastShape: record.lastShape || null,
         draftId: (record.draft && record.draft.id) || null,
         sent: record.item || null,
@@ -1666,7 +1731,7 @@
           }
           const published = await publishDraft(csrf, record.draft, record.sessionId, record.item);
           if (published && published.id) return published;
-          lastError = new Error('Vinted published the draft but returned no id.');
+          lastError = fail('relist.error.publishedNoId');
         } catch (err) {
           lastError = err;
 
@@ -1704,7 +1769,7 @@
       if (attempt < PUBLISH_ATTEMPTS) await pause(between(4000, 9000));
     }
 
-    throw lastError || new Error('Publishing failed after several attempts.');
+    throw lastError || fail('relist.error.publishGaveUp');
   }
 
   // Safe to call as often as you like; it either finishes the job or records
@@ -1730,7 +1795,14 @@
     } catch (err) {
       console.error('[Bumpline] relist still pending for item', itemId, err);
       record.attempts = (record.attempts || 0) + 1;
-      record.lastError = (err && err.message) || String(err);
+      // This is written to storage.local and read back on a later page load, so
+      // what goes in is the code and its arguments rather than the finished
+      // sentence: the seller may be reading it in a language they had not
+      // chosen when it was thrown. A refusal that carries no code of ours is
+      // Vinted's own words, and those are stored as they arrived.
+      record.lastError = err && err.code
+        ? { code: err.code, args: err.args || [] }
+        : (err && err.message) || String(err);
       // Field names of what went out and what Vinted had stored. No values, so
       // nothing of the listing travels with a bug report.
       record.lastShape = err && err.sentKeys ? { sent: err.sentKeys } : null;

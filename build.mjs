@@ -89,7 +89,12 @@ const TARGETS = {
     
     // Firefox has no service worker to give: an MV3 background there is an
     // event page, woken by the same listeners and torn down the same way.
-    out.background = { scripts: ['background.js'] };
+    //
+    // strings.js comes first because an event page has no importScripts, which
+    // is how the Chrome worker pulls the catalogue in. Here the order of this
+    // array is the whole loading mechanism: background.js paints the toolbar
+    // tooltip on the way up and needs BumplineText to already be there.
+    out.background = { scripts: ['strings.js', 'background.js'] };
 
     out.browser_specific_settings = {
       gecko: {
@@ -245,6 +250,11 @@ function checkCatalogues() {
     source + '; return BumplineText;',
   )({ language: 'en' }, { querySelectorAll: () => [], documentElement: {} });
 
+  // The language every other one is a translation of, and the one strings.js
+  // falls back to; it is named here rather than read from there because a
+  // catalogue that lost it would fail this check rather than pass it quietly.
+  const BASE_LANG = 'en';
+
   const languages = Object.keys(CATALOG);
   const complaints = [];
 
@@ -256,21 +266,87 @@ function checkCatalogues() {
     }
   }
 
+  // A sentence that lost a {1} in translation renders the two characters "{1}"
+  // to a seller, and every check above it stays quiet: the key is present, the
+  // key is asked for, the line is a string. What it no longer is, is the same
+  // sentence. English is the shape the code writes its substitutions to fit, so
+  // English is what every other language is measured against.
+  const slotsOf = line =>
+    new Set([...String(line).matchAll(/\{(\d+)\}/g)].map(match => match[1]));
+  for (const key of Object.keys(CATALOG[BASE_LANG])) {
+    const wanted = slotsOf(CATALOG[BASE_LANG][key]);
+    for (const lang of languages) {
+      if (lang === BASE_LANG || !(key in CATALOG[lang])) continue;
+      const got = slotsOf(CATALOG[lang][key]);
+      const missing = [...wanted].filter(slot => !got.has(slot));
+      const extra = [...got].filter(slot => !wanted.has(slot));
+      if (missing.length) complaints.push(`${lang} ${key} drops {${missing.join('}, {')}}`);
+      if (extra.length) complaints.push(`${lang} ${key} invents {${extra.join('}, {')}}`);
+    }
+  }
+
   // Every t('…') written in the code — single-quoted, double-quoted or
   // backtick-quoted — and every data-i18n attribute in the two pages, has to
   // name a key that exists.
   const CONSUMERS = [
-    'content.js', 'popup.js', 'popup.html',
+    'background.js', 'content.js', 'popup.js', 'popup.html',
     join('welcome', 'script.js'), join('welcome', 'index.html'),
   ];
+
+  // The scan above reads a key only where it is written straight after t(, and
+  // that is not where thirteen of them are written: a ternary picks one of two
+  // keys and hands t() the result, and a lookup table holds a column of them.
+  // Those are exactly the keys most likely to be renamed on one side only, so
+  // they are found a second way — by their own shape. A catalogue key is a
+  // namespace, a dot, and the rest; no selector, storage key or test id in this
+  // repository begins with one of these words followed by a dot, so a quoted
+  // string that does is a key and is checked as one.
+  const NAMESPACES = [
+    'button', 'toast', 'card', 'size', 'budget',
+    'relist', 'age', 'pause', 'popup', 'footer', 'welcome',
+  ];
+  const KEY_SHAPED = new RegExp(
+    `(['"\`])((?:${NAMESPACES.join('|')})\\.[A-Za-z0-9.]+)\\1`,
+    'g',
+  );
+
+  // popup.html links "popup.css" and loads "popup.js"; both are the shape above
+  // and neither is a key. A catalogue key never ends in a file extension, which
+  // is a narrower thing to say than dropping the popup namespace — and that
+  // namespace is where most of the keys this pass exists for actually live.
+  const FILE_LIKE = /\.(css|js|mjs|html|json|png|svg|txt)$/i;
+
   for (const file of CONSUMERS) {
     const text = readFileSync(join(ROOT, file), 'utf8');
     const asked = [
       ...[...text.matchAll(/\b[tT]\(\s*(['"`])([^'"`]+)\1/g)].map(match => match[2]),
       ...[...text.matchAll(/data-i18n(?:-title|-label|-html)?="([^"]+)"/g)].map(match => match[1]),
+      ...[...text.matchAll(KEY_SHAPED)].map(match => match[2]).filter(key => !FILE_LIKE.test(key)),
     ];
     for (const key of asked) {
       if (!(key in CATALOG.en)) complaints.push(`${file} asks for ${key}, which en does not have`);
+    }
+  }
+
+  // The store reads the extension's name and description from these, not from
+  // the catalogue above, and a key present in one file and absent from the other
+  // is a listing that falls back to English without saying so.
+  const locales = ['en', 'it'];
+  const messages = {};
+  for (const lang of locales) {
+    const path = join(ROOT, '_locales', lang, 'messages.json');
+    try {
+      messages[lang] = JSON.parse(readFileSync(path, 'utf8'));
+    } catch (err) {
+      complaints.push(`_locales/${lang}/messages.json will not parse: ${err.message}`);
+    }
+  }
+  for (const lang of locales) {
+    for (const other of locales) {
+      if (!messages[lang] || !messages[other]) continue;
+      for (const key of Object.keys(messages[other])) {
+        if (!(key in messages[lang])) complaints.push(`_locales/${lang} is missing ${key}`);
+      }
     }
   }
 
