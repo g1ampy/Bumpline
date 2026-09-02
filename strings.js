@@ -739,6 +739,33 @@ const BumplineText = (() => {
       : line;
   }
 
+  // The two tags a catalogue line is allowed to carry, and the only two it
+  // does: a <b> or an <i> around a word its sentence leans on. Neither takes an
+  // attribute and neither nests, so one pass over the line is the whole parser.
+  //
+  // Everything this does not match is text — an unknown tag, a half-open one, a
+  // {0} that was never substituted, a bare angle bracket a translator typed.
+  // That is the point of building the nodes rather than handing the line to
+  // innerHTML: the rule is enforced by the code that draws the line instead of
+  // promised by a comment above it. build.mjs holds the other end, and refuses
+  // a catalogue that carries any tag but these.
+  const EMPHASIS = /<(b|i)>([\s\S]*?)<\/\1>/g;
+
+  function emphasised(line) {
+    const nodes = [];
+    let at = 0;
+    for (const found of line.matchAll(EMPHASIS)) {
+      if (found.index > at) nodes.push(document.createTextNode(line.slice(at, found.index)));
+      const tag = document.createElement(found[1]);
+      // textContent, so a tag inside a tag is drawn rather than obeyed.
+      tag.textContent = found[2];
+      nodes.push(tag);
+      at = found.index + found[0].length;
+    }
+    if (at < line.length) nodes.push(document.createTextNode(line.slice(at)));
+    return nodes;
+  }
+
   // The two extension pages are HTML, so their words are attributes on the
   // markup rather than calls in a script: data-i18n for the text, and one
   // attribute each for the two places a string is read out but not shown.
@@ -755,18 +782,21 @@ const BumplineText = (() => {
     for (const node of root.querySelectorAll('[data-i18n]')) {
       node.textContent = t(node.dataset.i18n);
     }
-    // innerHTML is safe here because of what this loop does, not because of
-    // where the strings came from: it calls t() with no substitutions, so the
-    // only thing that can reach the DOM is a catalogue line exactly as it is
-    // written in this file, with every {0} left standing as literal text. No
-    // runtime value — a page's, a seller's, or Vinted's — has a path into it.
-    // That is the property to keep: a paint() that ever passed subs through
-    // here would break it, and the provenance argument alone would not have
-    // caught that. It exists for the handful of sentences that carry their own
-    // emphasis (a <b>, an <i>) that textContent would otherwise strip;
-    // data-i18n stays the default for everything else.
+    // For the handful of sentences that carry their own emphasis, which
+    // textContent would otherwise strip; data-i18n stays the default for
+    // everything else.
+    //
+    // Built node by node rather than assigned through innerHTML. The two are
+    // the same page out of the same catalogue, and the difference is what
+    // happens to anything the catalogue did not intend as markup: here it
+    // reaches the seller as the characters it is written with. An earlier
+    // version of this loop set innerHTML and argued in a comment that nothing
+    // untrusted could arrive, because t() is called with no substitutions. The
+    // argument was true and the invariant it rested on was written nowhere but
+    // in that comment, which is a poor place to keep a thing that has to stay
+    // true for as long as the file exists.
     for (const node of root.querySelectorAll('[data-i18n-html]')) {
-      node.innerHTML = t(node.dataset.i18nHtml);
+      node.replaceChildren(...emphasised(t(node.dataset.i18nHtml)));
     }
     for (const node of root.querySelectorAll('[data-i18n-title]')) {
       node.title = t(node.dataset.i18nTitle);

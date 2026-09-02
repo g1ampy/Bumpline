@@ -285,6 +285,35 @@ function checkCatalogues() {
     }
   }
 
+  // paint() draws a catalogue line's emphasis by building the nodes itself, and
+  // it knows two tags: <b> and <i>. A third one added to a sentence here would
+  // not break anything loudly — it would reach the seller as its own angle
+  // brackets, mid-paragraph, in one language only. This is the other end of
+  // that rule: the drawing code cannot render a tag it does not know, and the
+  // build will not ship a catalogue that contains one.
+  const TAG = /<\/?([a-zA-Z][^\s/>]*)[^>]*>/g;
+  for (const lang of languages) {
+    for (const [key, line] of Object.entries(CATALOG[lang])) {
+      // By name rather than by match, or a stray <span>…</span> is two
+      // complaints about one mistake.
+      const strangers = new Set(
+        [...String(line).matchAll(TAG)]
+          .map(found => found[1].toLowerCase())
+          .filter(name => name !== 'b' && name !== 'i'),
+      );
+      for (const name of strangers) {
+        complaints.push(`${lang} ${key} carries <${name}>, which paint() cannot draw`);
+      }
+      // An unclosed <b> is the same sentence with the emphasis silently gone,
+      // since a tag that never matches its closer is left standing as text.
+      for (const name of ['b', 'i']) {
+        const open = (String(line).match(new RegExp(`<${name}>`, 'g')) || []).length;
+        const close = (String(line).match(new RegExp(`</${name}>`, 'g')) || []).length;
+        if (open !== close) complaints.push(`${lang} ${key} has ${open} <${name}> and ${close} </${name}>`);
+      }
+    }
+  }
+
   // Every t('…') written in the code — single-quoted, double-quoted or
   // backtick-quoted — and every data-i18n attribute in the two pages, has to
   // name a key that exists.
