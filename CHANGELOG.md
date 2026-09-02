@@ -18,8 +18,7 @@ and the same rule that nothing is deleted before the copy exists.
 
 Which language opens is decided by the browser's own language, the same
 signal Chrome and Firefox already hand every extension, and it can be
-overruled from a new language row in the panel's settings drawer — **Lingua**,
-**Langue** or **Language**, whichever the panel is already speaking — for the
+overruled from a globe beside the name at the top of the panel, for the
 seller whose browser and whose Vinted are not set to the same language.
 Switching it repaints an open wardrobe page in every open tab on the spot;
 nothing needs a reload to catch up.
@@ -43,12 +42,16 @@ Australian site the buttons simply never appeared.
   name does. The words Vinted owns are quoted the way a seller reads them on
   the site rather than translated out of English: the site's own button is
   «Metti in evidenza» to an Italian seller and « Booster » to a French one.
-- **A language setting.** A new row in the panel's settings drawer lets a
-  seller pick a language regardless of what the browser reports, stored as
-  `bumpline:lang`. The row builds itself from the catalogue, each language
-  written under its own name, so a language added to `strings.js` turns up
-  here without an edit of its own. Left on **Automatic**, the browser's own
-  language keeps deciding, exactly as it did before this row existed.
+- **A language picker in the header.** A globe and a two-letter code sit
+  beside the name at the top of the panel, and picking from them stores
+  `bumpline:lang`. It is a real `<select>` laid over the two at zero
+  opacity, so the menu that opens is the browser's own and a screen reader
+  still hears the language written out in full; only the closed state is
+  abbreviated. The list builds itself from the catalogue, each language
+  under its own name, so a language added to `strings.js` turns up there
+  without an edit of its own. Left on **Automatic** the browser keeps
+  deciding, and the code shows the language it resolved to, muted rather
+  than at full strength to say it was reported and not chosen.
 - **A build that refuses to ship a half-finished translation.** `node
   build.mjs` now fails the build outright if the catalogues disagree — a key
   present in one language and missing from another — or if a page asks for a
