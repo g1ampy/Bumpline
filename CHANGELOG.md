@@ -5,6 +5,43 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-09-02
+
+Relisting an accessory no longer stops to ask for a clothing size it never had.
+A seller reported it of earrings: every relist asked for a size as if the item
+were a garment, and the copy that came out was in the right category all along.
+
+The check that asked was reading an answer that does not say what it was taken
+to say. `GET /api/v2/item_upload/size_groups?catalog_ids[]=<id>` replies with the
+default size group of the branch the catalog sits in, not with the catalog's own
+rule: earrings, necklaces, backpacks and sunglasses under Women all come back
+holding the same women's clothing sizes a dress does. So "the catalog offers
+sizes" was read as "the catalog demands one", and every accessory without a size
+— which is every accessory — was stopped at a window offering S, M and L.
+
+Nothing readable before the publish tells the two apart. What does is the
+publish: where a category really requires a size, completion answers
+`size: Fill in size to continue`. That refusal is now what asks.
+
+### Fixed
+
+- **No size prompt for categories that do not want a size.** A listing with no
+  size is taken at its word — Vinted accepted it without one — and the relist
+  goes through. The prompt still appears before anything is deleted when the
+  size the listing carries has stopped being valid for its category, which is
+  the case it was written for.
+- **The prompt moved to where it can be true.** If completion refuses over the
+  size, the size list opens then, the answer goes into the copy held on this
+  device, and the publish is tried again with an extra attempt so that the
+  answer is never given to nothing. It is asked once per relist: a second
+  refusal naming the size means the answer was not the problem. A resume that
+  ran on its own as a page loaded never opens the window — it records the
+  refusal and raises the recovery card, and **Retry now** is what asks.
+- **Backing out of that window keeps Vinted's words on the card.** The reason
+  the card reads back is the refusal itself, not Bumpline's note that no size
+  was chosen; the note is said in a toast, where it cannot be mistaken for
+  something Vinted said.
+
 ## [1.1.1] - 2026-09-02
 
 One thing a seller sees is different, and only on Firefox: the rating link now
@@ -664,6 +701,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.2]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.2
 [1.1.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.1
 [1.1.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.0
 [1.0.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.0.1
