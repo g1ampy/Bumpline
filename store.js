@@ -33,12 +33,19 @@ const BumplineStore = (() => {
   const CHROME_STORE_ID = 'bckdngndomabedcpciejiojhjfheolkn';
 
   // AMO's slug, which is the last path segment of the listing it gives the
-  // add-on on the first submission — addons.mozilla.org/…/addon/<this>/ —
-  // derived from the add-on's name. It is not the gecko id in build.mjs, which
-  // identifies the installed add-on rather than a page on the site. Empty until
-  // there is a listing to point at: a link to a page that does not exist is
-  // worse than no link, so whatever asks for it hides itself instead.
-  const FIREFOX_ADDON_ID = 'bumpline-relist-for-vinted';
+  // add-on on the first submission — addons.mozilla.org/…/addon/<this>/. It is
+  // not the gecko id in build.mjs, which identifies the installed add-on rather
+  // than a page on the site, and it is not derived from the add-on's name
+  // either: AMO picks it, and what it picked is not the order the name is
+  // written in. This held 'bumpline-relist-for-vinted', which reads like the
+  // right answer and 404s. Copy it from the address bar of the published
+  // listing rather than working it out from the name.
+  //
+  // Empty is a supported value and means there is no listing in this browser's
+  // store yet: a link to a page that does not exist is worse than no link, so
+  // whatever asks for it hides itself instead. A wrong value is worse than
+  // both, because nothing hides and the seller finds the 404.
+  const FIREFOX_ADDON_ID = 'bumpline-vinted-relister';
 
   // The extension's own origin, which is the one thing a browser cannot get
   // wrong about its own extension: Firefox serves these pages from
