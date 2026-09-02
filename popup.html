@@ -172,10 +172,11 @@
 
         <label class="switch">
           <span class="switch__label" data-i18n="popup.lang.label">Language</span>
+          <!-- Only Automatic is written here. The languages themselves are
+               added by popup.js from the catalogue, each under its own name, so
+               a language added to strings.js needs no edit in this file. -->
           <select class="setting__select" id="lang-select">
             <option value="auto" data-i18n="popup.lang.auto">Automatic (browser language)</option>
-            <option value="en">English</option>
-            <option value="it">Italiano</option>
           </select>
         </label>
 

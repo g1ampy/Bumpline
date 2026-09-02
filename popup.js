@@ -34,9 +34,12 @@ const HARD_COOLDOWN_MS = 10000;
 // vinted.it, vinted.com, vinted.co.uk … one domain per country.
 const VINTED_HOST = /(^|\.)vinted\.[a-z]{2,3}(\.[a-z]{2})?$/i;
 
-// The three values the language <select> offers, which are also the three the
-// stored key is allowed to hold.
-const LANGS = ['auto', 'en', 'it'];
+// What the language <select> offers, and what the stored key is allowed to
+// hold: 'auto' plus whatever languages the catalogue actually carries. Read
+// from the catalogue rather than written out here, so adding a language is
+// strings.js and _locales and nothing else — a list kept by hand is a list that
+// disagrees with the catalogue the first time somebody forgets it.
+const LANGS = ['auto', ...Object.keys(BumplineText.CATALOG)];
 
 // Lucide paths. Stroke, width and colour come from the .icon rule, so the two
 // glyphs stay the same weight as each other.
@@ -663,6 +666,36 @@ function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => ch
   });
 }
 
+// A language is offered under its own name, because somebody scanning this list
+// is looking for the one word on it they can read. Intl knows those names, so
+// nothing here has to be kept in step with the catalogue by hand: it answers in
+// the language it is asked about, and only the first letter needs raising —
+// Italian writes "italiano" in a sentence and "Italiano" in a list. A browser
+// that cannot answer, or a code Intl does not know, falls back to the code
+// itself, which is still something a reader can pick their language out of.
+function languageName(code) {
+  try {
+    const name = new Intl.DisplayNames([code], { type: 'language' }).of(code);
+    if (!name || name === code) return code;
+    return name.charAt(0).toLocaleUpperCase(code) + name.slice(1);
+  } catch (_) {
+    return code;
+  }
+}
+
+// The markup ships the Automatic row and nothing else: the languages come from
+// the catalogue, so a language added to strings.js appears here on its own. A
+// panel whose script never ran shows only Automatic, which is honest — without
+// the script the row could not have switched anything anyway.
+function fillLanguages(box) {
+  for (const code of Object.keys(BumplineText.CATALOG)) {
+    const option = document.createElement('option');
+    option.value = code;
+    option.textContent = languageName(code);
+    box.append(option);
+  }
+}
+
 // repaint is everything this panel draws from something other than the
 // catalogue, handed in the way wirePower is handed paintTab. Changing the
 // language is the one action in here that invalidates the whole panel rather
@@ -710,6 +743,7 @@ function wireSettings(stored, repaint) {
   // write puts the box back where it was rather than showing a language the
   // extension is not in.
   const langBox = document.getElementById('lang-select');
+  fillLanguages(langBox);
   langBox.value = stored.lang;
   langBox.addEventListener('change', async () => {
     const wanted = langBox.value;

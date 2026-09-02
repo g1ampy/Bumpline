@@ -331,7 +331,12 @@ function checkCatalogues() {
   // The store reads the extension's name and description from these, not from
   // the catalogue above, and a key present in one file and absent from the other
   // is a listing that falls back to English without saying so.
-  const locales = ['en', 'it'];
+  //
+  // Which languages to expect comes from the catalogue rather than a list kept
+  // here: a language the extension speaks with no _locales folder of its own is
+  // exactly the omission this check exists to catch, and a list written out
+  // twice is a list that only agrees with itself until somebody forgets.
+  const locales = Object.keys(CATALOG);
   const messages = {};
   for (const lang of locales) {
     const path = join(ROOT, '_locales', lang, 'messages.json');
