@@ -7,18 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2026-09-01
 
-Bumpline now speaks Italian. Every string a seller reads on the page or in the
-panel — the two relist buttons and their progress labels, the toasts in the
-corner, the recovery card, the size dialog, the budget-warning modal, the age
-line under each item, the whole toolbar panel including both of its warning
-dialogs, and the page shown once after install — exists in Italian as well as
-English now, one catalogue loaded by each page before it draws. Nothing about
+Bumpline now speaks Italian and French. Every string a seller reads on the page
+or in the panel — the two relist buttons and their progress labels, the toasts
+in the corner, the recovery card, the size dialog, the budget-warning modal,
+the age line under each item, the whole toolbar panel including both of its
+warning dialogs, and the page shown once after install — exists in all three
+languages now, one catalogue loaded by each page before it draws. Nothing about
 the relist changed: the same fields, the same photos, the same two buttons,
 and the same rule that nothing is deleted before the copy exists.
 
 Which language opens is decided by the browser's own language, the same
 signal Chrome and Firefox already hand every extension, and it can be
-overruled from a new **Lingua** row in the panel's settings drawer for the
+overruled from a new language row in the panel's settings drawer — **Lingua**,
+**Langue** or **Language**, whichever the panel is already speaking — for the
 seller whose browser and whose Vinted are not set to the same language.
 Switching it repaints an open wardrobe page in every open tab on the spot;
 nothing needs a reload to catch up.
@@ -31,25 +32,31 @@ Australian site the buttons simply never appeared.
 
 ### Added
 
-- **Italian.** The extension speaks it wherever the browser's own language is
-  Italian, and can be told to regardless from the panel. `strings.js` is one
-  catalogue holding both languages, loaded as a plain script before every page
-  that reads from it — the two extension pages read it through `data-i18n`
-  attributes on their own markup, and the content script through direct calls.
-  The manifest's name and description are translated too, through
-  `_locales/it`; the name itself is not — "Bumpline - Relister for Vinted"
-  stays the same in every language, the way a product name does.
-- **A Lingua setting.** A new row in the panel's settings drawer lets a seller
-  choose Italian or English regardless of what the browser reports, stored as
-  `bumpline:lang`. Left on **Automatic**, the browser's own language keeps
-  deciding, exactly as it did before this row existed.
+- **Italian and French.** The extension speaks whichever of them the browser
+  reports, and can be told to regardless from the panel. `strings.js` is one
+  catalogue holding all three languages, loaded as a plain script before every
+  page that reads from it — the two extension pages read it through
+  `data-i18n` attributes on their own markup, and the content script through
+  direct calls. The manifest's name and description are translated too,
+  through `_locales/it` and `_locales/fr`; the name itself is not — "Bumpline
+  - Relister for Vinted" stays the same in every language, the way a product
+  name does. The words Vinted owns are quoted the way a seller reads them on
+  the site rather than translated out of English: the site's own button is
+  «Metti in evidenza» to an Italian seller and « Booster » to a French one.
+- **A language setting.** A new row in the panel's settings drawer lets a
+  seller pick a language regardless of what the browser reports, stored as
+  `bumpline:lang`. The row builds itself from the catalogue, each language
+  written under its own name, so a language added to `strings.js` turns up
+  here without an edit of its own. Left on **Automatic**, the browser's own
+  language keeps deciding, exactly as it did before this row existed.
 - **A build that refuses to ship a half-finished translation.** `node
-  build.mjs` now fails the build outright if the English and Italian
-  catalogues disagree — a key present in one and missing from the other — or
-  if a page asks for a key that exists in neither. A silent gap would have
-  reached a seller as English words sitting inside an otherwise Italian page,
-  or as the raw key left on screen; the build stops it before it ships
-  instead.
+  build.mjs` now fails the build outright if the catalogues disagree — a key
+  present in one language and missing from another — or if a page asks for a
+  key that exists in none of them. It also expects one `_locales` folder per
+  language the catalogue carries, so a language the panel offers cannot ship
+  with an untranslated store listing. A silent gap would have reached a seller
+  as English words sitting inside an otherwise translated page, or as the raw
+  key left on screen; the build stops it before it ships instead.
 - **Australia (`www.vinted.com.au`).** The domain is now named in all four
   places a country site has to be named for a relist to work: the host
   permissions, the pages `bridge.js` may be loaded into, the wardrobe pages
