@@ -3,5 +3,6 @@ Thumbs.db
 *.zip
 build/
 .claude/
+docs/superpowers/
 store/listing.md
 /listing*.txt
