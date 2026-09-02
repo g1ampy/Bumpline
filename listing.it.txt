@@ -1,0 +1,56 @@
+Bumpline mette un pulsante Ripubblica nel tuo armadio su Vinted. Un clic elimina l'annuncio vecchio e rimette l'articolo online, di nuovo in cima ai risultati di ricerca, senza che tu riscriva un solo campo.
+
+Ripubblicare è l'unico modo per rendere di nuovo visibile un articolo vecchio, e il sito non ti dà un pulsante per farlo. A mano vuol dire eliminare l'articolo, riscrivere titolo e descrizione, riselezionare marca, taglia, categoria e condizione, poi scaricare e ricaricare ogni foto. Tre-cinque minuti per articolo. Bumpline fa tutto in un clic.
+
+Ripubblicare, ricaricare, rimettere in cima un articolo vecchio: i venditori usano parole diverse per la stessa mossa, e questo è il pulsante che la fa.
+
+1. COSA FANNO I PULSANTI RIPUBBLICA
+
+• Ripubblica: elimina l'annuncio vecchio e pubblica subito la copia.
+• Ripubblica come bozza: elimina l'annuncio vecchio e lascia la copia non pubblicata nelle tue bozze, così puoi cambiare il prezzo o sistemare una foto prima che vada online.
+• La copia mantiene titolo, descrizione, prezzo, marca, taglia, categoria, condizione, colori e ogni foto, nell'ordine originale.
+• Entrambi i pulsanti compaiono sotto il pulsante «Metti in evidenza» del sito, su ogni articolo che puoi ancora modificare.
+• Ogni scheda articolo riceve una riga con la sua età, così vedi quali annunci sono abbastanza vecchi da valere una ripubblicazione.
+• Italiano, inglese e francese, scelti in base alla lingua del browser e modificabili dal pannello nella barra degli strumenti.
+• Funziona su tutti i 29 siti nazionali, senza configurazione, senza registrazione e senza chiavi API.
+
+Entrambi i pulsanti eliminano l'annuncio originale. «Ripubblica come bozza» non è una prova a vuoto: crea la bozza, elimina l'originale e si ferma prima di pubblicare. Gli articoli venduti o riservati non ricevono pulsanti, perché il sito non permette di copiarli.
+
+2. PERCHÉ IL TUO ARTICOLO NON PUÒ PERDERSI IN UNA RIPUBBLICAZIONE
+
+Due annunci identici non possono essere online insieme, quindi l'annuncio vecchio deve sparire prima che compaia la copia. Uno strumento che elimina per primo perde il tuo articolo se il passo successivo fallisce per una caduta di rete o un controllo anti-bot.
+
+Bumpline scrive l'intera copia, ogni campo e ogni foto, dentro il tuo browser PRIMA che venga eliminato qualcosa, e la tiene lì finché il nuovo annuncio non è online. Sopravvive alla chiusura della scheda, alla chiusura del browser e al riavvio del computer. Quando arriva l'eliminazione, il tuo articolo esiste in due posti insieme.
+
+Ripubblica come bozza mette quella seconda copia sul sito: una bozza privata, creata prima dell'eliminazione. Una bozza non è un annuncio, quindi non viene trattata come un duplicato, e resta sui server del sito, dove puoi pubblicarla a mano dall'app.
+
+Prima di eliminare qualsiasi cosa, Bumpline controlla che tutte le foto siano state caricate e non solo alcune, che il titolo ci sia, che la condizione sia leggibile, che la taglia sia valida per la categoria, e che tu sia connesso e non bloccato da un controllo anti-bot. Qualsiasi errore ferma tutto e non elimina niente.
+
+Se la pubblicazione fallisce dopo l'eliminazione, Bumpline riprova, e poi riprende il lavoro ogni volta che apri una pagina del sito. Una scheda nell'angolo offre tre vie d'uscita: riprova ora, scarica l'articolo come file per ricostruire l'annuncio, oppure scarta la copia. Dopo una ripubblicazione come bozza, l'articolo è nelle tue bozze.
+
+3. COME BUMPLINE REGOLA IL RITMO DELLE TUE RIPUBBLICAZIONI
+
+Il sito risponde al traffico che sembra automatizzato con un blocco temporaneo su modifiche e pubblicazioni, quindi Bumpline si dà un ritmo. Uno-due secondi tra le richieste, dieci secondi tra una ripubblicazione e la successiva, e una domanda prima della quinta ripubblicazione in un'ora o della sedicesima in un giorno. Il ritmo riduce il rischio di un blocco senza eliminarlo. Quella decisione spetta al sito.
+
+Se il sito risponde con un limite di frequenza o un controllo anti-bot, i pulsanti si spengono fino alla fine dell'attesa invece di lasciarti insistere. Insistere durante una pausa di quindici minuti è ciò che la trasforma in un blocco che dura un giorno. Se il tuo account è limitato nella pubblicazione, i pulsanti sono già spenti prima che tu prema.
+
+L'icona nella barra apre un pannello: se i pulsanti funzionano sulla pagina che stai guardando, le ripubblicazioni ancora da finire, quanti articoli hai ripubblicato nell'ultima ora e nell'ultimo giorno, la lingua e le impostazioni di ritmo. L'interruttore in alto a destra spegne Bumpline, e spegnerlo conserva le tue impostazioni, i tuoi conteggi e qualsiasi copia salvata su questo dispositivo.
+
+4. COME RIPUBBLICARE UN ARTICOLO
+
+1. Installa l'estensione e apri la tua pagina profilo sul sito.
+2. Trova l'articolo che vuoi rimandare in alto.
+3. Premi Ripubblica, o Ripubblica come bozza, sotto il pulsante «Metti in evidenza».
+4. Aspetta che la pagina si ricarichi. L'articolo è di nuovo online, in cima.
+
+5. PRIVACY E COSA VIENE SALVATO
+
+Bumpline parla con il sito e con nient'altro. Nessuna analisi, nessuna telemetria, nessun account, nessun server. Quello che salva resta nel tuo browser: il token di sicurezza richiesto a ogni richiesta, le tue impostazioni, quante ripubblicazioni hai fatto di recente e qualsiasi ripubblicazione non ancora conclusa, foto comprese, così da poterla recuperare.
+
+6. CODICE APERTO E SUPPORTO
+
+Bumpline è software libero sotto licenza GNU GPL v3, quindi puoi leggerne ogni riga. Codice, domande e segnalazioni: https://github.com/g1ampy/Bumpline
+
+7. NESSUN LEGAME CON VINTED
+
+Bumpline è un progetto indipendente. Non è affiliato, approvato o collegato a Vinted in alcun modo. Il nome «Vinted» è usato solo per dire su quale sito funziona l'estensione. Automatizzare un sito web può essere in conflitto con i suoi termini di servizio; usi Bumpline a tuo rischio.

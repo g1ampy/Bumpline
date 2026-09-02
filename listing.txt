@@ -1,0 +1,56 @@
+Bumpline puts a Relist button on your own Vinted wardrobe page. One click deletes the old listing and posts the item again, back at the top of the search results, without you retyping a single field.
+
+Relisting is the only way to make an older item visible again, and the site gives you no button for it. By hand it means deleting the item, retyping the title and the description, re-picking the brand, size, category and condition, then downloading and re-uploading every photo. Three to five minutes per item. Bumpline does all of it in one click.
+
+Relisting, reposting, re-uploading, bumping an old item back up: sellers use different words for the same move, and this is the button for it.
+
+1. WHAT THE RELIST BUTTONS DO
+
+• Relist: deletes the old listing and publishes the copy right away.
+• Relist as draft: deletes the old listing and leaves the copy unpublished in your drafts, so you can change the price or fix a photo before it goes live.
+• The copy keeps the title, description, price, brand, size, category, condition, colours and every photo, in their original order.
+• Both buttons appear under the site's own Bump button, on every item you can still edit.
+• Each item card gets an age line, so you can see which listings are old enough to be worth relisting.
+• English, Italian and French, chosen by your browser's own language and changeable in the toolbar panel.
+• Works on all 29 country sites, with no setup, no sign-up and no API key.
+
+Both buttons delete the original listing. "Relist as draft" is not a dry run: it creates the draft, deletes the original, and stops before publishing. Sold and reserved items get no buttons, because the site does not allow copying them.
+
+2. WHY YOUR ITEM CANNOT GET LOST IN A RELIST
+
+Two identical listings cannot be online at the same time, so the old listing has to go before the copy appears. A tool that deletes first loses your item if the next step fails on a network drop or a bot check.
+
+Bumpline writes the whole copy, every field and every photo, into your browser BEFORE anything is deleted, and keeps it there until the new listing is live. It survives closing the tab, closing the browser and restarting the machine. By the time the delete happens, your item exists in two places at once.
+
+Relist as draft puts that second copy on the site instead: a private draft, created before the delete. A draft is not a listing, so it is not treated as a duplicate, and it sits on the site's own servers, where you can publish it by hand from the app.
+
+Before deleting anything, Bumpline checks that all the photos uploaded and not just some of them, that the title is present, that the condition could be read, that the size is valid for the category, and that you are logged in and not blocked by a bot check. Any failure stops the run and deletes nothing.
+
+If publishing fails after the delete, Bumpline tries again, and then picks the job up every time you open a page on the site. A card in the corner offers three ways out: retry now, download the item as a file to rebuild the listing from, or discard it. After a draft relist the item is sitting in your drafts.
+
+3. HOW BUMPLINE PACES YOUR RELISTS
+
+The site answers traffic that looks automated with a temporary block on editing and publishing, so Bumpline paces itself. One to two seconds between requests, ten seconds between one relist and the next, and a question before the fifth relist in an hour or the sixteenth in a day. Pacing lowers the risk of a block without removing it. That call is the site's to make.
+
+If the site does answer with a rate limit or a bot check, the buttons grey out until the wait is over rather than letting you press on. Pressing on through a fifteen-minute pause is what turns it into a block that lasts a day. If your account is restricted from listing, the buttons are off before you press anything.
+
+The toolbar icon opens a panel: whether the buttons work on the page you are looking at, any relist still waiting to finish, how many items you have relisted in the last hour and in the last day, the language, and the pacing settings. The switch in the top right turns Bumpline off, and turning it off keeps your settings, your counts and any copy saved on this device.
+
+4. HOW TO RELIST AN ITEM
+
+1. Install the extension and open your own profile page on the site.
+2. Find the item you want to push back up.
+3. Click Relist, or Relist as draft, under the Bump button.
+4. Wait for the page to reload. The item is online again, at the top.
+
+5. PRIVACY AND WHAT IS STORED
+
+Bumpline talks to the site and to nothing else. No analytics, no telemetry, no account, no server. What it stores stays in your browser: the security token each request requires, your settings, how many relists you have made recently, and any relist that has not finished yet, photos included, so it can be recovered.
+
+6. OPEN SOURCE AND SUPPORT
+
+Bumpline is free software under the GNU GPL v3, so you can read every line of it. Source, questions and bug reports: https://github.com/g1ampy/Bumpline
+
+7. NOT AFFILIATED WITH VINTED
+
+Bumpline is an independent project. It is not affiliated with, endorsed by, or connected to Vinted in any way. The name "Vinted" is used only to say which website the extension works on. Automating a website may conflict with its terms of service; you use Bumpline at your own risk.

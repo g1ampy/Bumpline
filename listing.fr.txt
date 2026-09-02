@@ -1,0 +1,56 @@
+Bumpline pose un bouton Republier dans ton propre dressing Vinted. Un clic supprime la vieille annonce et remet l'article en ligne, de nouveau en tête des résultats de recherche, sans que tu retapes un seul champ.
+
+Republier est le seul moyen de rendre un vieil article visible à nouveau, et le site ne te donne aucun bouton pour le faire. À la main, cela veut dire supprimer l'article, retaper le titre et la description, resélectionner la marque, la taille, la catégorie et l'état, puis télécharger et renvoyer chaque photo. Trois à cinq minutes par article. Bumpline fait tout cela en un clic.
+
+Republier, reposter, remettre en ligne, faire remonter un vieil article : les vendeurs ont plusieurs mots pour le même geste, et voici le bouton qui le fait.
+
+1. CE QUE FONT LES BOUTONS REPUBLIER
+
+• Republier : supprime la vieille annonce et publie la copie tout de suite.
+• Republier en brouillon : supprime la vieille annonce et laisse la copie non publiée dans tes brouillons, pour que tu puisses changer le prix ou refaire une photo avant qu'elle passe en ligne.
+• La copie garde le titre, la description, le prix, la marque, la taille, la catégorie, l'état, les couleurs et chaque photo, dans leur ordre d'origine.
+• Les deux boutons apparaissent sous le bouton « Booster » du site, sur chaque article que tu peux encore modifier.
+• Chaque carte d'article reçoit une ligne d'âge, pour voir d'un coup d'œil quelles annonces sont assez vieilles pour mériter une republication.
+• Français, anglais et italien, choisis d'après la langue du navigateur et modifiables depuis le panneau de la barre d'outils.
+• Fonctionne sur les 29 sites nationaux, sans configuration, sans inscription et sans clé API.
+
+Les deux boutons suppriment l'annonce d'origine. « Republier en brouillon » n'est pas un essai à blanc : il crée le brouillon, supprime l'original, et s'arrête avant de publier. Les articles vendus ou réservés ne reçoivent aucun bouton, parce que le site n'autorise pas leur copie.
+
+2. POURQUOI TON ARTICLE NE PEUT PAS SE PERDRE PENDANT UNE REPUBLICATION
+
+Deux annonces identiques ne peuvent pas être en ligne en même temps, donc la vieille annonce doit partir avant que la copie apparaisse. Un outil qui supprime d'abord perd ton article si l'étape suivante échoue sur une coupure réseau ou un contrôle anti-robot.
+
+Bumpline écrit la copie entière, chaque champ et chaque photo, dans ton navigateur AVANT que quoi que ce soit soit supprimé, et l'y garde jusqu'à ce que la nouvelle annonce soit en ligne. Elle survit à la fermeture de l'onglet, à la fermeture du navigateur et au redémarrage de la machine. Au moment où la suppression arrive, ton article existe à deux endroits à la fois.
+
+Republier en brouillon met cette deuxième copie sur le site : un brouillon privé, créé avant la suppression. Un brouillon n'est pas une annonce, donc il n'est pas traité comme un doublon, et il reste sur les serveurs du site, où tu peux le publier à la main depuis l'application.
+
+Avant de supprimer quoi que ce soit, Bumpline vérifie que toutes les photos sont bien passées et pas seulement quelques-unes, que le titre est là, que l'état a pu être lu, que la taille est valable pour la catégorie, et que tu es connecté et non bloqué par un contrôle anti-robot. Le moindre échec arrête tout et ne supprime rien.
+
+Si la publication échoue après la suppression, Bumpline réessaie, puis reprend le travail chaque fois que tu ouvres une page du site. Une carte dans le coin offre trois sorties : réessayer maintenant, télécharger l'article sous forme de fichier pour reconstruire l'annonce, ou abandonner la copie. Après une republication en brouillon, l'article est dans tes brouillons.
+
+3. COMMENT BUMPLINE RÈGLE LE RYTHME DE TES REPUBLICATIONS
+
+Le site répond au trafic qui a l'air automatisé par un blocage temporaire des modifications et des publications, alors Bumpline se donne un rythme. Une à deux secondes entre les requêtes, dix secondes entre une republication et la suivante, et une question avant la cinquième republication en une heure ou la seizième en une journée. Le rythme réduit le risque d'un blocage sans l'éliminer. Cette décision appartient au site.
+
+Si le site répond par une limite de débit ou un contrôle anti-robot, les boutons s'éteignent jusqu'à la fin de l'attente au lieu de te laisser insister. Insister pendant une pause de quinze minutes, c'est ce qui la transforme en un blocage qui dure une journée. Si ton compte est restreint sur la publication, les boutons sont éteints avant que tu appuies sur quoi que ce soit.
+
+L'icône de la barre d'outils ouvre un panneau : si les boutons fonctionnent sur la page que tu regardes, les republications encore en attente, combien d'articles tu as republiés dans la dernière heure et dans la dernière journée, la langue, et les réglages de rythme. L'interrupteur en haut à droite éteint Bumpline, et l'éteindre conserve tes réglages, tes compteurs et toute copie enregistrée sur cet appareil.
+
+4. COMMENT REPUBLIER UN ARTICLE
+
+1. Installe l'extension et ouvre ta propre page de profil sur le site.
+2. Trouve l'article que tu veux faire remonter.
+3. Clique sur Republier, ou Republier en brouillon, sous le bouton « Booster ».
+4. Attends que la page se recharge. L'article est de nouveau en ligne, en tête.
+
+5. CONFIDENTIALITÉ ET CE QUI EST ENREGISTRÉ
+
+Bumpline parle au site et à rien d'autre. Aucune analyse, aucune télémétrie, aucun compte, aucun serveur. Ce qu'il enregistre reste dans ton navigateur : le jeton de sécurité que chaque requête réclame, tes réglages, combien de republications tu as faites récemment, et toute republication pas encore terminée, photos comprises, pour qu'elle puisse être récupérée.
+
+6. CODE OUVERT ET ASSISTANCE
+
+Bumpline est un logiciel libre sous licence GNU GPL v3, donc tu peux en lire chaque ligne. Code, questions et signalements : https://github.com/g1ampy/Bumpline
+
+7. AUCUN LIEN AVEC VINTED
+
+Bumpline est un projet indépendant. Il n'est affilié, approuvé ni lié à Vinted d'aucune manière. Le nom « Vinted » sert uniquement à dire sur quel site l'extension fonctionne. Automatiser un site web peut entrer en conflit avec ses conditions d'utilisation ; tu utilises Bumpline à tes propres risques.
