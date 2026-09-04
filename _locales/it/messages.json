@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "Bumpline - Relister for Vinted",
+    "message": "Bumpline - Vinted Relister",
     "description": "Same string as in en on purpose. The manifest has no way to say that a key is not translated, so it is repeated rather than left out; leaving it out would fall back to en anyway, but silently."
   },
   "extDescription": {
