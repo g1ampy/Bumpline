@@ -5,6 +5,44 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-09-04
+
+Nothing a seller clicks behaves differently. What changed is what they see
+before they click: a new mark, and a name that leads with the word they searched
+for.
+
+The old icon was a pair of chevrons — the bump, drawn as an arrow. It said the
+direction but not the thing being moved. The new one draws the list instead:
+three rows aligned to the right, the top one full width and lit while the two
+below it fade back. That is the whole product in one picture, an item that was
+buried sitting at the top again, and unlike an arrow it survives the size the
+icon is actually seen at.
+
+Sixteen pixels is that size. The drawing is built on a sixteen-unit grid scaled
+by eight, so every edge in the 128-unit file lands on a whole pixel when Chrome
+renders the toolbar icon: the rows come out two pixels tall and solid rather
+than one and seven eighths, blurred across three. The teal moved for the same
+reason. It was `#00ADB8`, which reads 2.65:1 against the white it carries; it is
+now `#007580` — the value `--primary` already held in the popup — which reads
+5.26:1. One teal in the product now rather than two, and the colour note at the
+top of `popup.css` says so instead of saying what it used to be true of.
+
+### Changed
+
+- **The icon is new, everywhere it appears.** `icons/logo.svg` and every PNG
+  rendered from it, the copy drawn inline on the welcome page, and the Chrome
+  Web Store marquee and promo tile. The store art now shows the icon with its
+  tile rather than the bare mark on the background: three rows without the tile
+  read as a menu button, not as a logo.
+- **The disabled icon keeps its grey.** `#7B7B7B`, unchanged. The same drawing
+  with the colour taken out is still what "there is nothing to do on this tab"
+  looks like, and that grey was picked to hold against light and dark toolbars
+  rather than to sit a fixed distance from the teal.
+- **The extension is named "Bumpline - Vinted Relister".** The same string in
+  every language, as before, and four characters shorter than
+  "Bumpline - Relister for Vinted". The brand still leads; what follows it is
+  now in the order a seller types it.
+
 ## [1.1.2] - 2026-09-02
 
 Relisting an accessory no longer stops to ask for a clothing size it never had.
@@ -701,6 +739,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.3]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.3
 [1.1.2]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.2
 [1.1.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.1
 [1.1.0]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.0
