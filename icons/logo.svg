@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Bumpline">
   <title>Bumpline</title>
-  <circle cx="64" cy="64" r="64" fill="#00ADB8"/>
-  <g fill="none" stroke="#FBFBFB" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="32.6,63.7 64,32.3 95.4,63.7"/>
-    <polyline points="32.6,98.2 64,66.9 95.4,98.2"/>
+  <rect width="128" height="128" rx="28" fill="#007580"/>
+  <g fill="#FBFBFB">
+    <rect x="72" y="88" width="32" height="16" rx="8" opacity=".35"/>
+    <rect x="48" y="56" width="56" height="16" rx="8" opacity=".55"/>
+    <rect x="24" y="24" width="80" height="16" rx="8"/>
   </g>
 </svg>

@@ -23,17 +23,17 @@
  * The theme keeps the preset's shape — the same token names, the same slots,
  * .dark folded into a prefers-color-scheme query because a popup has no app
  * shell to put the class on — and takes its colours from the logo, which is
- * two of them: #00ADB8 on #FBFBFB. In oklch the teal is 0.681 0.116 202.84,
- * and that hue is what every token below is built on.
+ * two of them: #007580 on #FBFBFB. In oklch the teal is 0.5 0.115 203, and
+ * that hue is what every token below is built on.
  *
- * The logo colour cannot simply be pasted into --primary. At its own lightness
- * it is 2.7:1 against white and 2.7:1 against its own white text, so it can
- * carry neither a label nor a filled button. --primary is that hue held and
- * that lightness moved: darkened for the light scheme, lightened for the dark
- * one, with a little more chroma than the logo so it reads as the same teal
- * rather than a washed-out one. The logo keeps its own value, unaltered, in
- * icons/logo.svg — and #FBFBFB, its second colour, is what the filled button
- * writes its label in.
+ * That value is --primary itself, and the two are meant to stay equal. The
+ * logo used to sit at #00ADB8, a lighter teal that reads 2.7:1 against white
+ * and could carry neither a label nor a filled button, so --primary held its
+ * hue and moved its lightness — darkened for the light scheme, lightened for
+ * the dark one. When the mark was redrawn it was drawn at the darker value
+ * instead, which is what a 16px toolbar icon wanted anyway: one teal now
+ * rather than two. It keeps that value in icons/logo.svg — and #FBFBFB, its
+ * second colour, is what the filled button writes its label in.
  *
  * The rest follows from that hue:
  *
