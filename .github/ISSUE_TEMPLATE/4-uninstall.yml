@@ -1,0 +1,29 @@
+name: Uninstall feedback
+description: Why you removed Bumpline. Usually opened from the goodbye page.
+title: "[uninstall] "
+labels: ["uninstall"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking a minute. Nothing here is sent until you press
+        **Create**, and you can change any of it first. This issue is public,
+        so leave out personal details.
+
+  - type: textarea
+    id: reasons
+    attributes:
+      label: Why you uninstalled
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Anything else
+      description: What happened, which Vinted site, what the button said.
+
+  - type: input
+    id: context
+    attributes:
+      label: Browser, language and version
