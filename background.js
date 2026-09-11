@@ -172,8 +172,8 @@ let switchedOn = true;
 
 // Colour needs no explaining, so it says the product name and nothing else —
 // the same word in every language, and therefore not a catalogue key. The two
-// grey states do need explaining, and the welcome page tells the seller to read
-// them, which makes them functional text and not decoration.
+// grey states do need explaining, and the welcome page on the website tells the
+// seller to read them, which makes them functional text and not decoration.
 function titleFor(colour) {
   if (!switchedOn) return BumplineText.t('popup.tooltip.off');
   return colour ? 'Bumpline' : BumplineText.t('popup.tooltip.notVinted');
@@ -281,11 +281,30 @@ ext.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   paintTab(tabId, tab && tab.url);
 });
 
+// The first page a seller sees and the last one both live on the website. The
+// first shows the pinning steps for the browser it opens in and can be
+// corrected without a store review; the last opens after the extension is
+// gone, so it could not live anywhere else. Both are plain visits to a static
+// site, in the language the browser asks for, with nothing of the seller's
+// attached to them.
+const SITE = 'https://bumpline.giampy.tech';
+
 // Installed from the store the extension draws nothing anywhere until you are
 // on your own Vinted wardrobe, so a new user sees an empty toolbar and assumes
 // it is broken. Opening the welcome page once answers where the icon went and
 // where the buttons appear. An update is not a first impression, so it passes.
 ext.runtime.onInstalled.addListener(details => {
   if (details.reason !== 'install') return;
-  ext.tabs.create({ url: ext.runtime.getURL('welcome/index.html') });
+  ext.tabs.create({ url: SITE + '/welcome/' });
 });
+
+// The browser opens this address once the extension has been removed: the one
+// moment a seller who gave up on it can still say why. The page sends nothing
+// by itself. What the seller writes becomes a GitHub issue they read before
+// posting it. The address carries no version number either, because Firefox
+// counts facts about the add-on as technical data, which may only be collected
+// with the user's consent, and a seller who is leaving can type it if it
+// matters. Set on every wake rather than once: the call is cheap, and the
+// address is then right however the worker came up.
+Promise.resolve(ext.runtime.setUninstallURL(SITE + '/goodbye/'))
+  .catch(err => console.debug('[Bumpline] could not set the uninstall page', err));

@@ -143,7 +143,8 @@ const BumplineText = (() => {
 
       // The toolbar button's tooltip, set by background.js. It is the only
       // thing the extension says while no panel is open, and the welcome page
-      // points at it by name, so it is functional text and not decoration.
+      // on the website points at it by name, so it is functional text and not
+      // decoration.
       // Colour needs no tooltip beyond the product name, which is the same word
       // in every language and is therefore not a key.
       'popup.tooltip.off': 'Bumpline: off',
@@ -273,43 +274,6 @@ const BumplineText = (() => {
       'footer.howItWorks': 'How it works',
       'footer.reportProblem': 'Report a problem',
       'footer.rate': 'Rate Bumpline',
-
-      // --- the page after the install -----------------------------------
-      // Read once, by welcome/script.js, right after the extension is
-      // installed. It reuses button.relist, button.draft and the popup's
-      // footer keys rather than repeating them, so the illustration and the
-      // links always match what the panel itself says.
-
-      'welcome.title': 'Welcome to Bumpline',
-      'welcome.hero.title': 'Thanks for installing Bumpline',
-      'welcome.hero.lead': 'Relisting an item used to mean retyping the title, the description and every last photo. From now on it is one button. Nothing to set up here either: two quick steps and you can close this tab for good.',
-
-      'welcome.step1.title': 'Pin Bumpline to your toolbar',
-      'welcome.step1.note': 'Click the puzzle piece next to the address bar, then the little pin beside Bumpline. One click now, and you never have to go looking for it again.',
-      'welcome.step1.aside': 'After that the icon does the talking: in colour when there is something for Bumpline to do on the tab you are on, grey when there is not. You will not have to click it to find out.',
-      'welcome.step1.artLabel': 'A Chrome window on a Vinted page. The puzzle piece to the right of the address bar is open, and the extensions menu lists Bumpline with a pin beside it.',
-      // The three words drawn inside that picture. They are Chrome's own menu,
-      // and Chrome translates its menu: an Italian reader looking for
-      // "Extensions" in a browser that says "Estensioni" is being sent to find
-      // something that is not there. The drawing has to show what the reader
-      // will actually see.
-      'welcome.step1.art.extensions': 'Extensions',
-      'welcome.step1.art.access': 'Full access',
-      'welcome.step1.art.manage': 'Manage extensions',
-
-      'welcome.step2.title': 'Go to your own wardrobe',
-      // Read through data-i18n-em, not data-i18n: these two carry their own
-      // <b>/<i> emphasis, which plain textContent painting would strip.
-      'welcome.step2.note': 'That is where the buttons turn up. Every item of yours still for sale gets a <b>Relist</b> and a <b>Relist as draft</b>, right beside it. Only on your things. Nobody else’s listings are touched.',
-      'welcome.step2.aside': 'Nothing is thrown away first. The copy is made <i>before</i> the old listing goes, so your item is never in limbo. <b>Relist</b> puts it straight back up; <b>Relist as draft</b> stops one step short of publishing, in case you want to look it over first.',
-      'welcome.step2.artLabel': 'A listing on your own wardrobe, with a Relist button and a Relist as draft button below it.',
-
-      'welcome.rate.title': 'If it saves you time, say so',
-      'welcome.rate.note': 'Bumpline is free, open source, and there is no account to sign up for. A rating is the only thing it asks for, and it is how the next seller finds it. No rush: come back once you have actually used the thing.',
-
-      // Written by script.js next to the manifest's own version number, which
-      // is never translated.
-      'welcome.version': 'Version {0}',
     },
     it: {
       'button.relist': 'Ripubblica',
@@ -479,30 +443,6 @@ const BumplineText = (() => {
       'footer.howItWorks': 'Come funziona',
       'footer.reportProblem': 'Segnala un problema',
       'footer.rate': 'Vota Bumpline',
-
-      'welcome.title': 'Benvenuto in Bumpline',
-      'welcome.hero.title': 'Grazie per aver installato Bumpline',
-      'welcome.hero.lead': 'Ripubblicare un articolo voleva dire riscrivere da capo il titolo, la descrizione e ogni singola foto. Da ora basta un pulsante. Niente da configurare neanche qui: due passaggi rapidi e puoi chiudere questa scheda per sempre.',
-
-      'welcome.step1.title': 'Fissa Bumpline nella barra degli strumenti',
-      'welcome.step1.note': 'Clicca sul pezzo di puzzle accanto alla barra degli indirizzi, poi sulla piccola puntina accanto a Bumpline. Un clic adesso, e non dovrai più andarlo a cercare.',
-      'welcome.step1.aside': 'Da quel momento parla l\'icona: a colori quando c\'è qualcosa da fare per Bumpline nella scheda che stai guardando, grigia quando non c\'è. Non dovrai cliccarci per saperlo.',
-      'welcome.step1.artLabel': 'Una finestra di Chrome su una pagina Vinted. Il pezzo di puzzle a destra della barra degli indirizzi è aperto, e il menu delle estensioni mostra Bumpline con una puntina accanto.',
-      // Chrome's own wording in Italian, which is what the reader will find in
-      // the menu the picture is of.
-      'welcome.step1.art.extensions': 'Estensioni',
-      'welcome.step1.art.access': 'Accesso completo',
-      'welcome.step1.art.manage': 'Gestisci estensioni',
-
-      'welcome.step2.title': 'Vai al tuo armadio',
-      'welcome.step2.note': 'È lì che compaiono i pulsanti. Ogni tuo articolo ancora in vendita riceve un pulsante <b>Ripubblica</b> e uno <b>Ripubblica come bozza</b>, proprio accanto. Solo sulle tue cose. Nessun annuncio altrui viene toccato.',
-      'welcome.step2.aside': 'Niente viene buttato via prima. La copia viene creata <i>prima</i> che il vecchio annuncio venga eliminato, così il tuo articolo non resta mai in sospeso. <b>Ripubblica</b> lo rimette subito in vendita; <b>Ripubblica come bozza</b> si ferma un passo prima della pubblicazione, nel caso tu voglia ricontrollarlo prima.',
-      'welcome.step2.artLabel': 'Un annuncio nel tuo armadio, con un pulsante Ripubblica e un pulsante Ripubblica come bozza sotto di esso.',
-
-      'welcome.rate.title': 'Se ti ha fatto risparmiare tempo, dillo',
-      'welcome.rate.note': 'Bumpline è gratuito, open source, e non serve nessun account per usarlo. Una valutazione è l\'unica cosa che chiede, ed è così che il prossimo venditore lo trova. Nessuna fretta: torna qui una volta che l\'hai davvero usato.',
-
-      'welcome.version': 'Versione {0}',
     },
     fr: {
       'button.relist': 'Republier',
@@ -672,30 +612,6 @@ const BumplineText = (() => {
       'footer.howItWorks': 'Comment ça marche',
       'footer.reportProblem': 'Signaler un problème',
       'footer.rate': 'Noter Bumpline',
-
-      'welcome.title': 'Bienvenue dans Bumpline',
-      'welcome.hero.title': 'Merci d\'avoir installé Bumpline',
-      'welcome.hero.lead': 'Republier un article, c\'était retaper le titre, la description et chaque photo. À partir de maintenant, c\'est un bouton. Rien à configurer ici non plus : deux étapes rapides et tu peux fermer cet onglet pour de bon.',
-
-      'welcome.step1.title': 'Épingle Bumpline dans ta barre d\'outils',
-      'welcome.step1.note': 'Clique sur la pièce de puzzle à côté de la barre d\'adresse, puis sur la petite épingle à côté de Bumpline. Un clic maintenant, et tu n\'auras plus jamais à le chercher.',
-      'welcome.step1.aside': 'Ensuite, c\'est l\'icône qui parle : en couleur quand Bumpline a quelque chose à faire dans l\'onglet où tu es, grise quand ce n\'est pas le cas. Tu n\'auras pas besoin de cliquer pour le savoir.',
-      'welcome.step1.artLabel': 'Une fenêtre Chrome sur une page Vinted. La pièce de puzzle à droite de la barre d\'adresse est ouverte, et le menu des extensions montre Bumpline avec une épingle à côté.',
-      // Chrome's own wording in French, which is what the reader will find in
-      // the menu the picture is of.
-      'welcome.step1.art.extensions': 'Extensions',
-      'welcome.step1.art.access': 'Accès complet',
-      'welcome.step1.art.manage': 'Gérer les extensions',
-
-      'welcome.step2.title': 'Va dans ton propre dressing',
-      'welcome.step2.note': 'C\'est là que les boutons apparaissent. Chacun de tes articles encore en vente reçoit un <b>Republier</b> et un <b>Republier en brouillon</b>, juste à côté. Uniquement sur tes affaires. Aucune annonce de quelqu\'un d\'autre n\'est touchée.',
-      'welcome.step2.aside': 'Rien n\'est jeté en premier. La copie est faite <i>avant</i> que l\'ancienne annonce disparaisse, donc ton article n\'est jamais dans le vide. <b>Republier</b> le remet directement en ligne ; <b>Republier en brouillon</b> s\'arrête un pas avant la publication, au cas où tu voudrais le relire.',
-      'welcome.step2.artLabel': 'Une annonce dans ton propre dressing, avec un bouton Republier et un bouton Republier en brouillon en dessous.',
-
-      'welcome.rate.title': 'Si ça t\'a fait gagner du temps, dis-le',
-      'welcome.rate.note': 'Bumpline est gratuit, open source, et il n\'y a aucun compte à créer. Une note est la seule chose qu\'il demande, et c\'est comme ça que le prochain vendeur le trouve. Rien ne presse : reviens ici quand tu l\'auras vraiment utilisé.',
-
-      'welcome.version': 'Version {0}',
     },
   };
 
@@ -772,11 +688,11 @@ const BumplineText = (() => {
     return nodes;
   }
 
-  // The two extension pages are HTML, so their words are attributes on the
-  // markup rather than calls in a script: data-i18n for the text, and one
-  // attribute each for the two places a string is read out but not shown.
+  // The toolbar panel is HTML, so its words are attributes on the markup
+  // rather than calls in a script: data-i18n for the text, and one attribute
+  // each for the two places a string is read out but not shown.
   //
-  // For the two extension pages, and only those. This file also loads into the
+  // For the panel, and only that. This file also loads into the
   // content-script world on every Vinted page, and Vinted is a translated site
   // that may well carry data-i18n attributes of its own — a paint(document)
   // there would walk Vinted's markup and overwrite whatever it found with

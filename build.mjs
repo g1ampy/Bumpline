@@ -42,15 +42,13 @@ const PAYLOAD = [
   'popup.html',
   'popup.css',
   'popup.js',
-  // Which store this copy came from, read by both the panel and the page shown
-  // after install.
+  // Which store this copy came from, read by the panel.
   'store.js',
   // Every language, and the two keys only the manifest can localise. Neither
   // is named in a manifest key the packer follows, so an unlisted file would
   // not ship and the extension would load without a word in it.
   'strings.js',
   '_locales',
-  'welcome',
   // Inter, the typeface the shadcn preset asks for. Manifest v3 refuses a
   // remote font, so the two Latin subsets ship with the extension, and OFL.txt
   // is the licence they ship under.
@@ -315,12 +313,9 @@ function checkCatalogues() {
   }
 
   // Every t('…') written in the code — single-quoted, double-quoted or
-  // backtick-quoted — and every data-i18n attribute in the two pages, has to
-  // name a key that exists.
-  const CONSUMERS = [
-    'background.js', 'content.js', 'popup.js', 'popup.html',
-    join('welcome', 'script.js'), join('welcome', 'index.html'),
-  ];
+  // backtick-quoted — and every data-i18n attribute in the panel, has to name a
+  // key that exists.
+  const CONSUMERS = ['background.js', 'content.js', 'popup.js', 'popup.html'];
 
   // The scan above reads a key only where it is written straight after t(, and
   // that is not where thirteen of them are written: a ternary picks one of two
@@ -332,7 +327,7 @@ function checkCatalogues() {
   // string that does is a key and is checked as one.
   const NAMESPACES = [
     'button', 'toast', 'card', 'size', 'budget',
-    'relist', 'age', 'pause', 'popup', 'footer', 'welcome',
+    'relist', 'age', 'pause', 'popup', 'footer',
   ];
   const KEY_SHAPED = new RegExp(
     `(['"\`])((?:${NAMESPACES.join('|')})\\.[A-Za-z0-9.]+)\\1`,

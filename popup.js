@@ -74,9 +74,8 @@ const onVinted = url => !!url && VINTED_HOST.test(url.hostname);
 // --- the review link ------------------------------------------------------
 
 // Which store this copy came from, and whether that store has a listing to
-// point at, is worked out in store.js — the page shown after install asks the
-// same question, and a store id kept in two files is one that will one day be
-// corrected in only one of them.
+// point at, is worked out in store.js, where the two store ids live on their
+// own and are easy to find when one of them has to be corrected.
 
 // An anchor rather than a click handler: the browser closes the popup itself
 // when it opens the tab, and a real href can be middle-clicked and copied.

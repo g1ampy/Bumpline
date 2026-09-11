@@ -15,12 +15,11 @@
 // with this program. If not, see <https://www.gnu.org/licenses/>.
 
 // One package ships to both stores, so a link to the listing cannot be written
-// at build time; it has to be worked out in the browser that is running. Two
-// pages ask the same question — the toolbar panel and the page shown once after
-// install — and a store id that lives in two files is a store id that will one
-// day be corrected in one of them. It lives here instead.
+// at build time; it has to be worked out in the browser that is running. The
+// toolbar panel is what asks, and the store ids live here, on their own, where
+// the next person who has to correct one will find it.
 //
-// Loaded as a plain script before the page's own, which is all an extension
+// Loaded as a plain script before the panel's own, which is all an extension
 // page needs: no modules, no bundler, and a top-level const is reachable from
 // every script that follows it.
 

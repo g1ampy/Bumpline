@@ -1,6 +1,6 @@
 # Bumpline — Privacy Policy
 
-Last updated: 27 August 2026
+Last updated: 11 September 2026
 
 Bumpline is a browser extension that relists your own Vinted listings. This
 policy explains exactly what it touches.
@@ -10,7 +10,8 @@ policy explains exactly what it touches.
 Bumpline sends nothing anywhere. It talks to Vinted, which you are already
 logged into, and to no one else. There is no server, no account, no analytics
 and no telemetry. The developer receives no data about you and cannot see what
-you do with the extension.
+you do with the extension. The only other place it takes you is its own
+website, twice: once after you install it and once after you remove it.
 
 ## What the extension reads
 
@@ -49,6 +50,27 @@ Only to Vinted, and only the requests needed to do what you clicked:
 
 There are no other network destinations. The extension contacts no third-party
 service of any kind.
+
+## The two pages on the website
+
+The extension opens two pages on its website, <https://bumpline.giampy.tech>,
+and no others:
+
+- **A welcome page, once, right after you install it.** It shows how to pin the
+  icon to your toolbar and where the buttons appear.
+- **A goodbye page, after you remove it.** Your browser opens it by itself,
+  because by then the extension is gone.
+
+Neither address carries anything about you, your listings or the extension.
+Opening them is an ordinary visit to a website. The site is static: it sets no
+cookies, runs no analytics and loads nothing from anyone else. Like any web
+host, Cloudflare, which serves it, sees your IP address and browser when a page
+is requested. Your choice of language and theme on the site is remembered in
+your own browser and nowhere else.
+
+The goodbye page asks why you left. Nothing you type is sent from the page:
+its button opens a GitHub issue with your answers filled in, which you can
+read, change or abandon before posting. A posted issue is public.
 
 ## Data sharing and sale
 
