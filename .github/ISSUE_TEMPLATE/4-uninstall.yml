@@ -14,8 +14,6 @@ body:
     id: reasons
     attributes:
       label: Why you uninstalled
-    validations:
-      required: true
 
   - type: textarea
     id: details
