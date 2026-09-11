@@ -5,6 +5,52 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2026-09-11
+
+Bumpline has a website now, and the extension opens it twice: once right after
+the install, and once after it has been removed. Nothing a seller clicks on
+Vinted behaves differently.
+
+The page after the install used to ship inside the extension. It moves to
+bumpline.giampy.tech, where it shows the pinning steps for the browser it opens
+in — Chrome, Firefox and Edge each keep the button somewhere else — and where a
+correction does not have to wait for a store review. The page after removal is
+new, and could only ever have lived on the web: by the time it opens there is
+no extension left to show it. It asks why the seller left and turns what they
+pick and write into a GitHub issue they read before posting it.
+
+Neither address carries anything. The one opened after removal could have
+carried the version number for the report, but Firefox counts facts about the
+add-on as technical data, which may only be collected with consent, and the
+manifest declares that nothing is collected. A seller who thinks the version
+matters can type it in.
+
+### Added
+
+- **A page after removal.** `runtime.setUninstallURL` points the browser at
+  `https://bumpline.giampy.tech/goodbye/`, set again every time the background
+  wakes, so the address holds however it came up. The page sends nothing by
+  itself: its button opens a new issue on this repository with the seller's
+  answers filled in.
+- **An issue form for that feedback.** `.github/ISSUE_TEMPLATE/4-uninstall.yml`,
+  *Uninstall feedback*, labelled `uninstall`. None of its fields is required, so
+  a seller who only writes a sentence can still post it.
+
+### Changed
+
+- **The welcome page opens on the website.**
+  `https://bumpline.giampy.tech/welcome/`, once, on install and not on update,
+  as before. The site answers in the language the browser asks for.
+- **The privacy policy describes both pages.** What the host sees of a visit —
+  the IP address and the browser, as for any website — and that the site sets
+  no cookies, runs no analytics and loads nothing from anyone else.
+
+### Removed
+
+- **The welcome page bundled in the extension.** `welcome/` and its strings in
+  all three languages leave the package, and with them their place in the
+  build's catalogue check. The package goes from 28 files to 25.
+
 ## [1.1.3] - 2026-09-04
 
 Nothing a seller clicks behaves differently. What changed is what they see
@@ -739,6 +785,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.4]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.4
 [1.1.3]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.3
 [1.1.2]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.2
 [1.1.1]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.1
