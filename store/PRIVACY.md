@@ -62,11 +62,18 @@ and no others:
   because by then the extension is gone.
 
 Neither address carries anything about you, your listings or the extension.
-Opening them is an ordinary visit to a website. The site is static: it sets no
-cookies, runs no analytics and loads nothing from anyone else. Like any web
-host, Cloudflare, which serves it, sees your IP address and browser when a page
-is requested. Your choice of language and theme on the site is remembered in
-your own browser and nowhere else.
+Opening them is an ordinary visit to a website. The site is static: it runs no
+analytics, sets no cookies of its own and loads nothing from anyone else. Your
+choice of language and theme on the site is remembered in your own browser and
+nowhere else.
+
+The site is served by Cloudflare, which sees your IP address and browser when a
+page is requested, as any web host does. Cloudflare also screens visits for
+automated traffic: its bot protection runs a short check script in the page,
+served from the site's own address, and keeps the result in a cookie named
+`cf_clearance` for up to a year. That cookie belongs to Cloudflare and serves
+only to tell people from bots. Cloudflare's own handling of it is described in
+its [privacy policy](https://www.cloudflare.com/privacypolicy/).
 
 The goodbye page asks why you left. Nothing you type is sent from the page:
 its button opens a GitHub issue with your answers filled in, which you can

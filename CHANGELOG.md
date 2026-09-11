@@ -42,8 +42,10 @@ matters can type it in.
   `https://bumpline.giampy.tech/welcome/`, once, on install and not on update,
   as before. The site answers in the language the browser asks for.
 - **The privacy policy describes both pages.** What the host sees of a visit —
-  the IP address and the browser, as for any website — and that the site sets
-  no cookies, runs no analytics and loads nothing from anyone else.
+  the IP address and the browser, as for any website — and the one cookie a
+  visit can leave behind: `cf_clearance`, from Cloudflare's bot protection. The
+  site itself runs no analytics, sets no cookies of its own and loads nothing
+  from anyone else.
 
 ### Removed
 
