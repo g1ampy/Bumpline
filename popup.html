@@ -1,3 +1,9 @@
+<!doctype html>
+<!-- Without the doctype the panel rendered in quirks mode, where the body is
+     stretched to the height of the window. The browser sizes a popup to its
+     content, so a panel that grew while Settings was open could never shrink
+     back: the body went on filling the taller window, and the space Settings
+     had taken stayed as a blank band under the footer. -->
 <meta charset="utf-8">
 <title>Bumpline</title>
 <link rel="stylesheet" href="popup.css">
