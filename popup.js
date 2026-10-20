@@ -71,6 +71,21 @@ function currentUrl(tab) {
 
 const onVinted = url => !!url && VINTED_HOST.test(url.hostname);
 
+// --- the website ----------------------------------------------------------
+
+// The website has a page per language the panel speaks, and the links follow
+// the panel rather than the browser: a seller who picked Italian over an
+// English browser reads the panel in Italian and should land on the Italian
+// page. A language added to the catalogue needs its page on the site too.
+const SITE = 'https://bumpline.giampy.tech';
+
+function paintSiteLinks() {
+  const lang = BumplineText.locale().split('-')[0];
+  for (const link of document.querySelectorAll('[data-site]')) {
+    link.href = `${SITE}/${lang}/${link.dataset.site}`;
+  }
+}
+
 // --- the review link ------------------------------------------------------
 
 // Which store this copy came from, and whether that store has a listing to
@@ -788,6 +803,7 @@ function wireLanguage(stored, repaint, paintCount) {
     // The panel is the one page that does not hear its own storage change.
     BumplineText.use(wanted);
     BumplineText.paint();
+    paintSiteLinks();
     paint();
     paintCount();
     // BumplineText.paint() has just rewritten every [data-i18n] node straight
@@ -880,6 +896,7 @@ async function main() {
   // English, so this is what makes the page Italian.
   BumplineText.use(stored.lang);
   BumplineText.paint();
+  paintSiteLinks();
 
   const here = url ? `${url.origin}${url.pathname}` : null;
 

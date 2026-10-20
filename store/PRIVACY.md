@@ -61,6 +61,10 @@ and no others:
 - **A goodbye page, after you remove it.** Your browser opens it by itself,
   because by then the extension is gone.
 
+The toolbar panel also links to the site's explanation of how Bumpline works,
+from the name at the top and from "How it works" at the bottom. That page opens
+only when you click one of the two.
+
 Neither address carries anything about you, your listings or the extension.
 Opening them is an ordinary visit to a website. The site is static: it runs no
 analytics, sets no cookies of its own and loads nothing from anyone else. Your

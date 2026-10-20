@@ -241,6 +241,19 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* A link that still reads as the name: the underline on hover, as on the
+   footer's links, is the only thing that says it goes somewhere. */
+.head__home {
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.head__home:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* The state in a word, for anyone who reads the panel rather than the switch.
    A screen reader gets the same from the switch role and skips this. */
 /* The header's only spacer, now that the name is no wider than the word: this
