@@ -104,13 +104,28 @@ async function tokensForPage() {
   }
 }
 
+// The bytes go back over runtime messaging, which Chrome serialises as JSON
+// unless the manifest opts into structured cloning. An ArrayBuffer arrives as
+// {}, and the photo the page then uploads is the fifteen characters of
+// "[object Object]". A string crosses either browser's channel as it is.
+function base64Of(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  // fromCharCode takes the bytes as arguments, and a full-size photo has more
+  // of them than one call can carry.
+  for (let at = 0; at < bytes.length; at += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(at, at + 0x8000));
+  }
+  return btoa(binary);
+}
+
 async function fetchBinary(url) {
   try {
     const reply = await fetch(url, { credentials: 'omit' });
     if (!reply.ok) return { ok: false, status: reply.status };
     return {
       ok: true,
-      buffer: await reply.arrayBuffer(),
+      data: base64Of(await reply.arrayBuffer()),
       contentType: reply.headers.get('content-type') || '',
     };
   } catch (err) {

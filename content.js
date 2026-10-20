@@ -999,9 +999,19 @@
     return urls;
   }
 
+  // The worker sends the bytes as base64, the one shape that survives Chrome's
+  // JSON message channel (see base64Of in background.js).
+  function bytesOf(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let at = 0; at < binary.length; at += 1) bytes[at] = binary.charCodeAt(at);
+    return bytes;
+  }
+
   // The CDN serves images publicly, but a cross-origin read from the page can
-  // still be refused; the service worker has host permissions and can fetch the
-  // bytes when that happens.
+  // still be refused — and is, every time, for the photos Vinted now stores as
+  // WebP: that backend sends no CORS header. The service worker has host
+  // permissions and can fetch the bytes when that happens.
   async function grabPhoto(url) {
     try {
       const direct = await fetch(url, { credentials: 'omit', mode: 'cors' });
@@ -1011,11 +1021,11 @@
     }
 
     const relayed = await askWorker({ type: 'bumpline:fetchBinary', url });
-    if (!relayed || !relayed.ok || !relayed.buffer) {
+    if (!relayed || !relayed.ok || typeof relayed.data !== 'string') {
       const why = (relayed && (relayed.status || relayed.error)) || 'no response';
       throw new Error(`Could not download a photo (${why})`);
     }
-    return new Blob([relayed.buffer], { type: relayed.contentType || 'image/jpeg' });
+    return new Blob([bytesOf(relayed.data)], { type: relayed.contentType || 'image/jpeg' });
   }
 
   // ===========================================================================
