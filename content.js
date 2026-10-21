@@ -97,6 +97,7 @@
   const PACE_KEY = 'bumpline:pace';
   const HARD_COOLDOWN_KEY = 'bumpline:hardCooldown';
   const LOCAL_DRAFTS_KEY = 'bumpline:localDrafts';
+  const KEEP_ORIGINAL_KEY = 'bumpline:draftKeepsOriginal';
   const RELIST_LOG_KEY = 'bumpline:relistLog';
   const BLOCK_KEY = 'bumpline:blockedUntil';
   const REFUSAL_LOG_KEY = 'bumpline:refusalLog';
@@ -623,6 +624,30 @@
     enabled = on;
     if (on) attachButtons();
     else removeOurUi();
+  }
+
+  // Whether the draft button only copies the listing into the drafts and leaves
+  // the original online, a setting in the panel. Held here like the switch, so
+  // every draft button is named for what it will do the moment it is drawn,
+  // and the name is what a click acts on.
+  let keepOriginal = false;
+
+  function draftWords() {
+    return keepOriginal
+      ? { label: T('button.copyDraft'), title: T('button.copyDraft.title') }
+      : { label: T('button.draft'), title: T('button.draft.title') };
+  }
+
+  function applyKeepOriginal(on) {
+    if (keepOriginal === on) return;
+    keepOriginal = on;
+    const { label, title } = draftWords();
+    for (const button of document.querySelectorAll(`.${CLASS.draftButton}`)) {
+      // A button mid-relist shows its progress, and is renamed when it is done.
+      if (button.classList.contains('is-busy')) continue;
+      setButtonLabel(button, label);
+      button.title = title;
+    }
   }
 
   // ===========================================================================
@@ -2259,7 +2284,9 @@
     }
 
     const draftOnly = mode === 'draft';
-    const restingLabel = draftOnly ? T('button.draft') : T('button.relist');
+    // Taken at the click, from the name the button carried when it was
+    // pressed: a setting changed mid-relist does not change what this one does.
+    const copyOnly = draftOnly && keepOriginal;
 
     button.disabled = true;
     button.classList.add('is-busy');
@@ -2397,6 +2424,21 @@
         snapshot.size_id = chosen;
       }
 
+      // --- a copy and nothing else. The seller asked the draft button to leave
+      // the original online, so from here nothing is deleted: there is no
+      // pending record to keep, no copy of the photos to hold on this device,
+      // no relist to count and nothing on the page to reload. The draft on
+      // Vinted is the whole result, and the original is still there if
+      // opening it fails. The last check before a deletion is skipped with
+      // the deletion.
+      if (copyOnly) {
+        setButtonLabel(button, T('button.savingDraft'));
+        await step(pace);
+        await openDraft(csrf, item, sessionId);
+        toast(T('toast.copiedToDrafts'));
+        return;
+      }
+
       setButtonLabel(button, T('button.checking'));
       await assertItemReachable(itemId, csrf);
 
@@ -2491,7 +2533,15 @@
     } finally {
       button.disabled = false;
       button.classList.remove('is-busy');
-      setButtonLabel(button, restingLabel);
+      // Named afresh rather than put back: the setting may have changed while
+      // this button was busy, and applyKeepOriginal passed it over.
+      if (draftOnly) {
+        const words = draftWords();
+        setButtonLabel(button, words.label);
+        button.title = words.title;
+      } else {
+        setButtonLabel(button, T('button.relist'));
+      }
       // A refusal may have arrived mid-relist. Re-enabling the button above is
       // unconditional, so the pause has to be put back over the top of it.
       paintLock();
@@ -2531,9 +2581,10 @@
         relist(publish, 'publish');
       });
 
-      const draft = buildButton(T('button.draft'));
+      const words = draftWords();
+      const draft = buildButton(words.label);
       draft.classList.add(CLASS.button, CLASS.draftButton);
-      draft.title = T('button.draft.title');
+      draft.title = words.title;
       draft.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
@@ -2595,7 +2646,12 @@
     if (ENABLED_KEY in changes) applyEnabled(changes[ENABLED_KEY].newValue !== false);
     if (LANG_KEY in changes) applyLanguage(changes[LANG_KEY].newValue || 'auto');
     if (BLOCK_KEY in changes) applyLock(changes[BLOCK_KEY].newValue);
+    if (KEEP_ORIGINAL_KEY in changes) applyKeepOriginal(changes[KEEP_ORIGINAL_KEY].newValue === true);
   });
+
+  readSetting(KEEP_ORIGINAL_KEY, false)
+    .then(value => applyKeepOriginal(value === true))
+    .catch(err => trace('could not read the draft setting', err));
 
   readBlock()
     .then(applyLock)

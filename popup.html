@@ -145,9 +145,11 @@
     <p class="card__note" id="volume-detail"></p>
   </section>
 
-  <!-- Every switch here is on by default and every label says what it does at
-       its own number, so the row reads the same way in all three: on is the
-       cautious position and the hint says what off costs. The two that raise
+  <!-- Every switch here but the last is on by default and every label says what
+       it does at its own number, so the row reads the same way in all of them:
+       on is the cautious position and the hint says what off costs. The last
+       one, under "Relist as draft", is off by default so the button keeps
+       doing what it always did; on is still its cautious position. The two that raise
        the odds of a block used to argue their case in this section, where it
        was read by everyone and acted on by nobody; that argument now appears in
        the warning at the moment the setting is changed, which is the only
@@ -155,7 +157,7 @@
   <details class="drawer">
     <summary class="drawer__summary">
       <span data-i18n="popup.settings.title">Settings</span>
-      <!-- What is not at its default, said without opening the section. Three
+      <!-- What is not at its default, said without opening the section. Four
            switches all sitting where they were left is the common case, and it
            should not need reading. -->
       <span class="drawer__count" id="settings-count"></span>
@@ -221,6 +223,24 @@
             </span>
           </span>
           <input class="toggle" type="checkbox" id="local-drafts-toggle" role="switch" checked>
+        </label>
+        <!-- The one switch that is off by default, and the one where on is the
+             cautious position: the draft button has always deleted the
+             original, and a seller who relies on that keeps it. On, the button
+             only copies the listing into the drafts, for a seller who wants to
+             publish the copy later, from a phone, at a better hour. Nothing is
+             deleted that way, so it needs no warning. -->
+        <p class="setting__group" data-i18n="button.draft">Relist as draft</p>
+        <label class="switch">
+          <span class="switch__label">
+            <span data-i18n="popup.settings.keepOriginal.label">Keep the original online</span>
+            <span class="switch__hint" data-i18n="popup.settings.keepOriginal.hint">
+              Off deletes it, as always. On only puts a copy in your drafts:
+              delete the original yourself before publishing it, because Vinted
+              does not accept two identical listings.
+            </span>
+          </span>
+          <input class="toggle" type="checkbox" id="keep-original-toggle" role="switch">
         </label>
       </div>
     </div>

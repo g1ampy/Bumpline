@@ -31,6 +31,9 @@ const BumplineText = (() => {
       'button.relist': 'Relist',
       'button.draft': 'Relist as draft',
       'button.draft.title': 'Delete the original and leave the copy unpublished in your Vinted drafts',
+      // The same button when the seller has asked it to keep the original.
+      'button.copyDraft': 'Copy to drafts',
+      'button.copyDraft.title': 'Leave the original online and save a copy, unpublished, in your Vinted drafts',
       'button.cooldown': 'Cooling down {0}s…',
       'button.waiting': 'Waiting…',
       'button.relisting': 'Relisting…',
@@ -50,6 +53,7 @@ const BumplineText = (() => {
       'toast.relisted': 'Relisted.',
       'toast.relistedNoPhotos': 'Relisted, but the copy has no photos. Add them on Vinted.',
       'toast.originalDeletedDraft': 'Original deleted. The copy is in your Vinted drafts.',
+      'toast.copiedToDrafts': 'Copy saved in your Vinted drafts. The original is still online: delete it before you publish the copy.',
       'toast.reloading': '{0} Reloading…',
       'toast.reloadToSee': '{0} Reload to see it.',
       'toast.cantFindItem': 'Could not tell which item that button belongs to.',
@@ -218,6 +222,8 @@ const BumplineText = (() => {
       'popup.lang.auto': 'Automatic (browser language)',
       'popup.settings.localDrafts.label': 'Keep the copy on this device',
       'popup.settings.localDrafts.hint': 'Relist button only. Off saves a draft to your Vinted account first, as in versions before 1.0.1.',
+      'popup.settings.keepOriginal.label': 'Keep the original online',
+      'popup.settings.keepOriginal.hint': 'Off deletes it, as always. On only puts a copy in your drafts: delete the original yourself before publishing it, because Vinted does not accept two identical listings.',
 
       // The warning dialog: a shared shell (popup.risk.keep and
       // popup.risk.change are its defaults, which no call site currently
@@ -286,6 +292,8 @@ const BumplineText = (() => {
       'button.relist': 'Ripubblica',
       'button.draft': 'Ripubblica come bozza',
       'button.draft.title': 'Elimina l\'originale e lascia la copia non pubblicata nelle tue bozze di Vinted',
+      'button.copyDraft': 'Copia nelle bozze',
+      'button.copyDraft.title': 'Lascia online l\'originale e salva una copia non pubblicata nelle tue bozze di Vinted',
       'button.cooldown': 'Attesa {0}s…',
       'button.waiting': 'Attesa…',
       'button.relisting': 'Ripubblicazione…',
@@ -304,6 +312,7 @@ const BumplineText = (() => {
       'toast.relisted': 'Ripubblicato.',
       'toast.relistedNoPhotos': 'Ripubblicato, ma la copia non ha foto. Aggiungile su Vinted.',
       'toast.originalDeletedDraft': 'Originale eliminato. La copia si trova nelle tue bozze di Vinted.',
+      'toast.copiedToDrafts': 'Copia salvata nelle tue bozze di Vinted. L\'originale è ancora online: eliminalo prima di pubblicare la copia.',
       'toast.reloading': '{0} Ricaricamento…',
       'toast.reloadToSee': '{0} Ricarica per vederlo.',
       'toast.cantFindItem': 'Impossibile capire a quale articolo appartiene questo pulsante.',
@@ -411,6 +420,8 @@ const BumplineText = (() => {
       'popup.lang.auto': 'Automatica (lingua del browser)',
       'popup.settings.localDrafts.label': 'Tieni la copia su questo dispositivo',
       'popup.settings.localDrafts.hint': 'Solo per il pulsante Ripubblica. Se disattivato, salva prima una bozza sul tuo account Vinted, come nelle versioni precedenti alla 1.0.1.',
+      'popup.settings.keepOriginal.label': 'Tieni l\'originale online',
+      'popup.settings.keepOriginal.hint': 'Se disattivato lo elimina, come sempre. Se attivato mette solo una copia nelle bozze: elimina tu l\'originale prima di pubblicarla, perché Vinted non accetta due annunci identici.',
 
       'popup.risk.keep': 'Mantieni questa impostazione',
       'popup.risk.change': 'Modificala comunque',
@@ -459,6 +470,8 @@ const BumplineText = (() => {
       'button.relist': 'Republier',
       'button.draft': 'Republier en brouillon',
       'button.draft.title': 'Supprime l\'original et laisse la copie non publiée dans tes brouillons Vinted',
+      'button.copyDraft': 'Copier dans les brouillons',
+      'button.copyDraft.title': 'Laisse l\'original en ligne et enregistre une copie non publiée dans tes brouillons Vinted',
       'button.cooldown': 'Pause {0} s…',
       'button.waiting': 'En attente…',
       'button.relisting': 'Republication…',
@@ -477,6 +490,7 @@ const BumplineText = (() => {
       'toast.relisted': 'Republié.',
       'toast.relistedNoPhotos': 'Republié, mais la copie n\'a aucune photo. Ajoute-les sur Vinted.',
       'toast.originalDeletedDraft': 'Original supprimé. La copie se trouve dans tes brouillons Vinted.',
+      'toast.copiedToDrafts': 'Copie enregistrée dans tes brouillons Vinted. L\'original est toujours en ligne : supprime-le avant de publier la copie.',
       'toast.reloading': '{0} Rechargement…',
       'toast.reloadToSee': '{0} Recharge la page pour le voir.',
       'toast.cantFindItem': 'Impossible de savoir à quel article ce bouton appartient.',
@@ -584,6 +598,8 @@ const BumplineText = (() => {
       'popup.lang.auto': 'Automatique (langue du navigateur)',
       'popup.settings.localDrafts.label': 'Garder la copie sur cet appareil',
       'popup.settings.localDrafts.hint': 'Bouton Republier uniquement. Désactivé, un brouillon est d\'abord enregistré sur ton compte Vinted, comme dans les versions antérieures à la 1.0.1.',
+      'popup.settings.keepOriginal.label': 'Garder l\'original en ligne',
+      'popup.settings.keepOriginal.hint': 'Désactivé, il est supprimé, comme toujours. Activé, seule une copie va dans tes brouillons : supprime toi-même l\'original avant de la publier, car Vinted n\'accepte pas deux annonces identiques.',
 
       'popup.risk.keep': 'Garder ce réglage',
       'popup.risk.change': 'Le modifier quand même',

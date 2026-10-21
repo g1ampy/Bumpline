@@ -51,7 +51,9 @@ across the delete.
 
 It is important to note that **Relist as draft is NOT a dry run**. Both buttons
 delete the original. The draft variant simply stops before publishing the copy,
-so that you can review it first.
+so that you can review it first. The one exception is a setting you turn on
+yourself, *Keep the original online*: the draft button is then renamed **Copy to
+drafts**, and it leaves the original where it is.
 
 ***
 
@@ -280,6 +282,16 @@ publishes, and turning it off parks a draft in your Vinted account before the
 delete, as versions before 1.0.1 did. It governs the **Relist** button and
 nothing else — **Relist as draft** opens a draft on Vinted either way, because
 there the draft *is* the result.
+
+**Keep the original online.** Off by default, the one switch that is, so
+**Relist as draft** goes on deleting the original as it always has. Turned on,
+the draft button is renamed **Copy to drafts** and does only that: it reads the
+listing, uploads its photos again and saves the copy, unpublished, in your
+Vinted drafts, with the original left online. Nothing is deleted, so the copy is
+not counted towards the relist limits below, no cooldown follows it and the page
+is not reloaded. Vinted does not accept two identical listings, so delete the
+original yourself before you publish the copy: it is for preparing a relist now
+and publishing it later, from your phone, at a better hour.
 
 Past four relists in an hour, or fifteen in a day, the next one stops and asks
 whether you mean it. Two windows rather than one, because an hourly limit on its

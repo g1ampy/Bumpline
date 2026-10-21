@@ -19,6 +19,7 @@ const PACE_KEY = 'bumpline:pace';
 const LANG_KEY = 'bumpline:lang';
 const HARD_COOLDOWN_KEY = 'bumpline:hardCooldown';
 const LOCAL_DRAFTS_KEY = 'bumpline:localDrafts';
+const KEEP_ORIGINAL_KEY = 'bumpline:draftKeepsOriginal';
 const RELIST_LOG_KEY = 'bumpline:relistLog';
 const BLOCK_KEY = 'bumpline:blockedUntil';
 const ENABLED_KEY = 'bumpline:enabled';
@@ -308,6 +309,9 @@ async function readStored() {
     reload: bag[RELOAD_KEY] !== false,
     cooldown: bag[HARD_COOLDOWN_KEY] !== false,
     localDrafts: bag[LOCAL_DRAFTS_KEY] !== false,
+    // The one setting that is off unless it was turned on: the draft button
+    // deletes the original, as it always has, until the seller says otherwise.
+    keepOriginal: bag[KEEP_ORIGINAL_KEY] === true,
     // Stored as a pace rather than a flag, and read here as the switch reads
     // in the panel: on is the pause, off is the fast lane.
     paced: bag[PACE_KEY] !== 'fast',
@@ -721,6 +725,7 @@ const SETTING_DEFAULTS = {
   reload: true,
   cooldown: true,
   paced: true,
+  keepOriginal: false,
 };
 
 // Writes the value and keeps the checkbox honest: if the write fails the box
@@ -829,6 +834,10 @@ function wireSettings(stored) {
   wireToggle('reload-toggle', RELOAD_KEY, stored.reload, note('reload'));
 
   wireToggle('local-drafts-toggle', LOCAL_DRAFTS_KEY, stored.localDrafts, note('localDrafts'));
+
+  // The wardrobe page hears this one at once: the draft buttons change their
+  // name to say what they will now do.
+  wireToggle('keep-original-toggle', KEEP_ORIGINAL_KEY, stored.keepOriginal, note('keepOriginal'));
 
   wireGuarded('cooldown-toggle', HARD_COOLDOWN_KEY, stored.cooldown, false, () => ({
     title: BumplineText.t('popup.risk.cooldown.title'),
