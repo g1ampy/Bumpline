@@ -324,8 +324,14 @@ async function readStored() {
     // that value and would sit blank, saying nothing about the language the
     // page is actually in.
     lang: LANGS.includes(bag[LANG_KEY]) ? bag[LANG_KEY] : 'auto',
+    // What the background last fetched from the website, and the notices
+    // closed since. Drawn from here, so the panel never waits on the website.
+    news: listOf(bag[BumplineBroadcast.NOTICES_KEY]),
+    dismissed: listOf(bag[BumplineBroadcast.DISMISSED_KEY]),
   };
 }
+
+const listOf = value => (Array.isArray(value) ? value : []);
 
 const nameOf = record =>
   (record.snapshot && record.snapshot.title) ||
@@ -553,6 +559,92 @@ function renderVolume({ relists, cooldown }) {
   }
 
   detail.textContent = BumplineText.t('popup.volume.normal', HOUR_ALARM_AT, DAY_ALARM_AT, wait);
+}
+
+// --- the website's notices --------------------------------------------------
+
+// Lucide again: circle-info for news, circle-alert for attention, and for a
+// warning the same triangle the unfinished-relist card carries.
+const NEWS_GLYPH = {
+  info: GLYPH.elsewhere,
+  attention: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z', 'M12 8v4', 'M12 16h.01'],
+  warning: ['M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z'],
+};
+const CLOSE_GLYPH = ['M18 6 6 18', 'm6 6 12 12'];
+
+function glyph(paths) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'icon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  draw(svg, paths);
+  return svg;
+}
+
+// The words come from a file on the website, so every one of them goes in as
+// text: whatever a notice holds, the seller reads the characters it was
+// written with, and nothing in it is ever markup.
+function newsItem(notice, stored) {
+  const item = document.createElement('div');
+  item.className = `news__item news__item--${notice.level}`;
+  // A broken relist is news worth interrupting a screen reader for; the other
+  // two can wait their turn.
+  item.setAttribute('role', notice.level === 'warning' ? 'alert' : 'status');
+
+  const words = document.createElement('div');
+  const title = document.createElement('strong');
+  title.className = 'news__title';
+  title.textContent = notice.title;
+  const body = document.createElement('span');
+  body.className = 'news__body';
+  body.textContent = notice.body;
+  words.append(title, body);
+
+  // broadcast.js only stores https links; this is for a storage edited by hand.
+  if (notice.link && /^https:\/\//i.test(notice.link)) {
+    const link = document.createElement('a');
+    link.className = 'news__link';
+    link.href = notice.link;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    link.textContent = BumplineText.t('popup.news.more');
+    words.append(link);
+  }
+
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'news__close';
+  close.setAttribute('aria-label', BumplineText.t('popup.news.close'));
+  close.append(glyph(CLOSE_GLYPH));
+  close.addEventListener('click', () => dismissNews(notice.id, stored));
+
+  item.append(glyph(NEWS_GLYPH[notice.level] || NEWS_GLYPH.info), words, close);
+  return item;
+}
+
+// Closed for good on this browser. The background hears the same write and
+// takes the badge down with it. A write that fails leaves the strip where it
+// is, rather than hiding a notice the next panel would show again.
+async function dismissNews(id, stored) {
+  const dismissed = [...stored.dismissed, id];
+  try {
+    await ext.storage.local.set({ [BumplineBroadcast.DISMISSED_KEY]: dismissed });
+  } catch (_) {
+    return;
+  }
+  stored.dismissed = dismissed;
+  renderNews(stored);
+}
+
+// Switched off there is no relisting for a notice to be about, and the strips
+// go with everything else.
+function renderNews(stored) {
+  const box = document.getElementById('news');
+  const shown = stored.enabled
+    ? BumplineBroadcast.eligible(stored.news, BumplineBroadcast.here(stored.dismissed))
+    : [];
+  box.replaceChildren(...shown.map(notice => newsItem(notice, stored)));
+  box.hidden = !shown.length;
 }
 
 // --- settings ---------------------------------------------------------------
@@ -943,18 +1035,39 @@ async function main() {
 
   // Everything on the panel that script wrote rather than the catalogue, drawn
   // from the top. paintTab covers the status card, the pending list and the
-  // action button; the other two own a card each.
+  // action button; the other three own a card or a strip each. The notices are
+  // on the list because the language decides which of them show at all.
   const repaintAll = () => {
     paintTab();
+    renderNews(stored);
     renderPause(stored);
     renderVolume(stored);
   };
 
-  wirePower(stored, tab, paintTab, fresh => { page = fresh; });
+  // The switch hides the notices along with everything else it hides.
+  wirePower(stored, tab, () => { paintTab(); renderNews(stored); }, fresh => { page = fresh; });
   repaintAll();
   wireLanguage(stored, repaintAll, wireSettings(stored));
   wireDrawer();
   wireReview();
+
+  // The background fetches the website's file; the panel draws whatever lands
+  // in storage, including a file that arrives while it is open.
+  ext.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes) return;
+    const { NOTICES_KEY, DISMISSED_KEY } = BumplineBroadcast;
+    if (!(NOTICES_KEY in changes) && !(DISMISSED_KEY in changes)) return;
+    if (NOTICES_KEY in changes) stored.news = listOf(changes[NOTICES_KEY].newValue);
+    if (DISMISSED_KEY in changes) stored.dismissed = listOf(changes[DISMISSED_KEY].newValue);
+    renderNews(stored);
+  });
+
+  // Opening the panel is a moment the seller is paying attention, so it is
+  // also a moment to look; the background decides whether the last look is
+  // recent enough to skip.
+  Promise.resolve()
+    .then(() => ext.runtime.sendMessage({ type: 'bumpline:broadcastCheck' }))
+    .catch(() => {});
 }
 
 main();

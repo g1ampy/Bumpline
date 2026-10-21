@@ -269,6 +269,11 @@ const BumplineText = (() => {
       'popup.pending.note.draft': 'The copy is also in your Vinted drafts.',
       'popup.pending.note.device': 'The copy is saved on this device.',
 
+      // The website's notices. Their own words arrive in the file, already in
+      // the panel's language; these are the two the panel wraps them in.
+      'popup.news.close': 'Close this notice',
+      'popup.news.more': 'Read more',
+
       // The footer: two links that are always the same, and a rating link
       // that only appears once store.js has worked out where it goes.
       'footer.howItWorks': 'How it works',
@@ -440,6 +445,9 @@ const BumplineText = (() => {
       'popup.pending.note.draft': 'La copia si trova anche nelle tue bozze di Vinted.',
       'popup.pending.note.device': 'La copia è salvata su questo dispositivo.',
 
+      'popup.news.close': 'Chiudi questo avviso',
+      'popup.news.more': 'Leggi di più',
+
       'footer.howItWorks': 'Come funziona',
       'footer.reportProblem': 'Segnala un problema',
       'footer.rate': 'Vota Bumpline',
@@ -608,6 +616,9 @@ const BumplineText = (() => {
       'popup.pending.note.disabled': 'Bumpline est désactivé, donc rien n\'est retenté. {0}',
       'popup.pending.note.draft': 'La copie se trouve aussi dans tes brouillons Vinted.',
       'popup.pending.note.device': 'La copie est enregistrée sur cet appareil.',
+
+      'popup.news.close': 'Fermer cet avis',
+      'popup.news.more': 'En savoir plus',
 
       'footer.howItWorks': 'Comment ça marche',
       'footer.reportProblem': 'Signaler un problème',

@@ -51,6 +51,12 @@
   <input class="toggle" type="checkbox" id="power" role="switch" data-i18n-label="popup.power.label" aria-label="Bumpline" checked>
 </header>
 
+<!-- The website's notices, one strip each, most alarming first: above
+     everything else, because a notice that relisting is broken outranks any
+     answer the panel could give about this tab. Filled by popup.js from what
+     the background last fetched, and empty and hidden when there is none. -->
+<div class="news" id="news" hidden></div>
+
 <main>
   <!-- Switched off there is nothing to report: no buttons anywhere, nothing
        sent, nothing retried. These two lines replace the whole panel rather
@@ -270,4 +276,7 @@
      first because popup.js reads it, and kept out of popup.js so the store ids
      live in a file of their own. -->
 <script src="store.js"></script>
+<!-- The notices' rules, shared with the background. After store.js, which it
+     asks which browser this is. -->
+<script src="broadcast.js"></script>
 <script src="popup.js"></script>

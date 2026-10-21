@@ -202,6 +202,16 @@
   :root { --success: oklch(0.75 0.155 148); }
 }
 
+/* Nor an amber. The website's notices have three levels and the middle one,
+   "attention", needs a colour between the logo's teal and the destructive
+   red: a warm amber, at the lightness the other two inks sit at in each
+   scheme. */
+:root { --news-attention: oklch(0.6 0.14 65); }
+
+@media (prefers-color-scheme: dark) {
+  :root { --news-attention: oklch(0.8 0.14 75); }
+}
+
 * { box-sizing: border-box; }
 
 /* .button sets display, which would otherwise beat the user-agent rule for the
@@ -375,6 +385,75 @@ body {
   .toggle::after { background: var(--foreground); background-clip: border-box; }
   .toggle:checked::after { background: var(--primary-foreground); }
 }
+
+/* --- the website's notices ---------------------------------------------- */
+
+/* A strip right under the header, edge to edge: the negative margins give back
+   the body's 16px on either side, so it reads as a band across the panel
+   rather than one more card in the stack below. Each level brings its own ink,
+   and its background is that ink at a tenth. */
+.news { margin: 12px -16px 0; }
+
+.news__item {
+  --ink: var(--primary);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 44px 12px 16px;
+  background: color-mix(in oklab, var(--ink) 10%, transparent);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.news__item + .news__item { margin-top: 1px; }
+
+.news__item--attention {
+  --ink: var(--news-attention);
+  /* Amber at a tenth is too faint to tell from the page in the light scheme. */
+  background: color-mix(in oklab, var(--ink) 12%, transparent);
+}
+
+.news__item--warning { --ink: var(--destructive); }
+
+.news__title {
+  display: block;
+  font-weight: 600;
+}
+
+/* The same walk back towards the page's ink as a red card's note: still the
+   notice's colour, no longer shouting a paragraph of it. */
+.news__body { color: color-mix(in oklab, var(--ink) 60%, var(--foreground)); }
+
+.news__link {
+  margin-left: 4px;
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.news__close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.news__close:hover { background: color-mix(in oklab, var(--ink) 15%, transparent); }
+
+.news__close .icon { margin: 0; }
 
 /* --- card --------------------------------------------------------------- */
 
