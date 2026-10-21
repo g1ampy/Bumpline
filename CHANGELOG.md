@@ -5,6 +5,74 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-10-21
+
+Relisting works again on Chrome. Vinted moved its newer photos to a server that
+refuses the page's own read of them, and the way round it, through the
+background, had never worked on Chrome: every photo reached Vinted as fifteen
+characters of text, and Vinted turned each one down (#3). Firefox was never
+affected.
+
+The rest is new. The website can now put a notice at the top of the panel, aimed
+at a language, a browser or a range of versions, so the next time something on
+Vinted's side breaks, the sellers it breaks for can read about it the same day
+instead of after a store review. The draft button can keep the original online,
+for a seller who wants to prepare a relist now and publish it later (#1). And the
+panel's links lead to the website, and to this changelog.
+
+### Added
+
+- **Notices from the website.** The background reads
+  `https://bumpline.giampy.tech/broadcast.json` at most once an hour: on the
+  tab events it already wakes for, and when the panel opens. There is no alarm,
+  because an alarm is a new permission; the manifest asks for nothing more. Each
+  notice that applies to this browser, this version and the panel's language is
+  a strip under the panel's header, red for a warning, amber for attention and
+  teal for news, with a "Read more" link when it carries one and a button to
+  close it. Every word goes in as text, and only https links are drawn. A file
+  that is not a notice file, such as an error page, leaves the last good
+  notices in place.
+- **A "!" on the toolbar icon** for a notice at attention or warning level,
+  amber or red, until it is closed or its end date passes. News puts nothing
+  there.
+- **"Keep the original online", in Settings.** Off by default, so the draft
+  button goes on doing what it did. Turned on, the button becomes *Copy to
+  drafts* on every open wardrobe at once: the same checks and the same photo
+  upload, then the draft, and the original stays where it is. Nothing is
+  deleted, so nothing counts toward the limits or the cooldown. Vinted does not
+  accept two identical listings, so the toast says to delete the original
+  before publishing the copy.
+- **The changelog, from the version number.** The version in the panel's footer
+  opens this file on GitHub, with a tooltip saying so.
+
+### Changed
+
+- **The panel's name and "How it works" open the website**, at its how it works
+  section, in the panel's language rather than the browser's: a seller who
+  picked Italian lands on `/it/#how`. "How it works" used to open the README.
+- **The Italian panel calls the Bump button what Vinted.it calls it**, «Metti un
+  boost», not «Metti in evidenza», a label nobody could find on the page.
+- **The privacy policy describes the notices file and the panel's links.** The
+  download carries no cookies, no identifier and nothing about the seller, and
+  the file is the same for everyone: which notices apply is worked out in the
+  browser.
+- **`broadcast.js` joins the package**, loaded ahead of the background with
+  `strings.js` and `store.js`. The package goes from 25 files to 26.
+
+### Fixed
+
+- **Relisting on Chrome stopped at "No photo could be uploaded".** Newer photos
+  are WebP on a Vinted backend that sends no CORS header, so the page's read of
+  them is refused and the background fetches them instead. Chrome's runtime
+  messaging is JSON, where an ArrayBuffer becomes `{}`: the page uploaded the
+  text `[object Object]`, and Vinted answered every photo with a 400. The
+  background now sends the bytes as base64, and a reply without them is reported
+  as a failed download. Vinted takes the WebP as it is.
+- **The panel stayed tall after Settings closed.** `popup.html` had no doctype,
+  so the panel ran in quirks mode with its body stretched to the window, and
+  the space Settings had taken stayed as a blank band under the footer. With
+  the doctype the panel shrinks back.
+
 ## [1.1.4] - 2026-09-11
 
 Bumpline has a website now, and the extension opens it twice: once right after
@@ -787,6 +855,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.5]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.5
 [1.1.4]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.4
 [1.1.3]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.3
 [1.1.2]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.2
