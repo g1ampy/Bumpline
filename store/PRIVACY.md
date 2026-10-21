@@ -1,17 +1,19 @@
 # Bumpline — Privacy Policy
 
-Last updated: 11 September 2026
+Last updated: 21 October 2026
 
 Bumpline is a browser extension that relists your own Vinted listings. This
 policy explains exactly what it touches.
 
 ## The short version
 
-Bumpline sends nothing anywhere. It talks to Vinted, which you are already
-logged into, and to no one else. There is no server, no account, no analytics
-and no telemetry. The developer receives no data about you and cannot see what
-you do with the extension. The only other place it takes you is its own
-website, twice: once after you install it and once after you remove it.
+Bumpline sends nothing about you anywhere. It talks to Vinted, which you are
+already logged into, and apart from that it only downloads a short public file
+of notices from its own website, about once an hour. There is no server that
+collects anything, no account, no analytics and no telemetry. The developer
+receives no data about you and cannot see what you do with the extension. The
+only other place it takes you is its own website, twice: once after you install
+it and once after you remove it.
 
 ## What the extension reads
 
@@ -35,12 +37,13 @@ Everything is stored locally in your own browser.
 | CSRF token and anonymous id | Extension storage | So requests are accepted without re-reading them on every page load | Until overwritten by a newer one |
 | An unfinished relist: the item's fields | Extension storage | So the listing can be recreated if publishing fails | Deleted as soon as it succeeds, or when you press Discard |
 | An unfinished relist: the photo files | IndexedDB, on the Vinted domain | Same reason. Photos are too large for extension storage | Deleted at the same time |
+| The website's notices, the ones you closed, and when the file was last checked | Extension storage | So the panel can show them without waiting for the website, and a closed notice stays closed | Replaced at each check; a closed notice is forgotten once the website drops it |
 
 Uninstalling the extension removes all of it.
 
 ## What the extension sends, and to whom
 
-Only to Vinted, and only the requests needed to do what you clicked:
+To Vinted, only the requests needed to do what you clicked:
 
 - read the listing you chose,
 - upload its photos again,
@@ -48,10 +51,28 @@ Only to Vinted, and only the requests needed to do what you clicked:
 - delete the original listing,
 - publish the draft.
 
-There are no other network destinations. The extension contacts no third-party
-service of any kind.
+The one other request it makes is the download of the notices file from its own
+website, described below. It contacts no third-party service of any kind.
 
-## The two pages on the website
+## The website
+
+### The notices file
+
+When something on Vinted's side breaks the extension, a new version takes days
+to get through store review. So the extension reads one public file from its
+website, <https://bumpline.giampy.tech/broadcast.json>, at most about once an
+hour while your browser is in use, and when you open its panel. The file holds
+short notices; one that applies to your browser, your version of the extension
+and the panel's language is shown at the top of the panel, and the important
+ones also put a "!" on the toolbar icon until you close them.
+
+The request is a plain download. It carries no cookies, no identifier and
+nothing about you, your listings or your use of the extension, and the file is
+the same for everyone: which notices apply is worked out in your browser. As
+with any website, Cloudflare sees the IP address and browser the request comes
+from (see below).
+
+### The pages it opens
 
 The extension opens two pages on its website, <https://bumpline.giampy.tech>,
 and no others:

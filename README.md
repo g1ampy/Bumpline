@@ -177,7 +177,9 @@ package can be checked against the store's own validator with
 #### Requirements
 
 Chrome, Edge or Firefox, and a Vinted account you are logged into. No API key,
-no dependencies, and no network calls to anything except Vinted itself.
+no dependencies, and no network calls to anything except Vinted itself and one
+public file of notices on Bumpline's own website,
+`https://bumpline.giampy.tech/broadcast.json`, read at most about once an hour.
 
 ## Usage
 

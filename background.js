@@ -15,20 +15,23 @@
 // with this program. If not, see <https://www.gnu.org/licenses/>.
 
 // The background — a service worker on Chrome, an event page on Firefox —
-// exists for two jobs the page cannot do on its own:
+// exists for three jobs the page cannot do on its own:
 //
 //   1. Watch the requests Vinted's own site makes and note the security tokens
 //      it attaches, so the extension can send requests Vinted will accept.
 //   2. Fetch image bytes from the CDN when a cross-origin read from the page is
 //      refused.
+//   3. Check the website for notices, and badge the toolbar icon when one of
+//      them asks for the seller's attention.
 
-// The words for the one thing this file puts on screen: the toolbar button's
-// tooltip. Chrome's background is a classic service worker, which brings its
-// own dependencies in with importScripts. Firefox's is an event page, where the
-// manifest lists strings.js ahead of this file — build.mjs writes that array —
+// The words for the one thing this file puts on screen, the toolbar button's
+// tooltip; which browser this is, which store.js knows; and the notices'
+// rules. Chrome's background is a classic service worker, which brings its own
+// dependencies in with importScripts. Firefox's is an event page, where the
+// manifest lists the three ahead of this file — build.mjs writes that array —
 // and importScripts does not exist at all. Asking which of the two this is
 // covers both without either needing to know about the other.
-if (typeof importScripts === 'function') importScripts('strings.js');
+if (typeof importScripts === 'function') importScripts('strings.js', 'store.js', 'broadcast.js');
 
 // Firefox answers to `browser` and only that namespace returns promises there;
 // Chrome answers to `chrome`. One alias, and the rest of the file is written
@@ -146,6 +149,13 @@ ext.runtime.onMessage.addListener((message, _sender, respond) => {
     return true;
   }
 
+  // The panel asks when it opens. The answer only says the check is over; the
+  // notices themselves reach the panel through storage, like everything else.
+  if (message.type === 'bumpline:broadcastCheck') {
+    checkBroadcast().then(() => respond(true));
+    return true;
+  }
+
   return false;
 });
 
@@ -241,6 +251,63 @@ async function paintActiveTab() {
   }
 }
 
+// --- the website's notices ------------------------------------------------
+
+// Asked on the way up and on every tab event, which comes to often while the
+// browser is in use and never while it is not; refresh() itself makes sure the
+// website hears from this browser at most once an hour. An alarm would be
+// tidier and would cost a new permission, and an update that asks for one is an
+// update some sellers never accept. What comes back reaches the badge and the
+// panel through storage.
+function checkBroadcast() {
+  return BumplineBroadcast.refresh({
+    fetch: url => fetch(url, { cache: 'no-cache', credentials: 'omit' }),
+    get: keys => ext.storage.local.get(keys),
+    set: values => ext.storage.local.set(values),
+    now: Date.now,
+  }).catch(err => {
+    console.debug('[Bumpline] could not check the notices', err);
+    return false;
+  });
+}
+
+// The seller does not have to open the panel to learn that relisting is
+// broken: a notice that asks for attention puts a "!" on the icon until it is
+// closed. Set without a tabId, so it shows on every tab, Vinted or not; the
+// icon underneath keeps its own per-tab colour. Switched off there is no
+// relisting to warn about, and no badge.
+async function paintBadge() {
+  const action = ext.action || ext.browserAction;
+  if (!action || !action.setBadgeText) return;
+
+  let level = null;
+  if (switchedOn) {
+    try {
+      const { NOTICES_KEY, DISMISSED_KEY } = BumplineBroadcast;
+      const bag = await ext.storage.local.get([NOTICES_KEY, DISMISSED_KEY]);
+      const shown = BumplineBroadcast.eligible(bag[NOTICES_KEY], BumplineBroadcast.here(bag[DISMISSED_KEY]));
+      level = BumplineBroadcast.badgeFor(shown);
+    } catch (err) {
+      console.debug('[Bumpline] could not read the notices', err);
+    }
+  }
+
+  const said = err => console.debug('[Bumpline] could not set the badge', err);
+  try {
+    Promise.resolve(action.setBadgeText({ text: level ? '!' : '' })).catch(said);
+    if (level) {
+      Promise.resolve(action.setBadgeBackgroundColor({ color: BumplineBroadcast.BADGE[level] })).catch(said);
+      // Chrome 110 and Firefox 63 onwards; before that the browser picks a
+      // text colour of its own, which reads on both backgrounds anyway.
+      if (action.setBadgeTextColor) {
+        Promise.resolve(action.setBadgeTextColor({ color: '#ffffff' })).catch(said);
+      }
+    }
+  } catch (err) {
+    said(err);
+  }
+}
+
 // The worker is torn down between events and the browser forgets a set icon at
 // the end of a session, so the switch is read on the way up rather than
 // remembered. Absent means on, the same rule the popup and the page use.
@@ -259,6 +326,10 @@ async function paintIconFromStore() {
   }
   paintDefault();
   await paintActiveTab();
+  // The badge depends on the switch and the language just read, so it comes
+  // after them; a fresh file, if there is one, repaints it through storage.
+  paintBadge();
+  checkBroadcast();
 }
 
 paintIconFromStore();
@@ -268,25 +339,36 @@ ext.runtime.onStartup.addListener(paintIconFromStore);
 // content scripts already listen to, so the icon follows the same signal rather
 // than needing a message of its own. The language is chosen in the same panel
 // and written the same way, so it arrives here the same way: either one changes
-// what the tooltip should say, and both are answered by repainting it.
+// what the tooltip should say, and both are answered by repainting it. Both
+// also change which notices apply, and so does a new file or a notice closed
+// in the panel: those four repaint the badge.
 ext.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes) return;
   const touched = ENABLED_KEY in changes || LANG_KEY in changes;
-  if (!touched) return;
+  const notices = BumplineBroadcast.NOTICES_KEY in changes || BumplineBroadcast.DISMISSED_KEY in changes;
+  if (!touched && !notices) return;
   if (ENABLED_KEY in changes) switchedOn = changes[ENABLED_KEY].newValue !== false;
   if (LANG_KEY in changes) BumplineText.use(changes[LANG_KEY].newValue || 'auto');
-  paintDefault();
-  paintActiveTab();
+  if (touched) {
+    paintDefault();
+    paintActiveTab();
+  }
+  paintBadge();
 });
 
 // Neither of these needs the "tabs" permission. The events fire either way; the
 // url is what is withheld without one, and a withheld url is a tab the
 // extension cannot work on — which is the same grey icon as a tab it will not
 // work on. The two cases do not have to be told apart.
+//
+// They are also the steady pulse the notices are checked on, and the badge is
+// repainted with them so a notice whose end has passed takes its "!" with it.
 ext.tabs.onActivated.addListener(({ tabId }) => {
   Promise.resolve(ext.tabs.get(tabId))
     .then(tab => paintTab(tabId, tab && tab.url))
     .catch(() => paintTab(tabId, null));
+  paintBadge();
+  checkBroadcast();
 });
 
 ext.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -294,6 +376,8 @@ ext.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // title, a favicon, a mute — cannot have changed the answer.
   if (!changeInfo.url && changeInfo.status !== 'complete') return;
   paintTab(tabId, tab && tab.url);
+  paintBadge();
+  checkBroadcast();
 });
 
 // The first page a seller sees and the last one both live on the website. The

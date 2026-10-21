@@ -42,8 +42,10 @@ const PAYLOAD = [
   'popup.html',
   'popup.css',
   'popup.js',
-  // Which store this copy came from, read by the panel.
+  // Which store this copy came from, read by the panel and the background.
   'store.js',
+  // The website's notices, read by the panel and the background.
+  'broadcast.js',
   // Every language, and the two keys only the manifest can localise. Neither
   // is named in a manifest key the packer follows, so an unlisted file would
   // not ship and the extension would load without a word in it.
@@ -88,11 +90,12 @@ const TARGETS = {
     // Firefox has no service worker to give: an MV3 background there is an
     // event page, woken by the same listeners and torn down the same way.
     //
-    // strings.js comes first because an event page has no importScripts, which
-    // is how the Chrome worker pulls the catalogue in. Here the order of this
-    // array is the whole loading mechanism: background.js paints the toolbar
-    // tooltip on the way up and needs BumplineText to already be there.
-    out.background = { scripts: ['strings.js', 'background.js'] };
+    // The three shared scripts come first because an event page has no
+    // importScripts, which is how the Chrome worker pulls them in. Here the
+    // order of this array is the whole loading mechanism: background.js paints
+    // the toolbar tooltip and the notices' badge on the way up, and needs
+    // BumplineText, BumplineStore and BumplineBroadcast to already be there.
+    out.background = { scripts: ['strings.js', 'store.js', 'broadcast.js', 'background.js'] };
 
     out.browser_specific_settings = {
       gecko: {
