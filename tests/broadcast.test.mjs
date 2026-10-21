@@ -55,6 +55,31 @@ describe('parse', () => {
   it('drops a notice in a language the extension does not speak only', () => {
     assert.deepEqual(B.parse(file(notice({ text: { de: { title: 'T', body: 'B' } } }))), []);
   });
+
+  // An install keeps the rules it shipped with. A language or browser added to
+  // the file later must not take the rest of a notice away from it.
+  it('keeps the languages it knows when a notice also carries one it does not', () => {
+    const [parsed] = B.parse(file(notice({ text: { en: { title: 'T', body: 'B' }, de: { title: 'T', body: 'B' } } })));
+    assert.deepEqual(Object.keys(parsed.text), ['en']);
+  });
+
+  it('keeps the browsers it knows when a notice also names one it does not', () => {
+    const [parsed] = B.parse(file(notice({ browsers: ['chrome', 'safari'] })));
+    assert.deepEqual(parsed.browsers, ['chrome']);
+  });
+
+  it('drops a notice aimed only at browsers it does not know', () => {
+    assert.deepEqual(B.parse(file(notice({ browsers: ['safari'] }))), []);
+  });
+
+  it('takes until only as an ISO date, or a date-time with its offset', () => {
+    for (const until of ['2026-11-30T18:00:00Z', '2026-11-30T18:00:00+01:00', '2026-11-30T18:00Z']) {
+      assert.equal(B.parse(file(notice({ until }))).length, 1, until);
+    }
+    for (const until of ['30 Nov 2026', '2026/11/30', '2026-02-30', '2026-11-30T18:00', 'next week']) {
+      assert.deepEqual(B.parse(file(notice({ until }))), [], until);
+    }
+  });
 });
 
 describe('compareVersions', () => {
@@ -198,6 +223,31 @@ describe('refresh', () => {
     const store = memory({ [B.DISMISSED_KEY]: ['gone', 'kept'] });
     await B.refresh({ ...store, now: () => NOW, fetch: async () => reply(file(notice({ id: 'kept' }))) });
     assert.deepEqual(store.bag[B.DISMISSED_KEY], ['kept']);
+  });
+
+  // Firefox reports every key a set() names, changed or not, and the panel
+  // redraws on each report: a warning would be announced again for nothing.
+  it('writes nothing but the check time when the file has not changed', async () => {
+    const same = B.parse(file(notice({ id: 'same' })));
+    const store = memory({ [B.NOTICES_KEY]: same, [B.DISMISSED_KEY]: ['same'] });
+    const written = [];
+    const set = async values => { written.push(...Object.keys(values)); await store.set(values); };
+    const fetched = await B.refresh({ ...store, set, now: () => NOW, fetch: async () => reply(file(notice({ id: 'same' }))) });
+    assert.equal(fetched, false);
+    assert.deepEqual(written, [B.CHECKED_KEY]);
+  });
+
+  it('keeps a notice closed while the file was on its way', async () => {
+    const store = memory();
+    await B.refresh({
+      ...store,
+      now: () => NOW,
+      fetch: async () => {
+        await store.set({ [B.DISMISSED_KEY]: ['closed'] });
+        return reply(file(notice({ id: 'closed' })));
+      },
+    });
+    assert.deepEqual(store.bag[B.DISMISSED_KEY], ['closed']);
   });
 
   it('asks once when two checks start together', async () => {

@@ -50,6 +50,9 @@ const BumplineBroadcast = (() => {
   const LANGUAGES = ['en', 'it', 'fr'];
   const VERSION = /^\d+(\.\d+)*$/;
   const BARE_DATE = /^\d{4}-\d{2}-\d{2}$/;
+  // A date-time has to say which zone it is in. Without one, browsers read it
+  // as local time, and they disagree on most other shapes Date.parse accepts.
+  const DATE_TIME = /^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 
   const isObject = value => typeof value === 'object' && value !== null && !Array.isArray(value);
   const filled = value => typeof value === 'string' && value.trim() !== '';
@@ -63,21 +66,37 @@ const BumplineBroadcast = (() => {
     }
   }
 
-  // A date on its own means the whole of that day, wherever the seller is, so
-  // it ends at its last millisecond in UTC rather than at its first.
-  function endOf(until) {
-    if (typeof until !== 'string') return NaN;
-    return Date.parse(BARE_DATE.test(until) ? until + 'T23:59:59.999Z' : until);
+  // 2026-02-30 is a real string and no real day; Date would roll it over into
+  // March without a word.
+  function onCalendar(day) {
+    const [year, month, date] = day.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, date));
+    return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === date;
   }
 
-  // Null for a text map with anything wrong in it. A link that is not https is
-  // wrong rather than dropped: a notice that lost the link it was written
-  // around would point at nothing while reading as though it did.
+  // Only the two ISO shapes, read the same way by every browser. A date on its
+  // own means the whole of that day, wherever the seller is, so it ends at its
+  // last millisecond in UTC rather than at its first.
+  function endOf(until) {
+    if (typeof until !== 'string') return NaN;
+    if (BARE_DATE.test(until)) return onCalendar(until) ? Date.parse(until + 'T23:59:59.999Z') : NaN;
+    const timed = until.match(DATE_TIME);
+    return timed && onCalendar(timed[1]) ? Date.parse(until) : NaN;
+  }
+
+  // Null for a text map with anything wrong in what this version can read. A
+  // language it does not speak is passed over rather than counted against the
+  // notice: the file will learn languages after this install was made, and the
+  // English, Italian and French beside them are still for this seller. A link
+  // that is not https is wrong rather than dropped: a notice that lost the link
+  // it was written around would point at nothing while reading as though it
+  // did.
   function readText(text) {
     if (!isObject(text)) return null;
     const out = {};
     for (const [lang, entry] of Object.entries(text)) {
-      if (!LANGUAGES.includes(lang) || !isObject(entry)) return null;
+      if (!LANGUAGES.includes(lang)) continue;
+      if (!isObject(entry)) return null;
       if (!filled(entry.title) || !filled(entry.body)) return null;
       if (entry.link !== undefined && !(typeof entry.link === 'string' && isHttps(entry.link))) return null;
       out[lang] = { title: entry.title, body: entry.body, link: entry.link === undefined ? null : entry.link };
@@ -88,11 +107,13 @@ const BumplineBroadcast = (() => {
   function readNotice(raw) {
     if (!isObject(raw) || !filled(raw.id) || !LEVELS.includes(raw.level)) return null;
 
+    // The same for browsers: a name this version does not know is one it is
+    // not, and a list left with none it knows is a notice for someone else.
     let browsers = null;
     if (raw.browsers !== undefined) {
-      const list = raw.browsers;
-      if (!Array.isArray(list) || !list.length || !list.every(name => BROWSERS.includes(name))) return null;
-      browsers = [...list];
+      if (!Array.isArray(raw.browsers)) return null;
+      browsers = raw.browsers.filter(name => BROWSERS.includes(name));
+      if (!browsers.length) return null;
     }
 
     let from = null;
@@ -200,14 +221,21 @@ const BumplineBroadcast = (() => {
 
     // Read after the answer, not before: a notice closed while the file was on
     // its way has to stay closed.
-    const dismissed = (await get(DISMISSED_KEY))[DISMISSED_KEY];
+    const bag = await get([NOTICES_KEY, DISMISSED_KEY]);
+    const dismissed = Array.isArray(bag[DISMISSED_KEY]) ? bag[DISMISSED_KEY] : [];
     const ids = new Set(notices.map(notice => notice.id));
-    await set({
-      [NOTICES_KEY]: notices,
-      // A closed notice that has left the file has nothing left to hide.
-      [DISMISSED_KEY]: Array.isArray(dismissed) ? dismissed.filter(id => ids.has(id)) : [],
-    });
-    return true;
+    // A closed notice that has left the file has nothing left to hide.
+    const kept = dismissed.filter(id => ids.has(id));
+
+    // Only what changed is written. Firefox reports every key a write names,
+    // changed or not, and an open panel redraws on each report, which would
+    // have a screen reader announce a warning it has already read out.
+    const changes = {};
+    const fresh = JSON.stringify(notices) !== JSON.stringify(bag[NOTICES_KEY]);
+    if (fresh) changes[NOTICES_KEY] = notices;
+    if (kept.length !== dismissed.length) changes[DISMISSED_KEY] = kept;
+    if (Object.keys(changes).length) await set(changes);
+    return fresh;
   }
 
   // Resolves true when a new file was stored. Every event the background wakes
