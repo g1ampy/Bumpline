@@ -223,7 +223,7 @@ const BumplineText = (() => {
       'popup.settings.localDrafts.label': 'Keep the copy on this device',
       'popup.settings.localDrafts.hint': 'Relist button only. Off saves a draft to your Vinted account first, as in versions before 1.0.1.',
       'popup.settings.keepOriginal.label': 'Keep the original online',
-      'popup.settings.keepOriginal.hint': 'Off deletes it, as always. On only puts a copy in your drafts: delete the original yourself before publishing it, because Vinted does not accept two identical listings.',
+      'popup.settings.keepOriginal.hint': 'Off deletes the original. On saves only a copy to your drafts; delete the original yourself before publishing the copy, as Vinted won\'t accept two identical listings.',
 
       // The warning dialog: a shared shell (popup.risk.keep and
       // popup.risk.change are its defaults, which no call site currently
@@ -421,7 +421,7 @@ const BumplineText = (() => {
       'popup.settings.localDrafts.label': 'Tieni la copia su questo dispositivo',
       'popup.settings.localDrafts.hint': 'Solo per il pulsante Ripubblica. Se disattivato, salva prima una bozza sul tuo account Vinted, come nelle versioni precedenti alla 1.0.1.',
       'popup.settings.keepOriginal.label': 'Tieni l\'originale online',
-      'popup.settings.keepOriginal.hint': 'Se disattivato lo elimina, come sempre. Se attivato mette solo una copia nelle bozze: elimina tu l\'originale prima di pubblicarla, perché Vinted non accetta due annunci identici.',
+      'popup.settings.keepOriginal.hint': 'Se disattivato, elimina l\'originale. Se attivato, salva solo una copia nelle bozze; elimina tu l\'originale prima di pubblicare la copia, perché Vinted non accetta due annunci identici.',
 
       'popup.risk.keep': 'Mantieni questa impostazione',
       'popup.risk.change': 'Modificala comunque',
@@ -599,7 +599,7 @@ const BumplineText = (() => {
       'popup.settings.localDrafts.label': 'Garder la copie sur cet appareil',
       'popup.settings.localDrafts.hint': 'Bouton Republier uniquement. Désactivé, un brouillon est d\'abord enregistré sur ton compte Vinted, comme dans les versions antérieures à la 1.0.1.',
       'popup.settings.keepOriginal.label': 'Garder l\'original en ligne',
-      'popup.settings.keepOriginal.hint': 'Désactivé, il est supprimé, comme toujours. Activé, seule une copie va dans tes brouillons : supprime toi-même l\'original avant de la publier, car Vinted n\'accepte pas deux annonces identiques.',
+      'popup.settings.keepOriginal.hint': 'Désactivé, l\'original est supprimé. Activé, seule une copie est enregistrée dans tes brouillons ; supprime toi-même l\'original avant de publier la copie, car Vinted n\'accepte pas deux annonces identiques.',
 
       'popup.risk.keep': 'Garder ce réglage',
       'popup.risk.change': 'Le modifier quand même',
