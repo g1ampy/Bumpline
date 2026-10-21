@@ -278,6 +278,8 @@ const BumplineText = (() => {
       // that only appears once store.js has worked out where it goes.
       'footer.howItWorks': 'How it works',
       'footer.reportProblem': 'Report a problem',
+      // The tooltip on the version number, which links to the changelog.
+      'footer.changelog': "What's new in each version",
       'footer.rate': 'Rate Bumpline',
     },
     it: {
@@ -450,6 +452,7 @@ const BumplineText = (() => {
 
       'footer.howItWorks': 'Come funziona',
       'footer.reportProblem': 'Segnala un problema',
+      'footer.changelog': 'Novità di ogni versione',
       'footer.rate': 'Vota Bumpline',
     },
     fr: {
@@ -622,6 +625,7 @@ const BumplineText = (() => {
 
       'footer.howItWorks': 'Comment ça marche',
       'footer.reportProblem': 'Signaler un problème',
+      'footer.changelog': 'Nouveautés de chaque version',
       'footer.rate': 'Noter Bumpline',
     },
   };

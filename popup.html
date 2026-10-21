@@ -256,7 +256,13 @@
 <footer class="foot">
   <a class="foot__link" href="https://bumpline.giampy.tech/en/#how" data-site="#how" target="_blank" rel="noreferrer" data-i18n="footer.howItWorks">How it works</a>
   <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer" data-i18n="footer.reportProblem">Report a problem</a>
-  <span class="foot__version" id="version"></span>
+  <!-- The version is the question "what changed?" as often as it is the answer
+       to "which one do I have?", so it leads to the changelog: the top of it,
+       where the newest version is. GitHub builds each section's anchor from
+       its date as well as its number, so a link to this version's own section
+       would have to guess. The tooltip says where it goes, which the number
+       alone does not. -->
+  <a class="foot__link foot__version" id="version" href="https://github.com/g1ampy/Bumpline/blob/main/CHANGELOG.md" target="_blank" rel="noreferrer" data-i18n-title="footer.changelog"></a>
 
   <!-- A rating is the one thing an extension cannot write for itself, and the
        panel being open is the only moment its user is near a store page. Which

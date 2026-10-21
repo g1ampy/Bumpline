@@ -993,6 +993,9 @@ body {
 /* Pushed to the end of the first row: it is there for a bug report, not for
    reading. The rating below it starts the second row, so the auto margin only
    ever has the two links to push away from. */
+/* A link like the two beside it, and it underlines on hover the same way; it
+   only keeps its smaller, tabular figures, which is what makes it read as the
+   version rather than as a third label. */
 .foot__version {
   margin-left: auto;
   color: var(--muted-foreground);
