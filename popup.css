@@ -62,6 +62,11 @@
  * clear it. --success sits at 0.53 for the same reason; at 0.55 it was 4.5:1
  * on the card and under it on the page behind.
  *
+ * The website's notices are the exception: each level's ink, and its body
+ * text, on that level's own tint is computed from this file rather than read
+ * off a screenshot, by tests/contrast.test.mjs, which holds all of them to
+ * 4.5:1 in both schemes.
+ *
  * Two pairs are still deliberately short of 4.5:1, both the preset's own: the
  * switch's off track against the panel, at 1.2:1 and 1.5:1, where the thumb's
  * position and its own contrast say the same thing again, and --ring at 30%,
@@ -204,9 +209,10 @@
 
 /* Nor an amber. The website's notices have three levels and the middle one,
    "attention", needs a colour between the logo's teal and the destructive
-   red: a warm amber, at the lightness the other two inks sit at in each
-   scheme. */
-:root { --news-attention: oklch(0.6 0.14 65); }
+   red: a warm amber. Light, it sits at 0.52: at 0.6, the lightness the other
+   inks have, an amber title on its own tint read 3.4:1. tests/contrast.test.mjs
+   measures every strip in both schemes. */
+:root { --news-attention: oklch(0.52 0.14 65); }
 
 @media (prefers-color-scheme: dark) {
   :root { --news-attention: oklch(0.8 0.14 75); }
@@ -415,7 +421,12 @@ body {
   background: color-mix(in oklab, var(--ink) 12%, transparent);
 }
 
-.news__item--warning { --ink: var(--destructive); }
+/* A shade lighter than a tenth: at 10% the red title on its own red read
+   4.47:1, just short. */
+.news__item--warning {
+  --ink: var(--destructive);
+  background: color-mix(in oklab, var(--ink) 8%, transparent);
+}
 
 .news__title {
   display: block;
@@ -433,6 +444,14 @@ body {
   text-decoration: underline;
   text-underline-offset: 3px;
   white-space: nowrap;
+}
+
+/* The words come from a file on the website, and one long token in them, an
+   address written out in full, would otherwise push the strip wider than the
+   panel or run it under the close button. */
+.news__words {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .news__close {

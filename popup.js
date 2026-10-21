@@ -592,6 +592,7 @@ function newsItem(notice, stored) {
   item.setAttribute('role', notice.level === 'warning' ? 'alert' : 'status');
 
   const words = document.createElement('div');
+  words.className = 'news__words';
   const title = document.createElement('strong');
   title.className = 'news__title';
   title.textContent = notice.title;
