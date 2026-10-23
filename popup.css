@@ -951,6 +951,25 @@ body {
   }
 }
 
+/* --- donation ----------------------------------------------------------- */
+
+/* button.tsx's secondary variant: a fill, so it reads as a button, but in
+   --secondary rather than --primary, so it never outweighs #action, the one
+   thing the panel asks the seller to do. No margin above: the drawer's own
+   16px of padding is the gap there, and the 16px below matches it. */
+.donate {
+  margin: 0 0 16px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  text-decoration: none;
+}
+
+.donate:hover { background: color-mix(in oklab, var(--secondary) 80%, transparent); }
+
+/* The half step every other icon is nudged down sits it on a line of text;
+   here the button's own flex centres it, and the nudge would only lower it. */
+.donate .icon { margin-top: 0; }
+
 /* --- footer ------------------------------------------------------------- */
 
 /* No margin above the rule: the drawer's own 16px of padding is the whole gap,

@@ -273,6 +273,21 @@
   </div>
 </dialog>
 
+<!-- For a seller who has found Bumpline worth something and wants to say so.
+     Outside <main>, so it stays with the footer when the switch is off, and an
+     anchor rather than a button for the same reason as the rating: the browser
+     closes the panel itself as it opens the tab. The label is a span of its
+     own because paint() writes textContent, which would take the cup with it. -->
+<a class="button donate" href="https://ko-fi.com/bumpline" target="_blank" rel="noreferrer">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M10 2v2"/>
+    <path d="M14 2v2"/>
+    <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>
+    <path d="M6 2v2"/>
+  </svg>
+  <span data-i18n="popup.donate">Support Bumpline on Ko-fi</span>
+</a>
+
 <footer class="foot">
   <a class="foot__link" href="https://bumpline.giampy.tech/en/#how" data-site="#how" target="_blank" rel="noreferrer" data-i18n="footer.howItWorks">How it works</a>
   <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer" data-i18n="footer.reportProblem">Report a problem</a>

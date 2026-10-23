@@ -280,6 +280,9 @@ const BumplineText = (() => {
       'popup.news.close': 'Close this notice',
       'popup.news.more': 'Read more',
 
+      // The button above the footer, which opens Bumpline's page on Ko-fi.
+      'popup.donate': 'Support Bumpline on Ko-fi',
+
       // The footer: two links that are always the same, and a rating link
       // that only appears once store.js has worked out where it goes.
       'footer.howItWorks': 'How it works',
@@ -461,6 +464,8 @@ const BumplineText = (() => {
       'popup.news.close': 'Chiudi questo avviso',
       'popup.news.more': 'Leggi di più',
 
+      'popup.donate': 'Sostieni Bumpline su Ko-fi',
+
       'footer.howItWorks': 'Come funziona',
       'footer.reportProblem': 'Segnala un problema',
       'footer.changelog': 'Novità di ogni versione',
@@ -638,6 +643,8 @@ const BumplineText = (() => {
 
       'popup.news.close': 'Fermer cet avis',
       'popup.news.more': 'En savoir plus',
+
+      'popup.donate': 'Soutenir Bumpline sur Ko-fi',
 
       'footer.howItWorks': 'Comment ça marche',
       'footer.reportProblem': 'Signaler un problème',
