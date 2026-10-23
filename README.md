@@ -3,6 +3,7 @@
 [![Badge Browsers]][Installation]
 [![Badge Dependencies]][Source]
 [![Badge License]][License]
+[![Badge Ko-fi]][Ko-fi]
 
 ***
 
@@ -488,6 +489,11 @@ acceptable outcome.
 If you ever want to contribute something, the useful thing is a report: which
 Vinted country site, which category, and what the button said when it stopped.
 
+If Bumpline saves you time, you can also support it on Ko-fi. It pays for the
+website and for the fixes each time Vinted changes something.
+
+[![Support Bumpline on Ko-fi][Ko-fi Button]][Ko-fi]
+
 Bumpline is an independent project. It is not affiliated with, endorsed by, or
 connected to Vinted in any way. "Vinted" is used only to say which site the
 extension works on.
@@ -502,6 +508,8 @@ extension works on.
 [Source]: content.js
 [License]: LICENSE
 [Releases]: https://github.com/g1ampy/Bumpline/releases
+[Ko-fi]: https://ko-fi.com/bumpline
+[Ko-fi Button]: https://ko-fi.com/img/githubbutton_sm.svg
 
 <!----------------------------------[ Badges ]--------------------------------->
 
@@ -510,3 +518,4 @@ extension works on.
 [Badge Browsers]: https://img.shields.io/badge/chrome%20%7C%20edge%20%7C%20firefox-supported-%2328A745?labelColor=%23282f37
 [Badge Dependencies]: https://img.shields.io/badge/dependencies-0-%236B7280?labelColor=%23282f37
 [Badge License]: https://img.shields.io/badge/license-GPL--3.0-%23A31F34?labelColor=%23282f37
+[Badge Ko-fi]: https://img.shields.io/badge/ko--fi-support-%23FF5E5B?labelColor=%23282f37&logo=kofi&logoColor=white
