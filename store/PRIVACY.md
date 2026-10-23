@@ -1,6 +1,6 @@
 # Bumpline — Privacy Policy
 
-Last updated: 21 October 2026
+Last updated: 23 October 2026
 
 Bumpline is a browser extension that relists your own Vinted listings. This
 policy explains exactly what it touches.
@@ -38,6 +38,7 @@ Everything is stored locally in your own browser.
 | An unfinished relist: the item's fields | Extension storage | So the listing can be recreated if publishing fails | Deleted as soon as it succeeds, or when you press Discard |
 | An unfinished relist: the photo files | IndexedDB, on the Vinted domain | Same reason. Photos are too large for extension storage | Deleted at the same time |
 | The website's notices, the ones you closed, and when the file was last checked | Extension storage | So the panel can show them without waiting for the website, and a closed notice stays closed | Replaced at each check; a closed notice is forgotten once the website drops it |
+| How many items you have relisted, as a single number | Extension storage | So the request to support Bumpline on Ko-fi comes after the 5th relist and every 25th after it | Until you uninstall |
 
 Uninstalling the extension removes all of it.
 
@@ -103,6 +104,13 @@ its [privacy policy](https://www.cloudflare.com/privacypolicy/).
 The goodbye page asks why you left. Nothing you type is sent from the page:
 its button opens a GitHub issue with your answers filled in, which you can
 read, change or abandon before posting. A posted issue is public.
+
+The toolbar panel also has a "Support Bumpline on Ko-fi" button, and after the
+5th relist and every 25th after it a box on the Vinted page asks the same.
+Either one opens <https://ko-fi.com/bumpline> only when you click it. The
+address carries nothing about you, your listings or the extension. A donation
+there is made to Ko-fi, not through Bumpline, and is covered by Ko-fi's own
+[privacy policy](https://more.ko-fi.com/privacy).
 
 ## Data sharing and sale
 

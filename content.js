@@ -103,6 +103,9 @@
   const REFUSAL_LOG_KEY = 'bumpline:refusalLog';
   const ENABLED_KEY = 'bumpline:enabled';
   const LANG_KEY = 'bumpline:lang';
+  const RELIST_COUNT_KEY = 'bumpline:relistCount';
+  const DONATE_DUE_KEY = 'bumpline:donateDue';
+  const DRAFT_TIP_KEY = 'bumpline:draftTipSeen';
   const DB_NAME = 'bumpline';
   const DB_STORE = 'photos';
 
@@ -143,7 +146,16 @@
   const BLOCK_BASE_MS = { 429: 15 * 60 * 1000, 403: 30 * 60 * 1000 };
   const BLOCK_CAP_MS = 6 * 60 * 60 * 1000;
 
-  const trace = (...parts) => console.debug('[Bumpline]', ...parts);
+  // The request for a donation comes after the fifth finished relist and then
+  // after every twenty-fifth: a seller who tried it once never sees it, and
+  // one who relists every week sees it now and then rather than every day.
+  // The same address as the panel's button, in popup.html.
+  const DONATE_URL = 'https://ko-fi.com/bumpline';
+  const DONATE_FIRST_AT = 5;
+  const DONATE_EVERY = 25;
+  const DONATE_DELAY_MS = 1500;
+
+  const trace =(...parts) => console.debug('[Bumpline]', ...parts);
   const pause = ms => new Promise(done => setTimeout(done, ms));
 
   const randomUuid = () =>
@@ -1081,20 +1093,29 @@
          a stuck relist — are one card in three places. Their colours are fixed
          rather than following the page: a card with its own background reads on
          a light Vinted and on a dark one. */
-      .bumpline-card {
+      .bumpline-card,
+      .bumpline-modal {
         /* The toolbar popup's own tokens, value for value — shadcn preset
            b1tepwVzU, style base-luma, on the logo's hue — so the two halves of
-           the extension are one thing. They are declared on the card rather
-           than on :root: Vinted has its own custom properties and this must not
-           reach them. The 26px corner is base-luma's rounded-4xl, the same one
-           the popup's cards use. */
+           the extension are one thing. They are declared on the card and the
+           modal rather than on :root: Vinted has its own custom properties and
+           this must not reach them. The 26px corner is base-luma's
+           rounded-4xl, the same one the popup's cards use. */
+        --bl-page: oklch(0.985 0.005 203);
         --bl-card: oklch(1 0 0);
         --bl-ink: oklch(0.21 0.022 213);
         --bl-muted-ink: oklch(0.545 0.032 210);
+        --bl-muted: oklch(0.965 0.011 203);
+        --bl-border: oklch(0.918 0.015 203);
+        --bl-primary: oklch(0.5 0.115 203);
+        --bl-primary-ink: #fbfbfb;
         --bl-destructive: oklch(0.54 0.225 25);
         --bl-success: oklch(0.53 0.155 148);
         --bl-ring: oklch(0.21 0.022 213 / 5%);
+        color-scheme: light;
+      }
 
+      .bumpline-card {
         position: fixed;
         z-index: 2147483647;
         box-sizing: border-box;
@@ -1116,13 +1137,20 @@
       /* Vinted follows the system theme and so does the popup, so this does
          too rather than sitting on the page as a white slab. */
       @media (prefers-color-scheme: dark) {
-        .bumpline-card {
+        .bumpline-card,
+        .bumpline-modal {
+          --bl-page: oklch(0.175 0.015 215);
           --bl-card: oklch(0.225 0.018 215);
           --bl-ink: oklch(0.97 0.007 203);
           --bl-muted-ink: oklch(0.72 0.026 210);
+          --bl-muted: oklch(0.285 0.021 215);
+          --bl-border: oklch(1 0 0 / 12%);
+          --bl-primary: oklch(0.72 0.13 203);
+          --bl-primary-ink: oklch(0.2 0.028 215);
           --bl-destructive: oklch(0.71 0.185 25);
           --bl-success: oklch(0.75 0.155 148);
           --bl-ring: oklch(1 0 0 / 10%);
+          color-scheme: dark;
         }
       }
       .bumpline-card[data-leaving] {
@@ -1170,41 +1198,169 @@
         margin-top: 10px;
       }
 
+      /* The popup's warning dialog, brought onto the page: the same card, a
+         title with its icon over a muted note, and the buttons stacked full
+         width with the safe one first. The page behind is veiled in its own
+         colour and blurred rather than blacked out, as the popup does to the
+         panel under its dialog. Every property a button or a select can carry
+         is set here, because Vinted's stylesheet reaches them too. */
       .bumpline-modal {
         position: fixed;
         inset: 0;
         z-index: 2147483647;
+        box-sizing: border-box;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(0,0,0,.45);
+        padding: 16px;
+        background: color-mix(in oklab, var(--bl-page) 55%, transparent);
+        backdrop-filter: blur(6px);
+        animation: bumpline-veil-in 200ms ease-out;
       }
       .bumpline-modal__panel {
-        width: min(420px, 90vw);
-        padding: 20px;
-        border-radius: 10px;
-        background: #fff;
-        color: #111;
-        font-size: 14px;
-        line-height: 1.4;
-        box-shadow: 0 8px 32px rgba(0,0,0,.3);
-      }
-      .bumpline-modal__title { margin-bottom: 8px; font-size: 16px; font-weight: 700; }
-      .bumpline-modal__body { margin-bottom: 14px; }
-      .bumpline-modal__picker {
+        box-sizing: border-box;
         width: 100%;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        background: #fff;
-        color: #111;
-        font-size: 14px;
+        max-width: 360px;
+        max-height: 100%;
+        overflow: auto;
+        padding: 24px;
+        border-radius: 26px;
+        background: var(--bl-card);
+        color: var(--bl-ink);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1),
+                    0 0 0 1px var(--bl-ring);
+        font: 14px/1.4285 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+              Helvetica, Arial, sans-serif;
+        text-align: left;
+        animation: bumpline-card-in 200ms ease-out;
       }
+      /* The popup's header in small: the mark and the name, in the muted ink,
+         over the question, so a box on Vinted's page says whose it is. */
+      .bumpline-modal__brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        color: var(--bl-muted-ink);
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .bumpline-modal__logo {
+        flex: none;
+        width: 18px;
+        height: 18px;
+      }
+      .bumpline-modal__title {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 1.35;
+      }
+      .bumpline-modal__title .bumpline-card__icon { margin-top: 2px; }
+      .bumpline-modal__body {
+        margin-top: 6px;
+        color: var(--bl-muted-ink);
+      }
+
+      /* alert.tsx's destructive variant, as the popup has it: the title and
+         its icon in red, the note in the same red walked most of the way back
+         to the ink, and the button that goes ahead a red tint, not a fill. */
+      .bumpline-modal--alert .bumpline-modal__title { color: var(--bl-destructive); }
+      .bumpline-modal--alert .bumpline-modal__body {
+        color: color-mix(in oklab, var(--bl-destructive) 55%, var(--bl-ink));
+      }
+
+      .bumpline-modal__picker {
+        box-sizing: border-box;
+        width: 100%;
+        height: 36px;
+        margin: 16px 0 0;
+        padding: 0 12px;
+        border: 1px solid var(--bl-border);
+        border-radius: 26px;
+        background: var(--bl-card);
+        color: var(--bl-ink);
+        font: inherit;
+      }
+
       .bumpline-modal__actions {
         display: flex;
-        justify-content: flex-end;
+        flex-direction: column;
         gap: 8px;
         margin-top: 16px;
+      }
+      .bumpline-modal__button {
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        height: 36px;
+        margin: 0;
+        padding: 0 16px;
+        border: 1px solid transparent;
+        border-radius: 26px;
+        background: var(--bl-primary);
+        background-clip: padding-box;
+        color: var(--bl-primary-ink);
+        font: inherit;
+        font-weight: 500;
+        text-transform: none;
+        white-space: nowrap;
+        cursor: pointer;
+        appearance: none;
+        transition: background-color 150ms ease;
+      }
+      .bumpline-modal__button:hover {
+        background: color-mix(in oklab, var(--bl-primary) 80%, transparent);
+      }
+      .bumpline-modal__button:active { transform: translateY(1px); }
+      .bumpline-modal__button:disabled {
+        opacity: .5;
+        pointer-events: none;
+      }
+      .bumpline-modal__button .bumpline-card__icon { margin-top: 0; }
+      .bumpline-modal__button--quiet {
+        border-color: var(--bl-border);
+        background: var(--bl-card);
+        color: var(--bl-ink);
+      }
+      .bumpline-modal__button--quiet:hover { background: var(--bl-muted); }
+      .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet) {
+        background: color-mix(in oklab, var(--bl-destructive) 10%, transparent);
+        color: var(--bl-destructive);
+      }
+      .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet):hover {
+        background: color-mix(in oklab, var(--bl-destructive) 20%, transparent);
+      }
+      @media (prefers-color-scheme: dark) {
+        .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet) {
+          background: color-mix(in oklab, var(--bl-destructive) 20%, transparent);
+        }
+        .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet):hover {
+          background: color-mix(in oklab, var(--bl-destructive) 30%, transparent);
+        }
+      }
+
+      /* focus-visible:ring-3 ring-ring/30, drawn as an outline as the popup
+         draws it, with the border taking the full colour. */
+      .bumpline-modal__button:focus-visible,
+      .bumpline-modal__picker:focus-visible {
+        outline: 3px solid color-mix(in oklab, var(--bl-primary) 30%, transparent);
+        outline-offset: 0;
+        border-color: var(--bl-primary);
+      }
+
+      @keyframes bumpline-veil-in {
+        from { opacity: 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bumpline-modal,
+        .bumpline-modal__panel { animation: none; }
+        .bumpline-modal__button { transition: none; }
       }
     `;
     document.head.appendChild(sheet);
@@ -1248,14 +1404,35 @@
     ],
   };
 
+  // Lucide heart, coffee, ruler and lightbulb, for the titles and buttons of
+  // the modals.
+  const MODAL_GLYPH = {
+    lightbulb: [
+      'M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5',
+      'M9 18h6',
+      'M10 22h4',
+    ],
+    heart: [
+      'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z',
+    ],
+    coffee: [
+      'M10 2v2',
+      'M14 2v2',
+      'M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1',
+      'M6 2v2',
+    ],
+    ruler: [
+      'M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z',
+      'm14.5 12.5 2-2',
+      'm11.5 9.5 2-2',
+      'm8.5 6.5 2-2',
+      'm17.5 15.5 2-2',
+    ],
+  };
+
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  // Empties a card, gives it its icon, and hands back the body to fill. One
-  // builder, so the three cards cannot drift apart.
-  function paintCard(node, place, tone, glyph) {
-    node.className = `bumpline-card bumpline-card--${tone} ${place}`;
-    node.textContent = '';
-
+  function glyphIcon(glyph) {
     const icon = document.createElementNS(SVG_NS, 'svg');
     icon.setAttribute('viewBox', '0 0 24 24');
     icon.setAttribute('aria-hidden', 'true');
@@ -1265,6 +1442,16 @@
       path.setAttribute('d', d);
       icon.appendChild(path);
     }
+    return icon;
+  }
+
+  // Empties a card, gives it its icon, and hands back the body to fill. One
+  // builder, so the three cards cannot drift apart.
+  function paintCard(node, place, tone, glyph) {
+    node.className = `bumpline-card bumpline-card--${tone} ${place}`;
+    node.textContent = '';
+
+    const icon = glyphIcon(glyph);
 
     const body = document.createElement('div');
     body.className = 'bumpline-card__body';
@@ -2020,49 +2207,189 @@
     return { ok: true, required: true };
   }
 
+  // The logo, drawn rather than loaded: an image from the extension would have
+  // to be listed in web_accessible_resources, which lets any page find out the
+  // extension is installed. Same shapes as icons/logo.svg.
+  function logoMark() {
+    const mark = document.createElementNS(SVG_NS, 'svg');
+    mark.setAttribute('viewBox', '0 0 128 128');
+    mark.setAttribute('aria-hidden', 'true');
+    mark.setAttribute('class', 'bumpline-modal__logo');
+    const shapes = [
+      { width: 128, height: 128, rx: 28, fill: '#007580' },
+      { x: 72, y: 88, width: 32, height: 16, rx: 8, fill: '#FBFBFB', opacity: '.35' },
+      { x: 48, y: 56, width: 56, height: 16, rx: 8, fill: '#FBFBFB', opacity: '.55' },
+      { x: 24, y: 24, width: 80, height: 16, rx: 8, fill: '#FBFBFB' },
+    ];
+    for (const attributes of shapes) {
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      for (const [name, value] of Object.entries(attributes)) rect.setAttribute(name, value);
+      mark.appendChild(rect);
+    }
+    return mark;
+  }
+
+  let modalCount = 0;
+
+  // The frame every question on the page is drawn in: the veil, the card, the
+  // name it comes from, and a title with its icon over the note. tone 'alert'
+  // turns it red. Escape answers with onCancel, as Escape closes the popup's
+  // own dialog; every cancel here is the answer that changes nothing. Hands
+  // back the panel, to add the rest to, and close, to call once answered.
+  function buildModal({ tone, glyph, title, body, onCancel }) {
+    const id = `bumpline-modal-${++modalCount}`;
+
+    const overlay = document.createElement('div');
+    overlay.className = tone ? `bumpline-modal bumpline-modal--${tone}` : 'bumpline-modal';
+
+    const panel = document.createElement('div');
+    panel.className = 'bumpline-modal__panel';
+    panel.setAttribute('role', tone === 'alert' ? 'alertdialog' : 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-labelledby', `${id}-title`);
+    panel.setAttribute('aria-describedby', `${id}-body`);
+
+    // On Vinted's page, the name is what says this box is not Vinted's.
+    const brand = document.createElement('div');
+    brand.className = 'bumpline-modal__brand';
+    brand.append(logoMark(), 'Bumpline');
+
+    const heading = document.createElement('div');
+    heading.className = 'bumpline-modal__title';
+    heading.id = `${id}-title`;
+    const words = document.createElement('span');
+    words.textContent = title;
+    heading.append(glyphIcon(glyph), words);
+
+    const text = document.createElement('div');
+    text.className = 'bumpline-modal__body';
+    text.id = `${id}-body`;
+    text.textContent = body;
+
+    panel.append(brand, heading, text);
+    overlay.appendChild(panel);
+
+    // Captured, and kept from Vinted's own handlers, so the Escape that closes
+    // this does not also close something of Vinted's underneath it.
+    const onKey = event => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      onCancel();
+    };
+    document.addEventListener('keydown', onKey, true);
+
+    const close = () => {
+      document.removeEventListener('keydown', onKey, true);
+      overlay.remove();
+    };
+
+    document.body.appendChild(overlay);
+    return { panel, close };
+  }
+
+  // The popup's .button, and with quiet its outline variant. Its own markup
+  // rather than Vinted's, which buildButton borrows for the buttons that sit
+  // among Vinted's own: inside the card it would be the one thing not in the
+  // popup's style.
+  function modalButton(label, { quiet = false, glyph = null } = {}) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = quiet
+      ? 'bumpline-modal__button bumpline-modal__button--quiet'
+      : 'bumpline-modal__button';
+    if (glyph) button.appendChild(glyphIcon(glyph));
+    const text = document.createElement('span');
+    text.textContent = label;
+    button.appendChild(text);
+    return button;
+  }
+
   // The panel askForSize uses, reduced to a yes and a no. A warning about the
   // account cannot be got past by not reading it: carrying on is a separate,
   // deliberate click, and the cancel is the button holding focus.
-  function askToContinue({ title, body, proceed, cancel }) {
+  function askToContinue({ title, body, proceed, cancel, tone, glyph, proceedGlyph }) {
     return new Promise(resolve => {
-      const overlay = document.createElement('div');
-      overlay.className = 'bumpline-modal';
-
-      const panel = document.createElement('div');
-      panel.className = 'bumpline-modal__panel';
-
-      const heading = document.createElement('div');
-      heading.className = 'bumpline-modal__title';
-      heading.textContent = title;
-
-      const text = document.createElement('div');
-      text.className = 'bumpline-modal__body';
-      text.textContent = body;
+      const answer = value => {
+        close();
+        resolve(value);
+      };
+      const { panel, close } = buildModal({
+        tone, glyph, title, body,
+        onCancel: () => answer(false),
+      });
 
       const actions = document.createElement('div');
       actions.className = 'bumpline-modal__actions';
 
-      const stop = buildButton(cancel);
+      const stop = modalButton(cancel, { quiet: true });
       stop.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
-        overlay.remove();
-        resolve(false);
+        answer(false);
       });
 
-      const go = buildButton(proceed);
+      const go = modalButton(proceed, { glyph: proceedGlyph });
       go.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
-        overlay.remove();
-        resolve(true);
+        answer(true);
       });
 
       actions.append(stop, go);
-      panel.append(heading, text, actions);
-      overlay.appendChild(panel);
-      document.body.appendChild(overlay);
+      panel.appendChild(actions);
       stop.focus();
+    });
+  }
+
+  // A modal with something to read and a single button to say it has been
+  // read. Escape is the same answer, there being no other.
+  function tell({ glyph, title, body, ok }) {
+    return new Promise(resolve => {
+      const answer = () => {
+        close();
+        resolve();
+      };
+      const { panel, close } = buildModal({ glyph, title, body, onCancel: answer });
+
+      const actions = document.createElement('div');
+      actions.className = 'bumpline-modal__actions';
+
+      const done = modalButton(ok);
+      done.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        answer();
+      });
+
+      actions.appendChild(done);
+      panel.appendChild(actions);
+      done.focus();
+    });
+  }
+
+  // Once, on the first plain relist: the draft button leaves the publish to
+  // the seller, on Vinted's own page, which is one automated write fewer for
+  // an account Vinted has already restricted once. The relist goes ahead
+  // either way; the advice is for next time. Closing it is the "don't show
+  // again", so it is written down before the modal goes up, not after: a page
+  // that reloads mid-relist would otherwise ask again.
+  async function adviseDraftOnce(button) {
+    try {
+      const bag = await ext.storage.local.get(DRAFT_TIP_KEY);
+      if (bag[DRAFT_TIP_KEY] === true) return;
+      await ext.storage.local.set({ [DRAFT_TIP_KEY]: true });
+    } catch (_) {
+      return;
+    }
+    setButtonLabel(button, T('button.waiting'));
+    await tell({
+      glyph: MODAL_GLYPH.lightbulb,
+      title: T('tip.draft.title'),
+      // Named as the button is named now: with the original kept online it is
+      // "Copy to drafts", and the advice holds for that one too.
+      body: T('tip.draft.body', draftWords().label),
+      ok: T('tip.draft.ok'),
     });
   }
 
@@ -2073,19 +2400,16 @@
   // costs, so the sentence explaining them is the caller's to choose.
   function askForSize(groups, title, why, bodyKey) {
     return new Promise(resolve => {
-      const overlay = document.createElement('div');
-      overlay.className = 'bumpline-modal';
-
-      const panel = document.createElement('div');
-      panel.className = 'bumpline-modal__panel';
-
-      const heading = document.createElement('div');
-      heading.className = 'bumpline-modal__title';
-      heading.textContent = T('size.title');
-
-      const body = document.createElement('div');
-      body.className = 'bumpline-modal__body';
-      body.textContent = T(bodyKey || 'size.body', title, why);
+      const answer = value => {
+        close();
+        resolve(value);
+      };
+      const { panel, close } = buildModal({
+        glyph: MODAL_GLYPH.ruler,
+        title: T('size.title'),
+        body: T(bodyKey || 'size.body', title, why),
+        onCancel: () => answer(null),
+      });
 
       const picker = document.createElement('select');
       picker.className = 'bumpline-modal__picker';
@@ -2109,27 +2433,29 @@
       const actions = document.createElement('div');
       actions.className = 'bumpline-modal__actions';
 
-      const cancel = buildButton(T('size.cancel'));
+      const cancel = modalButton(T('size.cancel'), { quiet: true });
       cancel.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
-        overlay.remove();
-        resolve(null);
+        answer(null);
       });
 
-      const accept = buildButton(T('size.accept'));
+      // Greyed out until a size is picked, rather than live and doing nothing
+      // when pressed.
+      const accept = modalButton(T('size.accept'));
+      accept.disabled = true;
+      picker.addEventListener('change', () => {
+        accept.disabled = !picker.value;
+      });
       accept.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
         if (!picker.value) return;
-        overlay.remove();
-        resolve(Number(picker.value));
+        answer(Number(picker.value));
       });
 
       actions.append(cancel, accept);
-      panel.append(heading, body, picker, actions);
-      overlay.appendChild(panel);
-      document.body.appendChild(overlay);
+      panel.append(picker, actions);
       picker.focus();
     });
   }
@@ -2254,13 +2580,64 @@
   // Ends a finished relist: reload, or take away the card of the listing that
   // no longer exists and say plainly that the rest of the page is stale.
   async function settle(itemId, message) {
+    await countRelist();
     if (await reloadWanted()) {
       toast(T('toast.reloading', message));
       setTimeout(() => location.reload(), 1200);
+      // Asked on the page that comes back, by attachButtons: one drawn here
+      // would be gone with the reload a second later.
       return;
     }
     dropCard(itemId);
     toast(T('toast.reloadToSee', message));
+    // The same moment's wait as after a reload, so the toast is read before
+    // the veil covers it.
+    pause(DONATE_DELAY_MS).then(offerDonation);
+  }
+
+  // Every relist that ends in settle(), which is every one that deleted an
+  // original and left its copy on Vinted. A copy saved with the original kept
+  // online is not a relist and is not counted. The count is kept apart from
+  // the relist log, which forgets anything older than a day. When it reaches
+  // a number that asks, the asking is written down rather than done here,
+  // because the page is usually about to reload.
+  async function countRelist() {
+    try {
+      const bag = await ext.storage.local.get(RELIST_COUNT_KEY);
+      const count = (Number(bag[RELIST_COUNT_KEY]) || 0) + 1;
+      const due = count >= DONATE_FIRST_AT && (count - DONATE_FIRST_AT) % DONATE_EVERY === 0;
+      await ext.storage.local.set({
+        [RELIST_COUNT_KEY]: count,
+        ...(due ? { [DONATE_DUE_KEY]: count } : {}),
+      });
+    } catch (err) {
+      trace('could not count the relist', err);
+    }
+  }
+
+  // Shows the request if one is waiting, and clears it before showing it, so
+  // a second tab on the same wardrobe does not ask again. Saying no costs
+  // nothing and is the button holding focus; saying yes opens Ko-fi in a tab
+  // of its own and leaves this page where it was.
+  async function offerDonation() {
+    let count;
+    try {
+      const bag = await ext.storage.local.get(DONATE_DUE_KEY);
+      count = bag[DONATE_DUE_KEY];
+      if (!count) return;
+      await ext.storage.local.remove(DONATE_DUE_KEY);
+    } catch (_) {
+      return;
+    }
+    const give = await askToContinue({
+      glyph: MODAL_GLYPH.heart,
+      title: T('donate.title', count),
+      body: T('donate.body'),
+      proceed: T('donate.proceed'),
+      proceedGlyph: MODAL_GLYPH.coffee,
+      cancel: T('donate.cancel'),
+    });
+    if (give) window.open(DONATE_URL, '_blank', 'noopener');
   }
 
   // ===========================================================================
@@ -2304,6 +2681,8 @@
         return;
       }
 
+      if (!draftOnly) await adviseDraftOnce(button);
+
       const pace = await paceProfile();
 
       const owed = await cooldownLeft();
@@ -2322,6 +2701,8 @@
       if (overDay || thisHour >= HOUR_ALARM_AT) {
         setButtonLabel(button, T('button.waiting'));
         const carryOn = await askToContinue({
+          tone: 'alert',
+          glyph: CARD_GLYPH.bad,
           title: overDay ? T('budget.title.day') : T('budget.title.hour'),
           body: overDay
             ? T('budget.body.day', today)
@@ -2603,7 +2984,21 @@
     paintAgeLabels();
     paintLock();
     rememberProfile();
-    if (added) trace('added buttons to', added, 'item(s)');
+    if (added) {
+      trace('added buttons to', added, 'item(s)');
+      offerDonationOnce();
+    }
+  }
+
+  let donationChecked = false;
+
+  // The page that comes back from a relist's reload. A moment's wait first, so
+  // the seller sees the listing back at the top before anything covers it.
+  async function offerDonationOnce() {
+    if (donationChecked) return;
+    donationChecked = true;
+    await pause(DONATE_DELAY_MS);
+    offerDonation();
   }
 
   // The URL of somebody else's wardrobe looks exactly like the URL of your own,

@@ -92,6 +92,19 @@ const BumplineText = (() => {
       'budget.proceed': 'Relist anyway',
       'budget.cancel': 'Stop for now',
 
+      // The donation request: after the fifth finished relist, then after every
+      // twenty-fifth. {0} is how many this browser has finished.
+      'donate.title': "You've relisted {0} items",
+      'donate.body': 'Bumpline is free, and keeping it working each time Vinted changes its site takes time. If it saves you some, a coffee on Ko-fi helps keep it free.',
+      'donate.proceed': 'Support on Ko-fi',
+      'donate.cancel': 'Not now',
+
+      // Shown once, on the first press of the Relist button. {0} is the draft
+      // button's name as it stands: Relist as draft, or Copy to drafts.
+      'tip.draft.title': 'Has Vinted suspended your account before?',
+      'tip.draft.body': 'If your account has been suspended or restricted in the past, we recommend using “{0}”. The copy waits in your Vinted drafts and you publish it yourself from Vinted, so there is one automated step fewer and a lower risk of another block. This relist goes ahead as usual.',
+      'tip.draft.ok': "OK, don't show this again",
+
       // What stops a relist, in Bumpline's own words. Vinted's words are never
       // in here: a refusal it sent is quoted as it arrived, in whatever
       // language it arrived in, and only the sentence around it is ours.
@@ -348,6 +361,15 @@ const BumplineText = (() => {
       'budget.proceed': 'Ripubblica comunque',
       'budget.cancel': 'Interrompi per ora',
 
+      'donate.title': 'Hai ripubblicato {0} articoli',
+      'donate.body': 'Bumpline è gratuito, e tenerlo funzionante ogni volta che Vinted cambia il suo sito richiede tempo. Se a te ne fa risparmiare, un caffè su Ko-fi aiuta a mantenerlo gratuito.',
+      'donate.proceed': 'Sostieni su Ko-fi',
+      'donate.cancel': 'Non ora',
+
+      'tip.draft.title': 'Vinted ti ha già sospeso l\'account?',
+      'tip.draft.body': 'Se in passato il tuo account è stato sospeso o limitato, ti consigliamo di usare «{0}». La copia resta nelle tue bozze di Vinted e la pubblichi tu da Vinted: così c\'è un passaggio automatico in meno e si riduce il rischio di un altro blocco. Questa ripubblicazione prosegue come sempre.',
+      'tip.draft.ok': 'Ok, non mostrare più',
+
       'relist.error.noPhoto': 'Nessuna foto è stata caricata. Non è stato eliminato nulla.',
       'relist.error.photosIncomplete': 'Caricate solo {0} foto su {1} ({2} non riuscite). Non è stato eliminato nulla, riprova tra un momento.',
       'relist.error.noTitle': 'L\'annuncio non ha un titolo. Non è stato eliminato nulla.',
@@ -527,6 +549,15 @@ const BumplineText = (() => {
       'budget.body.hour': '{0} articles ont été republiés depuis ce navigateur au cours de la dernière heure. C\'est ce que Vinted lit comme une activité automatisée, et ce qu\'il fait alors, c\'est empêcher le compte de modifier ou de publier quoi que ce soit pendant environ un jour. Rien n\'a encore été supprimé.',
       'budget.proceed': 'Republier quand même',
       'budget.cancel': 'Arrêter pour l\'instant',
+
+      'donate.title': 'Tu as republié {0} articles',
+      'donate.body': 'Bumpline est gratuit, et le faire fonctionner chaque fois que Vinted change son site prend du temps. S\'il t\'en fait gagner, un café sur Ko-fi aide à le garder gratuit.',
+      'donate.proceed': 'Soutenir sur Ko-fi',
+      'donate.cancel': 'Pas maintenant',
+
+      'tip.draft.title': 'Vinted a déjà suspendu ton compte ?',
+      'tip.draft.body': 'Si ton compte a déjà été suspendu ou restreint, nous te conseillons d\'utiliser « {0} ». La copie attend dans tes brouillons Vinted et c\'est toi qui la publies depuis Vinted : il y a ainsi une étape automatique en moins, et le risque d\'un nouveau blocage diminue. Cette republication continue comme d\'habitude.',
+      'tip.draft.ok': 'OK, ne plus afficher',
 
       'relist.error.noPhoto': 'Aucune photo n\'a pu être envoyée. Rien n\'a été supprimé.',
       'relist.error.photosIncomplete': 'Seulement {0} photos sur {1} ont été envoyées ({2} en échec). Rien n\'a été supprimé, réessaie dans un instant.',
