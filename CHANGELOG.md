@@ -5,6 +5,48 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2026-10-23
+
+Bumpline can be supported on Ko-fi now: from a button in the panel, from a
+request on the wardrobe page after the fifth relist and every twenty-fifth after
+it, and from the README. The dialogs on the wardrobe page are drawn in the
+panel's style, and the first press of Relist suggests the draft button to
+sellers Vinted has suspended before. Relisting itself works as it did.
+
+### Added
+
+- **A Ko-fi button in the panel.** *Support Bumpline on Ko-fi*, above the
+  footer, opens `https://ko-fi.com/bumpline` in a new tab. It stays with the
+  footer when the switch is off.
+- **A request on the wardrobe page.** After the 5th finished relist, then the
+  30th, the 55th and so on, a dialog says how many items this browser has
+  relisted and asks for a coffee on Ko-fi. *Not now* holds the focus; the other
+  button opens Ko-fi in a new tab. After a relist that reloads the page, it
+  comes up on the page that comes back, a second and a half in; with *Reload
+  the page* off, on the same page, after the toast. A copy saved with *Keep the
+  original online* is not counted. The count starts at zero with this version.
+- **A tip on the first press of Relist.** Once, before the relist starts: a
+  seller whose account Vinted has suspended or restricted before is advised to
+  use *Relist as draft*, or *Copy to drafts* when that is its name, where the
+  seller publishes the copy from Vinted, one automated step fewer. *OK, don't
+  show this again* closes it, and the relist goes ahead.
+- **Ko-fi on GitHub.** A badge and Ko-fi's button in the README, and
+  `.github/FUNDING.yml` for the repository's Sponsor button.
+
+### Changed
+
+- **The wardrobe page's dialogs look like the panel's.** The budget warning,
+  the size picker and the two new dialogs are the panel's card: its colours in
+  both schemes, its corners, a title with its icon over a muted note, and the
+  buttons stacked full width with the safe one first. The budget warning is
+  red, as the panel's warnings are. The page behind is blurred under a veil
+  rather than blacked out, the logo and the name at the top say the box is
+  Bumpline's and not Vinted's, and Escape gives the safe answer. The size
+  picker's confirm button stays greyed out until a size is picked.
+- **The privacy policy describes the Ko-fi links and the relist count.** The
+  count is a single number in extension storage, and Ko-fi opens only on a
+  click.
+
 ## [1.1.5] - 2026-10-21
 
 Relisting works again on Chrome. Vinted moved its newer photos to a server that
@@ -855,6 +897,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.6]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.6
 [1.1.5]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.5
 [1.1.4]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.4
 [1.1.3]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.3
