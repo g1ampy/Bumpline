@@ -1,0 +1,38 @@
+[
+  {
+    "in": "photo failed https://images1.vinted.net/t/03_00abc/f800/1793117.jpeg?s=abc TypeError: Failed to fetch",
+    "out": "photo failed [link] TypeError: Failed to fetch"
+  },
+  {
+    "in": "relist still pending for item 4829301123 Error: Vinted refused the publish (422)",
+    "out": "relist still pending for item [id] Error: Vinted refused the publish (422)"
+  },
+  {
+    "in": "bridge timeout, falling back POST www.vinted.it/api/v2/item_upload/items",
+    "out": "bridge timeout, falling back POST [link]"
+  },
+  {
+    "in": "csrf eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.abc123def456 stored",
+    "out": "csrf [token] stored"
+  },
+  {
+    "in": "x-csrf-token 75f6c9fa-dc8e-4e52-a000-e09dd4084b3e",
+    "out": "x-csrf-token [token]"
+  },
+  {
+    "in": "write to seller.name@example.com please",
+    "out": "write to [email] please"
+  },
+  {
+    "in": "12:04:12 added buttons to 24 item(s)",
+    "out": "12:04:12 added buttons to 24 item(s)"
+  },
+  {
+    "in": "wardrobe page failed 3 Error: 429 Too Many Requests on vinted.it",
+    "out": "wardrobe page failed 3 Error: 429 Too Many Requests on vinted.it"
+  },
+  {
+    "in": "Perché è fallito? 🙁 articolo 98765",
+    "out": "Perché è fallito? 🙁 articolo [id]"
+  }
+]
