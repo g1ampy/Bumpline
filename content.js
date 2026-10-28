@@ -155,7 +155,16 @@
   const DONATE_EVERY = 25;
   const DONATE_DELAY_MS = 1500;
 
-  const trace =(...parts) => console.debug('[Bumpline]', ...parts);
+  // Every line also goes to the log a bug report can carry (diagnostics.js),
+  // cleaned before it is stored.
+  const trace = (...parts) => {
+    console.debug('[Bumpline]', ...parts);
+    BumplineLog.record(ext.storage.local, parts);
+  };
+  const logError = (...parts) => {
+    console.error('[Bumpline]', ...parts);
+    BumplineLog.record(ext.storage.local, parts);
+  };
   const pause = ms => new Promise(done => setTimeout(done, ms));
 
   const randomUuid = () =>
@@ -2086,7 +2095,7 @@
       }
       return newId;
     } catch (err) {
-      console.error('[Bumpline] relist still pending for item', itemId, err);
+      logError('relist still pending for item', itemId, err);
       record.attempts = (record.attempts || 0) + 1;
       // This is written to storage.local and read back on a later page load, so
       // what goes in is the code and its arguments rather than the finished
@@ -2909,7 +2918,7 @@
       // On failure advancePending has already stored the record and raised the
       // banner, and the next page load will try again.
     } catch (err) {
-      console.error('[Bumpline]', err);
+      logError(err);
       toast(T('toast.relistStopped', (err && err.message) || err), 'bad');
     } finally {
       button.disabled = false;
@@ -2986,6 +2995,7 @@
     rememberProfile();
     if (added) {
       trace('added buttons to', added, 'item(s)');
+      rememberSite();
       offerDonationOnce();
     }
   }
@@ -3017,6 +3027,19 @@
   // their member id. Leaving a note here means it can offer to open the right
   // profile page from any tab. Only a wardrobe of your own is worth recording:
   // that is the only page where buttons appear.
+  // The uninstall address tells the goodbye page which Vinted site was used
+  // last, after the # (see background.js). Written only when it changes.
+  function rememberSite() {
+    const site = BumplineLog.siteOf(location.hostname);
+    if (!site) return;
+    Promise.resolve(ext.storage.local.get(BumplineLog.LAST_SITE_KEY))
+      .then(bag => {
+        if (bag[BumplineLog.LAST_SITE_KEY] === site) return undefined;
+        return ext.storage.local.set({ [BumplineLog.LAST_SITE_KEY]: site });
+      })
+      .catch(err => trace('could not remember the site', err));
+  }
+
   function rememberProfile() {
     if (!document.querySelector(SELECTOR.ourButton)) return;
     // The call sits inside the then rather than in front of it, the same way

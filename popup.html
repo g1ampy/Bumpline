@@ -290,7 +290,10 @@
 
 <footer class="foot">
   <a class="foot__link" href="https://bumpline.giampy.tech/en/#how" data-site="#how" target="_blank" rel="noreferrer" data-i18n="footer.howItWorks">How it works</a>
-  <a class="foot__link" href="https://github.com/g1ampy/Bumpline/issues" target="_blank" rel="noreferrer" data-i18n="footer.reportProblem">Report a problem</a>
+  <!-- The website's report form, which needs no GitHub account. popup.js
+       fills in the language, the version, this tab's Vinted site and the log;
+       this address is what a panel whose script never ran still offers. -->
+  <a class="foot__link" id="report" href="https://bumpline.giampy.tech/en/report/" target="_blank" rel="noreferrer" data-i18n="footer.reportProblem">Report a problem</a>
   <!-- The version is the question "what changed?" as often as it is the answer
        to "which one do I have?", so it leads to the changelog: the top of it,
        where the newest version is. GitHub builds each section's anchor from
@@ -320,4 +323,6 @@
 <!-- The notices' rules, shared with the background. After store.js, which it
      asks which browser this is. -->
 <script src="broadcast.js"></script>
+<!-- The extension's own log, which the report link carries. -->
+<script src="diagnostics.js"></script>
 <script src="popup.js"></script>

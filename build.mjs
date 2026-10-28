@@ -46,6 +46,8 @@ const PAYLOAD = [
   'store.js',
   // The website's notices, read by the panel and the background.
   'broadcast.js',
+  // The extension's own log, for reports, read by all three of the above.
+  'diagnostics.js',
   // Every language, and the two keys only the manifest can localise. Neither
   // is named in a manifest key the packer follows, so an unlisted file would
   // not ship and the extension would load without a word in it.
@@ -95,7 +97,7 @@ const TARGETS = {
     // order of this array is the whole loading mechanism: background.js paints
     // the toolbar tooltip and the notices' badge on the way up, and needs
     // BumplineText, BumplineStore and BumplineBroadcast to already be there.
-    out.background = { scripts: ['strings.js', 'store.js', 'broadcast.js', 'background.js'] };
+    out.background = { scripts: ['strings.js', 'store.js', 'broadcast.js', 'diagnostics.js', 'background.js'] };
 
     out.browser_specific_settings = {
       gecko: {

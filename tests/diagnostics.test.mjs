@@ -76,36 +76,86 @@ describe('siteOf', () => {
   });
 });
 
+// Everything rides after the #, which the browser keeps to itself: opening
+// either page sends the website nothing about the add-on. The page reads the
+// fragment, and it reaches anyone only if the seller sends the form.
 describe('reportUrl', () => {
   const SITE = 'https://bumpline.giampy.tech';
 
   it('falls back to English, and leaves out what it does not know', () => {
     assert.equal(
       L.reportUrl(SITE, { lang: 'de', version: '1.1.7', site: null, lines: [] }),
-      `${SITE}/en/report/?from=popup&v=1.1.7`,
+      `${SITE}/en/report/#from=popup&v=1.1.7`,
     );
   });
 
-  it('carries the site and the log, the log after the #', () => {
+  it('carries the site and the log, all after the #', () => {
     const url = new URL(L.reportUrl(SITE, {
       lang: 'it', version: '1.1.7', site: 'vinted.it', lines: ['12:04:31 boom'],
     }));
     assert.equal(url.pathname, '/it/report/');
-    assert.equal(url.searchParams.get('site'), 'vinted.it');
-    assert.deepEqual(decode(url.hash.slice('#log='.length)), ['12:04:31 boom']);
+    assert.equal(url.search, '');
+    const fragment = new URLSearchParams(url.hash.slice(1));
+    assert.equal(fragment.get('from'), 'popup');
+    assert.equal(fragment.get('v'), '1.1.7');
+    assert.equal(fragment.get('site'), 'vinted.it');
+    assert.deepEqual(decode(fragment.get('log')), ['12:04:31 boom']);
   });
 });
 
 describe('goodbyeUrl', () => {
-  it('tells the goodbye page the version and, when known, the site', () => {
+  it('tells the goodbye page the version and, when known, the site, after the #', () => {
     assert.equal(
       L.goodbyeUrl('https://bumpline.giampy.tech', '1.1.7', 'vinted.it'),
-      'https://bumpline.giampy.tech/goodbye/?v=1.1.7&site=vinted.it',
+      'https://bumpline.giampy.tech/goodbye/#v=1.1.7&site=vinted.it',
     );
     assert.equal(
       L.goodbyeUrl('https://bumpline.giampy.tech', '1.1.7', null),
-      'https://bumpline.giampy.tech/goodbye/?v=1.1.7',
+      'https://bumpline.giampy.tech/goodbye/#v=1.1.7',
     );
+  });
+
+  it('stays within the 1023 characters Chrome allows an uninstall address', () => {
+    assert.ok(L.goodbyeUrl('https://bumpline.giampy.tech', '1.1.7', 'vinted.com.au').length < 1023);
+  });
+});
+
+// Each script loads diagnostics.js before using it, in every place the
+// extension is put together.
+describe('loading', () => {
+  const read = name => readFileSync(new URL(`../${name}`, import.meta.url), 'utf8');
+
+  it('comes before content.js in the content script', () => {
+    const [script] = JSON.parse(read('manifest.json')).content_scripts;
+    assert.ok(script.js.indexOf('diagnostics.js') > -1);
+    assert.ok(script.js.indexOf('diagnostics.js') < script.js.indexOf('content.js'));
+  });
+
+  it('comes before background.js on Chrome and on Firefox', () => {
+    assert.match(read('background.js'), /importScripts\([^)]*'diagnostics\.js'/);
+    assert.match(read('build.mjs'), /'diagnostics\.js', 'background\.js'/);
+  });
+
+  it('leaves every script it was wired into parseable', () => {
+    for (const name of ['background.js', 'content.js', 'popup.js', 'diagnostics.js']) {
+      assert.doesNotThrow(() => new Function(read(name)), name);
+    }
+  });
+
+  it('ships in the package and loads before popup.js', () => {
+    assert.match(read('build.mjs'), /^\s*'diagnostics\.js',$/m);
+    const popup = read('popup.html');
+    assert.ok(popup.indexOf('src="diagnostics.js"') > -1);
+    assert.ok(popup.indexOf('src="diagnostics.js"') < popup.indexOf('src="popup.js"'));
+  });
+});
+
+describe('record, from many places at once', () => {
+  it('keeps every line written by one script, however close together', async () => {
+    const storage = memoryStorage();
+    await Promise.all([L.record(storage, ['one']), L.record(storage, ['two']), L.record(storage, ['three'])]);
+    const lines = await L.read(storage);
+    assert.deepEqual(lines.map(line => line.slice(9)), ['one', 'two', 'three']);
   });
 });
 

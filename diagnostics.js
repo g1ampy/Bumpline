@@ -30,6 +30,8 @@
 
 const BumplineLog = (() => {
   const KEY = 'bumpline.log';
+  // The last Vinted site the content script ran on, for the goodbye page.
+  const LAST_SITE_KEY = 'bumpline.lastSite';
   const MAX_LINES = 200;
   const MAX_BYTES = 16 * 1024;
   const OBJECT_MAX = 300;
@@ -92,18 +94,28 @@ const BumplineLog = (() => {
     return match ? match[1] : null;
   }
 
+  // Everything goes after the #, which the browser never sends to a server:
+  // opening the page tells the website nothing about the add-on. Firefox
+  // counts the version and the like as technical data, which may only leave
+  // with the user's consent, and here that consent is the seller pressing the
+  // form's send button. The page reads the fragment and sends it only then.
+  function fragment(entries) {
+    return entries
+      .filter(([, value]) => value)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&');
+  }
+
   function reportUrl(base, { lang, version, site, lines }) {
     const language = LANGS.includes(lang) ? lang : 'en';
-    let url = `${base}/${language}/report/?from=popup&v=${encodeURIComponent(version)}`;
-    if (site) url += `&site=${encodeURIComponent(site)}`;
-    if (lines && lines.length) url += `#log=${encode(lines)}`;
-    return url;
+    const log = lines && lines.length ? encode(lines) : '';
+    return `${base}/${language}/report/#${fragment([
+      ['from', 'popup'], ['v', version], ['site', site], ['log', log],
+    ])}`;
   }
 
   function goodbyeUrl(base, version, site) {
-    let url = `${base}/goodbye/?v=${encodeURIComponent(version)}`;
-    if (site) url += `&site=${encodeURIComponent(site)}`;
-    return url;
+    return `${base}/goodbye/#${fragment([['v', version], ['site', site]])}`;
   }
 
   async function read(storage) {
@@ -115,18 +127,28 @@ const BumplineLog = (() => {
     }
   }
 
+  // Each write reads the log, adds a line and writes it back, so two writes
+  // from the same script would lose one of the lines if they overlapped: they
+  // wait their turn. Another tab writing at the same moment can still cost a
+  // line, which a log for bug reports can afford.
+  let queue = Promise.resolve();
+
   // A log that cannot be written is not worth breaking a relist over.
-  async function record(storage, parts) {
-    try {
-      const lines = append(await read(storage), format(parts));
-      await storage.set({ [KEY]: lines });
-    } catch (_) {
-      // Nothing to do: the console still has the line.
-    }
+  function record(storage, parts) {
+    // The time is taken now, not when the line's turn comes.
+    const line = format(parts);
+    queue = queue.then(async () => {
+      try {
+        await storage.set({ [KEY]: append(await read(storage), line) });
+      } catch (_) {
+        // Nothing to do: the console still has the line.
+      }
+    });
+    return queue;
   }
 
   return {
-    KEY, MAX_LINES, MAX_BYTES,
+    KEY, LAST_SITE_KEY, MAX_LINES, MAX_BYTES,
     clean, format, append, encode, siteOf, reportUrl, goodbyeUrl, record, read,
   };
 })();

@@ -31,12 +31,19 @@
 // manifest lists the three ahead of this file — build.mjs writes that array —
 // and importScripts does not exist at all. Asking which of the two this is
 // covers both without either needing to know about the other.
-if (typeof importScripts === 'function') importScripts('strings.js', 'store.js', 'broadcast.js');
+if (typeof importScripts === 'function') importScripts('strings.js', 'store.js', 'broadcast.js', 'diagnostics.js');
 
 // Firefox answers to `browser` and only that namespace returns promises there;
 // Chrome answers to `chrome`. One alias, and the rest of the file is written
 // once for both.
 const ext = globalThis.browser ?? globalThis.chrome;
+
+// Every line also goes to the log a bug report can carry (diagnostics.js),
+// cleaned before it is stored.
+const note = (...parts) => {
+  console.debug('[Bumpline]', ...parts);
+  BumplineLog.record(ext.storage.local, parts);
+};
 
 const TOKEN_KEYS = { csrf: 'bumpline.csrf', anon: 'bumpline.anon' };
 
@@ -90,7 +97,7 @@ ext.webRequest.onBeforeSendHeaders.addListener(
     try {
       noteTokens(details.requestHeaders);
     } catch (err) {
-      console.debug('[Bumpline] could not read request headers', err);
+      note('could not read request headers', err);
     }
   },
   { urls: API_URL_FILTERS },
@@ -218,12 +225,12 @@ function paintIcon(colour, tabId) {
   const where = tabId == null ? {} : { tabId };
   try {
     Promise.resolve(action.setIcon({ ...where, path: colour ? ACTION_ICONS.on : ACTION_ICONS.off }))
-      .catch(err => console.debug('[Bumpline] could not set the icon', err));
+      .catch(err => note('could not set the icon', err));
     Promise.resolve(action.setTitle({ ...where, title: titleFor(colour) }))
-      .catch(err => console.debug('[Bumpline] could not set the title', err));
+      .catch(err => note('could not set the title', err));
   } catch (err) {
     // An older browser without these methods keeps the manifest's icon.
-    console.debug('[Bumpline] this browser has no action icon to set', err);
+    note('this browser has no action icon to set', err);
   }
 }
 
@@ -247,7 +254,7 @@ async function paintActiveTab() {
     const [tab] = await ext.tabs.query({ active: true, lastFocusedWindow: true });
     if (tab) paintTab(tab.id, tab.url);
   } catch (err) {
-    console.debug('[Bumpline] could not read the active tab', err);
+    note('could not read the active tab', err);
   }
 }
 
@@ -266,7 +273,7 @@ function checkBroadcast() {
     set: values => ext.storage.local.set(values),
     now: Date.now,
   }).catch(err => {
-    console.debug('[Bumpline] could not check the notices', err);
+    note('could not check the notices', err);
     return false;
   });
 }
@@ -288,11 +295,11 @@ async function paintBadge() {
       const shown = BumplineBroadcast.eligible(bag[NOTICES_KEY], BumplineBroadcast.here(bag[DISMISSED_KEY]));
       level = BumplineBroadcast.badgeFor(shown);
     } catch (err) {
-      console.debug('[Bumpline] could not read the notices', err);
+      note('could not read the notices', err);
     }
   }
 
-  const said = err => console.debug('[Bumpline] could not set the badge', err);
+  const said = err => note('could not set the badge', err);
   try {
     Promise.resolve(action.setBadgeText({ text: level ? '!' : '' })).catch(said);
     if (level) {
@@ -399,11 +406,25 @@ ext.runtime.onInstalled.addListener(details => {
 
 // The browser opens this address once the extension has been removed: the one
 // moment a seller who gave up on it can still say why. The page sends nothing
-// by itself. What the seller writes becomes a GitHub issue they read before
-// posting it. The address carries no version number either, because Firefox
-// counts facts about the add-on as technical data, which may only be collected
-// with the user's consent, and a seller who is leaving can type it if it
-// matters. Set on every wake rather than once: the call is cheap, and the
-// address is then right however the worker came up.
-Promise.resolve(ext.runtime.setUninstallURL(SITE + '/goodbye/'))
-  .catch(err => console.debug('[Bumpline] could not set the uninstall page', err));
+// by itself; what the seller writes becomes a public GitHub issue only when
+// they send the form. The version and the last Vinted site used ride after
+// the #, which the browser keeps to itself: Firefox counts facts about the
+// add-on as technical data, which may only be collected with the user's
+// consent, so opening the page must tell the website nothing, and the form
+// sends them only with the seller's report. Set on every wake rather than
+// once, and again when the site changes: the call is cheap, and the address
+// is then right however the worker came up.
+function setGoodbye(site) {
+  const url = BumplineLog.goodbyeUrl(SITE, ext.runtime.getManifest().version, site || null);
+  Promise.resolve(ext.runtime.setUninstallURL(url))
+    .catch(err => note('could not set the uninstall page', err));
+}
+
+Promise.resolve(ext.storage.local.get(BumplineLog.LAST_SITE_KEY))
+  .then(bag => setGoodbye(bag && bag[BumplineLog.LAST_SITE_KEY]))
+  .catch(() => setGoodbye(null));
+
+ext.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local' || !changes || !(BumplineLog.LAST_SITE_KEY in changes)) return;
+  setGoodbye(changes[BumplineLog.LAST_SITE_KEY].newValue);
+});
