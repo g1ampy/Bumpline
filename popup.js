@@ -749,6 +749,18 @@ const SETTING_DEFAULTS = {
   keepOriginal: false,
 };
 
+// Moves a switch from script. md-switch draws the checkbox inside it from the
+// checked attribute, and an attribute stops governing a checkbox the moment
+// somebody clicks it. So setting `selected` alone after a click moves the
+// switch on screen and leaves the checkbox under it where the click put it:
+// the next click only brings the two back into step and does nothing else,
+// which is a switch that takes two clicks. The checkbox is set with it.
+function setSwitch(box, on) {
+  box.selected = on;
+  const input = box.shadowRoot && box.shadowRoot.querySelector('input');
+  if (input) input.checked = on;
+}
+
 // Writes the value and keeps the checkbox honest: if the write fails the box
 // goes back where it was rather than showing a setting that is not stored.
 //
@@ -758,7 +770,7 @@ async function commit(box, key, value) {
   try {
     await ext.storage.local.set({ [key]: value });
   } catch (_) {
-    box.selected = !box.selected;
+    setSwitch(box, !box.selected);
   }
 }
 
@@ -766,7 +778,7 @@ async function commit(box, key, value) {
 // actually survived the write, which is not the clicked one if it failed.
 function wireToggle(id, key, on, after, valueOf = checked => checked) {
   const box = document.getElementById(id);
-  box.selected = on;
+  setSwitch(box, on);
   box.addEventListener('change', async () => {
     await commit(box, key, valueOf(box.selected));
     after(box.selected);
@@ -785,7 +797,7 @@ function wireToggle(id, key, on, after, valueOf = checked => checked) {
 // when wireSettings ran and the panel might since have changed language.
 function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => checked) {
   const box = document.getElementById(id);
-  box.selected = on;
+  setSwitch(box, on);
   box.addEventListener('change', async () => {
     const wanted = box.selected;
     if (wanted !== risky) {
@@ -793,10 +805,10 @@ function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => ch
       after(box.selected);
       return;
     }
-    box.selected = !risky;
+    setSwitch(box, !risky);
     const agreed = await askRisk(warning());
     if (!agreed) return;
-    box.selected = risky;
+    setSwitch(box, risky);
     await commit(box, key, valueOf(risky));
     after(box.selected);
   });
@@ -987,7 +999,7 @@ function wirePower(stored, tab, repaint, notePage) {
   const word = document.getElementById('power-state');
 
   const paint = () => {
-    box.selected = stored.enabled;
+    setSwitch(box, stored.enabled);
     word.textContent = BumplineText.t(stored.enabled ? 'popup.power.on' : 'popup.power.off');
   };
   paint();
@@ -1003,7 +1015,7 @@ function wirePower(stored, tab, repaint, notePage) {
       await ext.storage.local.set({ [ENABLED_KEY]: wanted });
     } catch (_) {
       // Nothing was stored, so nothing changed on any page either.
-      box.selected = !wanted;
+      setSwitch(box, !wanted);
       return;
     }
     stored.enabled = wanted;
