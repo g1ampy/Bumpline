@@ -11,7 +11,9 @@ A problem can be reported without a GitHub account now. *Report a problem* in
 the panel opens a form on Bumpline's website with the extension's version, the
 Vinted site you are on and the extension's own error log already attached,
 cleaned of links, item numbers, emails and access tokens. Nothing leaves the
-browser until the form is sent. Relisting itself works as it did.
+browser until the form is sent. The panel, and the cards and dialogs on the
+wardrobe page, are redrawn in Material 3 and set in Roboto Flex. Relisting
+itself works as it did.
 
 ### Added
 
@@ -32,6 +34,22 @@ browser until the form is sent. Relisting itself works as it did.
 
 ### Changed
 
+- **The panel is drawn in Material 3.** The toolbar panel is rebuilt on
+  Material Web: the switches, the warning dialog, the language menu, the
+  volume bar and the buttons are Material components, and the colours are
+  Material 3's, generated from the logo's teal. In the dark scheme the alerts
+  sit on a muted red or amber rather than a saturated block. The language menu
+  fades out when it closes, and the panel changes language once it has gone.
+  The typeface is Roboto Flex in place of Inter, shipped with the extension
+  like Inter was.
+- **The wardrobe page's cards and dialogs follow the panel.** The toast, the
+  stuck-relist card, the budget warning, the size picker, the draft tip and the
+  Ko-fi request take the panel's Material colours, corners and typeface, with
+  Material Symbols for icons. In a dialog the answers sit side by side on the
+  right, and in the budget warning the safe one is the tonal button holding
+  the focus, as in the panel's own warning. The page behind is dimmed instead
+  of blurred. The typeface comes out of the extension's package, so nothing is
+  downloaded for it and no page can ask for the file.
 - **The goodbye page knows the version and the last site.** The uninstall
   address carries them after the `#`, so the goodbye form can include them
   without asking, and only if it is sent.
