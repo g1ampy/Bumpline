@@ -1,0 +1,17 @@
+{
+  "name": "bumpline-material-tools",
+  "private": true,
+  "description": "Regenerates vendor/material.js, icons.js and the Google Sans Flex subsets. Not part of the extension.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "theme": "node build.mjs --theme"
+  },
+  "devDependencies": {
+    "@fontsource-variable/google-sans-flex": "5.3.2",
+    "@material-symbols/svg-400": "0.48.2",
+    "@material/material-color-utilities": "0.4.0",
+    "@material/web": "2.5.0",
+    "esbuild": "0.28.2"
+  }
+}

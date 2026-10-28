@@ -42,21 +42,41 @@ const VINTED_HOST = /(^|\.)vinted\.[a-z]{2,3}(\.[a-z]{2})?$/i;
 // disagrees with the catalogue the first time somebody forgets it.
 const LANGS = ['auto', ...Object.keys(BumplineText.CATALOG)];
 
-// Lucide paths. Stroke, width and colour come from the .icon rule, so the two
-// glyphs stay the same weight as each other.
+// Material Symbols, by name, out of icons.js. md-icon sizes the <svg> and
+// fills it with currentColor, so every glyph takes the ink of what it sits in.
 const GLYPH = {
-  ready: ['M22 11.1V12a10 10 0 1 1-5.93-9.14', 'm9 11 3 3L22 4'],
-  elsewhere: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z', 'M12 16v-4', 'M12 8h.01'],
+  ready: 'check_circle',
+  elsewhere: 'info',
 };
 
-function draw(svg, paths) {
-  svg.textContent = '';
-  for (const d of paths) {
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', d);
-    svg.appendChild(path);
-  }
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function draw(icon, name) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 -960 960 960');
+  svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', BumplineIcons[name] || '');
+  svg.append(path);
+  icon.replaceChildren(svg);
+  icon.dataset.icon = name;
 }
+
+function mdIcon(name) {
+  const icon = document.createElement('md-icon');
+  draw(icon, name);
+  return icon;
+}
+
+// The markup names its icons rather than carrying their path data, so a glyph
+// lives in one place: icons.js.
+function drawIcons(root = document) {
+  for (const icon of root.querySelectorAll('md-icon[data-icon]')) draw(icon, icon.dataset.icon);
+}
+
+// The element the panel is drawn in: the body in the extension, a box of its
+// own when the same markup is mounted inside another page.
+const panelOf = () => document.querySelector('.panel') || document.body;
 
 // The url is only handed over for tabs the extension holds a host permission
 // for, which is exactly the Vinted domains. Anywhere else it is undefined, and
@@ -545,8 +565,7 @@ function renderVolume({ relists, cooldown }) {
   // that is the one that will stop the next relist. The sentence under it says
   // where the warning sits, because a bar on its own is not a number.
   const share = Math.max(thisHour / HOUR_ALARM_AT, today / DAY_ALARM_AT);
-  document.getElementById('volume-fill').style.width =
-    `${Math.min(100, Math.round(share * 100))}%`;
+  document.getElementById('volume-meter').value = Math.min(1, share);
 
   const owed = cooldown && today
     ? Math.max(0, HARD_COOLDOWN_MS - (Date.now() - Math.max(...relists)))
@@ -581,23 +600,13 @@ function renderVolume({ relists, cooldown }) {
 
 // --- the website's notices --------------------------------------------------
 
-// Lucide again: circle-info for news, circle-alert for attention, and for a
-// warning the same triangle the unfinished-relist card carries.
+// info for news, error for attention, and for a warning the same triangle the
+// unfinished-relist card carries.
 const NEWS_GLYPH = {
-  info: GLYPH.elsewhere,
-  attention: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z', 'M12 8v4', 'M12 16h.01'],
-  warning: ['M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z'],
+  info: 'info',
+  attention: 'error',
+  warning: 'warning',
 };
-const CLOSE_GLYPH = ['M18 6 6 18', 'm6 6 12 12'];
-
-function glyph(paths) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'icon');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  draw(svg, paths);
-  return svg;
-}
 
 // The words come from a file on the website, so every one of them goes in as
 // text: whatever a notice holds, the seller reads the characters it was
@@ -612,10 +621,10 @@ function newsItem(notice, stored) {
   const words = document.createElement('div');
   words.className = 'news__words';
   const title = document.createElement('strong');
-  title.className = 'news__title';
+  title.className = 'news__title md-typescale-title-small';
   title.textContent = notice.title;
   const body = document.createElement('span');
-  body.className = 'news__body';
+  body.className = 'news__body md-typescale-body-medium';
   body.textContent = notice.body;
   words.append(title, body);
 
@@ -630,14 +639,13 @@ function newsItem(notice, stored) {
     words.append(link);
   }
 
-  const close = document.createElement('button');
-  close.type = 'button';
+  const close = document.createElement('md-icon-button');
   close.className = 'news__close';
   close.setAttribute('aria-label', BumplineText.t('popup.news.close'));
-  close.append(glyph(CLOSE_GLYPH));
+  close.append(mdIcon('close'));
   close.addEventListener('click', () => dismissNews(notice.id, stored));
 
-  item.append(glyph(NEWS_GLYPH[notice.level] || NEWS_GLYPH.info), words, close);
+  item.append(mdIcon(NEWS_GLYPH[notice.level] || NEWS_GLYPH.info), words, close);
   return item;
 }
 
@@ -696,26 +704,25 @@ function askRisk({ title, detail, accept, cancel }) {
       yes.removeEventListener('click', onYes);
       no.removeEventListener('click', onNo);
       modal.removeEventListener('close', onClose);
-      if (modal.open) modal.close();
+      if (modal.open) modal.close(agreed ? 'accept' : 'cancel');
       closeGate = null;
       resolve(agreed);
     };
     const onYes = () => finish(true);
     const onNo = () => finish(false);
-    // Escape closes a modal dialog without either button being pressed. That is
-    // a no, and it has to be answered as one or the setting waits forever.
+    // Escape and a click on the scrim close md-dialog without either button
+    // being pressed. That is a no, and it has to be answered as one or the
+    // setting waits forever.
     const onClose = () => finish(false);
 
     yes.addEventListener('click', onYes);
     no.addEventListener('click', onNo);
     modal.addEventListener('close', onClose);
     closeGate = finish;
-    // showModal throws on a dialog that is already open; the gate closed above
-    // makes that impossible, and the guard says so.
-    if (!modal.open) modal.showModal();
-    // The safe answer takes the focus, so Enter on a warning nobody read keeps
-    // the setting where it was.
-    no.focus();
+    // The safe answer carries autofocus in the markup, so md-dialog hands it the
+    // focus as it opens: Enter on a warning nobody read keeps the setting where
+    // it was.
+    if (!modal.open) modal.show();
   });
 }
 
@@ -744,11 +751,14 @@ const SETTING_DEFAULTS = {
 
 // Writes the value and keeps the checkbox honest: if the write fails the box
 // goes back where it was rather than showing a setting that is not stored.
+//
+// The boxes are md-switch elements, whose state is `selected` rather than a
+// checkbox's `checked`; they fire `change` the same way.
 async function commit(box, key, value) {
   try {
     await ext.storage.local.set({ [key]: value });
   } catch (_) {
-    box.checked = !box.checked;
+    box.selected = !box.selected;
   }
 }
 
@@ -756,10 +766,10 @@ async function commit(box, key, value) {
 // actually survived the write, which is not the clicked one if it failed.
 function wireToggle(id, key, on, after, valueOf = checked => checked) {
   const box = document.getElementById(id);
-  box.checked = on;
+  box.selected = on;
   box.addEventListener('change', async () => {
-    await commit(box, key, valueOf(box.checked));
-    after(box.checked);
+    await commit(box, key, valueOf(box.selected));
+    after(box.selected);
   });
 }
 
@@ -775,20 +785,20 @@ function wireToggle(id, key, on, after, valueOf = checked => checked) {
 // when wireSettings ran and the panel might since have changed language.
 function wireGuarded(id, key, on, risky, warning, after, valueOf = checked => checked) {
   const box = document.getElementById(id);
-  box.checked = on;
+  box.selected = on;
   box.addEventListener('change', async () => {
-    const wanted = box.checked;
+    const wanted = box.selected;
     if (wanted !== risky) {
       await commit(box, key, valueOf(wanted));
-      after(box.checked);
+      after(box.selected);
       return;
     }
-    box.checked = !risky;
+    box.selected = !risky;
     const agreed = await askRisk(warning());
     if (!agreed) return;
-    box.checked = risky;
+    box.selected = risky;
     await commit(box, key, valueOf(risky));
-    after(box.checked);
+    after(box.selected);
   });
 }
 
@@ -813,12 +823,20 @@ function languageName(code) {
 // the catalogue, so a language added to strings.js appears here on its own. A
 // panel whose script never ran shows only Automatic, which is honest — without
 // the script the row could not have switched anything anyway.
-function fillLanguages(box) {
+function fillLanguages(menu) {
   for (const code of Object.keys(BumplineText.CATALOG)) {
-    const option = document.createElement('option');
-    option.value = code;
-    option.textContent = languageName(code);
-    box.append(option);
+    const item = document.createElement('md-menu-item');
+    item.dataset.value = code;
+    const check = mdIcon('check');
+    check.slot = 'start';
+    check.className = 'lang__check';
+    const name = document.createElement('div');
+    name.slot = 'headline';
+    name.textContent = languageName(code);
+    // Each name in its own language, so a screen reader pronounces it as one.
+    name.lang = code;
+    item.append(check, name);
+    menu.append(item);
   }
 }
 
@@ -887,32 +905,51 @@ function wireSettings(stored) {
 // wireSettings' own badge. Changing the language is the one action in the panel
 // that invalidates all of it rather than one row.
 function wireLanguage(stored, repaint, paintCount) {
-  const langBox = document.getElementById('lang-select');
+  const button = document.getElementById('lang-button');
+  const menu = document.getElementById('lang-menu');
   const code = document.getElementById('lang-code');
-  const box = code.parentElement;
+  const box = button.parentElement;
 
   // Two letters, and which two is not always the stored value: on 'auto' the
   // stored value is the question rather than the answer, and the answer is the
   // language the catalogue actually resolved to. locale() carries the region
   // the clock is formatted with — it-CH, fr-BE — and the code is the language,
   // so it is the subtag in front that gets drawn.
+  //
+  // The button's name says the language in full, because two letters read out
+  // are two letters: "Language: Italiano".
   const paint = () => {
     const picked = stored.lang !== 'auto';
-    code.textContent = (picked ? stored.lang : BumplineText.locale().split('-')[0]);
+    const shown = picked ? stored.lang : BumplineText.locale().split('-')[0];
+    code.textContent = shown;
     box.classList.toggle('lang--picked', picked);
+    button.setAttribute('aria-label', `${BumplineText.t('popup.lang.label')}: ${
+      picked ? languageName(stored.lang) : BumplineText.t('popup.lang.auto')}`);
+    // As an attribute, not only the property: the stylesheet shows the check
+    // on [selected], and md-menu-item does not reflect it.
+    for (const item of menu.querySelectorAll('md-menu-item')) {
+      item.toggleAttribute('selected', item.dataset.value === stored.lang);
+    }
   };
 
-  fillLanguages(langBox);
-  langBox.value = stored.lang;
+  fillLanguages(menu);
   paint();
 
-  langBox.addEventListener('change', async () => {
-    const wanted = langBox.value;
-    const before = stored.lang;
+  button.addEventListener('click', () => { menu.open = !menu.open; });
+  menu.addEventListener('opened', () => button.setAttribute('aria-expanded', 'true'));
+  menu.addEventListener('closed', () => button.setAttribute('aria-expanded', 'false'));
+
+  // md-menu closes itself on a pick; the item that was picked rides along on
+  // the event, which is the whole of what the old <select>'s change carried.
+  menu.addEventListener('close-menu', async event => {
+    const { initiator: item, reason } = event.detail || {};
+    // Only a click, Enter or Space is a pick; any other way out is a no.
+    if (reason && reason.kind === 'keydown' && !['Enter', 'Space'].includes(reason.key)) return;
+    const wanted = item && item.dataset.value;
+    if (!wanted || wanted === stored.lang) return;
     try {
       await ext.storage.local.set({ [LANG_KEY]: wanted });
     } catch (_) {
-      langBox.value = before;
       return;
     }
     stored.lang = wanted;
@@ -950,13 +987,13 @@ function wirePower(stored, tab, repaint, notePage) {
   const word = document.getElementById('power-state');
 
   const paint = () => {
-    box.checked = stored.enabled;
+    box.selected = stored.enabled;
     word.textContent = BumplineText.t(stored.enabled ? 'popup.power.on' : 'popup.power.off');
   };
   paint();
 
   box.addEventListener('change', async () => {
-    const wanted = box.checked;
+    const wanted = box.selected;
     // Switching off hides the whole panel, an open warning with it. A warning
     // that leaves the screen unanswered would otherwise still be holding a
     // promise, and its setting would commit on a click of a button nobody can
@@ -966,7 +1003,7 @@ function wirePower(stored, tab, repaint, notePage) {
       await ext.storage.local.set({ [ENABLED_KEY]: wanted });
     } catch (_) {
       // Nothing was stored, so nothing changed on any page either.
-      box.checked = !wanted;
+      box.selected = !wanted;
       return;
     }
     stored.enabled = wanted;
@@ -984,6 +1021,10 @@ function wirePower(stored, tab, repaint, notePage) {
 }
 
 async function main() {
+  // First, before anything waits: the icons are the only part of the markup
+  // that is not already readable as it ships.
+  drawIcons();
+
   // version_name is what a hand-built debug package sets; without one this is
   // the plain version, exactly as before.
   const build = ext.runtime.getManifest();
@@ -1038,7 +1079,7 @@ async function main() {
     // Switched off, the panel is one line and the logo goes grey with the
     // toolbar icon the background worker is repainting at the same moment. The
     // class does the hiding, so nothing below has to know about the switch.
-    document.body.classList.toggle('is-off', !stored.enabled);
+    panelOf().classList.toggle('is-off', !stored.enabled);
     document.getElementById('offline').hidden = stored.enabled;
 
     // Paused, "Ready on this page" is a lie — the buttons are there and greyed
@@ -1052,7 +1093,7 @@ async function main() {
     const action = stored.enabled ? chooseAction(stored, page, here) : null;
     button.hidden = !action;
     if (action) {
-      button.textContent = action.label;
+      document.getElementById('action-label').textContent = action.label;
       button.onclick = () => {
         ext.tabs.create({ url: action.url });
         window.close();

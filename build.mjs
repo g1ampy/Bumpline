@@ -42,6 +42,11 @@ const PAYLOAD = [
   'popup.html',
   'popup.css',
   'popup.js',
+  // The panel's Material Symbols, as path data md-icon draws.
+  'icons.js',
+  // Material Web's components, bundled, and the licences they ship under.
+  // tools/material/build.mjs writes this folder; tools/ itself never ships.
+  'vendor',
   // Which store this copy came from, read by the panel and the background.
   'store.js',
   // The website's notices, read by the panel and the background.
@@ -53,9 +58,9 @@ const PAYLOAD = [
   // not ship and the extension would load without a word in it.
   'strings.js',
   '_locales',
-  // Inter, the typeface the shadcn preset asks for. Manifest v3 refuses a
-  // remote font, so the two Latin subsets ship with the extension, and OFL.txt
-  // is the licence they ship under.
+  // Google Sans Flex, the typeface Material 3 is drawn in. Manifest v3 refuses
+  // a remote font, so the two Latin subsets ship with the extension, and
+  // OFL.txt is the licence they ship under.
   'fonts',
   'LICENSE',
 ];

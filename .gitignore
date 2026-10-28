@@ -6,3 +6,7 @@ build/
 docs/superpowers/
 store/listing.md
 /listing*.txt
+
+# tools/material installs its own toolchain. The lockfile is committed, so a
+# rebuild pulls the same Lit as the last one; the modules are not.
+tools/material/node_modules/

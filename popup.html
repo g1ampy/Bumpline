@@ -1,327 +1,246 @@
 <!doctype html>
-<!-- Without the doctype the panel rendered in quirks mode, where the body is
-     stretched to the height of the window. The browser sizes a popup to its
-     content, so a panel that grew while Settings was open could never shrink
-     back: the body went on filling the taller window, and the space Settings
-     had taken stayed as a blank band under the footer. -->
+<!-- Without the doctype the panel renders in quirks mode, where the body is
+     stretched to the height of the window and a panel that grew while Settings
+     was open could never shrink back. -->
 <meta charset="utf-8">
 <title>Bumpline</title>
 <link rel="stylesheet" href="popup.css">
+<!-- Material Web, bundled: an extension page cannot load a script from a CDN.
+     Loaded first so the md-* elements are defined before popup.js reads them. -->
+<script src="vendor/material.js"></script>
+
+<!-- The panel is the body here; the class is what the stylesheet and popup.js
+     hold on to, so the same markup can be mounted inside another page too. -->
+<body class="panel">
 
 <header class="head">
-  <img class="head__logo" src="icons/icon32.png" alt="" width="20" height="20">
-  <!-- The name and "How it works" both lead to the website's explanation, in
-       the panel's language: popup.js rewrites the path, and the English address
-       here is what a panel whose script never ran still offers. -->
-  <h1 class="head__name"><a class="head__home" href="https://bumpline.giampy.tech/en/#how" data-site="#how" target="_blank" rel="noreferrer">Bumpline</a></h1>
+  <img class="head__logo" src="icons/icon32.png" alt="" width="24" height="24">
+  <h1 class="head__name md-typescale-title-large"><a class="head__home" href="https://bumpline.giampy.tech/en/#how" data-site="#how" target="_blank" rel="noreferrer">Bumpline</a></h1>
 
-  <!-- The browser is asked first and is right nearly always; this is for the
-       seller it is wrong about — an Italian wardrobe read in a browser someone
-       else set up in English.
-
-       A real <select>, laid transparent over the globe and the code: the menu
-       that opens is the browser's own, with every language written under its
-       own name, and a screen reader reads the selected option in full
-       ("Automatic (browser language)"), not the two letters. Only the closed
-       state is abbreviated, and only visually — two letters wide in every
-       language, so switching one never moves the switch beside it.
-
-       The code is aria-hidden because the select already says the same thing
-       out loud, and better. -->
+  <!-- The language: a text button that opens a menu, the way Material offers a
+       choice from a short list. Closed it shows two letters, so switching
+       language never moves the switch beside it; open, every language is
+       written under its own name. popup.js adds the languages from the
+       catalogue, so only Automatic is written here. -->
   <span class="lang">
-    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
-      <path d="M2 12h20"/>
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/>
-    </svg>
-    <span class="lang__code" id="lang-code" aria-hidden="true"></span>
-    <!-- Only Automatic is written here. The languages themselves are added by
-         popup.js from the catalogue, each under its own name, so a language
-         added to strings.js needs no edit in this file. -->
-    <select class="lang__select" id="lang-select"
-            data-i18n-label="popup.lang.label" aria-label="Language">
-      <option value="auto" data-i18n="popup.lang.auto">Automatic (browser language)</option>
-    </select>
+    <md-text-button class="lang__button" id="lang-button" aria-haspopup="menu" aria-expanded="false"
+                    data-i18n-label="popup.lang.label" aria-label="Language">
+      <md-icon slot="icon" data-icon="language"></md-icon>
+      <span class="lang__code" id="lang-code"></span>
+    </md-text-button>
+    <md-menu class="lang__menu" id="lang-menu" anchor="lang-button" positioning="fixed" anchor-corner="end-start" menu-corner="start-start">
+      <md-menu-item data-value="auto">
+        <md-icon slot="start" class="lang__check" data-icon="check"></md-icon>
+        <div slot="headline" data-i18n="popup.lang.auto">Automatic (browser language)</div>
+      </md-menu-item>
+    </md-menu>
   </span>
 
-  <!-- The switch is the first thing in reach and the last thing that can go
-       wrong: everything below it stops when it is off. The word beside it says
-       the state in text as well as in colour and knob position. -->
-  <span class="power__state" id="power-state" aria-hidden="true" data-i18n="popup.power.on">On</span>
-  <input class="toggle" type="checkbox" id="power" role="switch" data-i18n-label="popup.power.label" aria-label="Bumpline" checked>
+  <!-- The state in a word as well as in the switch, for anyone who reads the
+       panel rather than the control. A screen reader gets it from the switch. -->
+  <span class="power__state md-typescale-label-large" id="power-state" aria-hidden="true" data-i18n="popup.power.on">On</span>
+  <md-switch id="power" icons show-only-selected-icon selected
+             data-i18n-label="popup.power.label" aria-label="Bumpline"></md-switch>
 </header>
 
-<!-- The website's notices, one strip each, most alarming first: above
-     everything else, because a notice that relisting is broken outranks any
-     answer the panel could give about this tab. Filled by popup.js from what
-     the background last fetched, and empty and hidden when there is none. -->
+<!-- The website's notices, most alarming first, edge to edge under the header. -->
 <div class="news" id="news" hidden></div>
 
-<main>
-  <!-- Switched off there is nothing to report: no buttons anywhere, nothing
-       sent, nothing retried. These two lines replace the whole panel rather
-       than joining it, because every card below answers a question about work
-       that is not happening. The state comes first and the way back second,
-       because a message that only says "off" leaves the reader looking for the
-       switch it is already sitting under. -->
-  <p class="offline" id="offline" hidden>
-    <span data-i18n="popup.offline.title">Bumpline is switched off</span>
-    <span class="offline__hint" data-i18n="popup.offline.hint">Turn it back on to relist your items.</span>
-  </p>
+<main class="stack">
+  <!-- Switched off there is nothing to report, so these lines replace the
+       whole panel rather than joining it. -->
+  <div class="offline" id="offline" hidden>
+    <span class="offline__badge"><md-icon data-icon="power_settings_new"></md-icon></span>
+    <p class="offline__title md-typescale-title-medium" data-i18n="popup.offline.title">Bumpline is switched off</p>
+    <p class="offline__hint md-typescale-body-medium" data-i18n="popup.offline.hint">Turn it back on to relist your items.</p>
+  </div>
 
-  <!-- An unfinished relist outranks everything else, so it is first in the
-       reading order as well as on screen. -->
+  <!-- An unfinished relist outranks everything else. -->
   <section class="card card--alert" id="pending" hidden>
-    <h2 class="card__title">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
-      </svg>
-      <span id="pending-title"></span>
-    </h2>
-    <ul class="card__list" id="pending-list"></ul>
-    <p class="card__note" id="pending-note"></p>
-  </section>
-
-  <!-- Vinted has refused something and the extension has stood down. That
-       outranks everything except an unfinished relist. -->
-  <section class="card card--alert" id="paused" role="alert" hidden>
-    <h2 class="card__title">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
-        <path d="M10 15V9M14 15V9"/>
-      </svg>
-      <span id="paused-title" data-i18n="popup.paused.title">Relisting is paused</span>
-    </h2>
-    <!-- Only the restriction is long enough to be worth folding; the pause the
-         extension sets itself is three short sentences and stays open. The
-         chevron sits in the corner the text fades into, which is the one place
-         it is both out of the way and unmistakably about the fold. -->
-    <div class="fold">
-      <p class="card__note" id="paused-detail"></p>
-      <button class="reveal" id="paused-reveal" type="button" aria-controls="paused-detail"
-              aria-expanded="false" data-i18n-label="popup.paused.more" aria-label="Show more" hidden>
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
+    <div class="card__head">
+      <span class="card__badge"><md-icon data-icon="warning"></md-icon></span>
+      <h2 class="card__title md-typescale-title-medium" id="pending-title"></h2>
     </div>
-    <button class="button button--quiet" id="paused-lift" type="button"
-            data-i18n="popup.paused.lift">Lift the pause early</button>
+    <ul class="card__list md-typescale-body-medium" id="pending-list"></ul>
+    <p class="card__note md-typescale-body-medium" id="pending-note"></p>
   </section>
 
-  <section class="card" id="status" role="status" aria-live="polite">
-    <h2 class="card__title">
-      <svg class="icon" id="status-icon" viewBox="0 0 24 24" aria-hidden="true"></svg>
-      <span id="status-title" data-i18n="popup.status.checking.title">Checking this tab</span>
-    </h2>
-    <p class="card__note" id="status-detail" data-i18n="popup.status.checking.detail">One moment…</p>
+  <!-- Vinted has refused something and the extension has stood down. -->
+  <section class="card card--alert" id="paused" role="alert" hidden>
+    <div class="card__head">
+      <span class="card__badge"><md-icon data-icon="pause_circle"></md-icon></span>
+      <h2 class="card__title md-typescale-title-medium" id="paused-title" data-i18n="popup.paused.title">Relisting is paused</h2>
+    </div>
+    <div class="fold">
+      <p class="card__note md-typescale-body-medium" id="paused-detail"></p>
+      <md-icon-button class="reveal" id="paused-reveal" aria-controls="paused-detail"
+                      aria-expanded="false" data-i18n-label="popup.paused.more" aria-label="Show more" hidden>
+        <md-icon data-icon="expand_more"></md-icon>
+      </md-icon-button>
+    </div>
+    <div class="card__actions">
+      <md-outlined-button id="paused-lift" data-i18n="popup.paused.lift">Lift the pause early</md-outlined-button>
+    </div>
   </section>
 
-  <button class="button" id="action" type="button" hidden></button>
+  <!-- What this tab is: a list item's shape, the icon carrying the answer and
+       the two lines beside it saying it in words. -->
+  <section class="card card--row" id="status" role="status" aria-live="polite">
+    <span class="card__badge"><md-icon id="status-icon" data-icon="info"></md-icon></span>
+    <div class="card__words">
+      <h2 class="card__title md-typescale-title-medium" id="status-title" data-i18n="popup.status.checking.title">Checking this tab</h2>
+      <p class="card__note md-typescale-body-medium" id="status-detail" data-i18n="popup.status.checking.detail">One moment…</p>
+    </div>
+  </section>
 
-  <!-- How much relisting has gone on lately, because that is the number Vinted
-       acts on and the one thing the seller cannot see from the page itself.
-       Two figures and a bar: the bar is the budget the next relist is measured
-       against, and it says in a glance what the sentence says in words. -->
+  <!-- The one action the panel ever offers. The label has its own span so that
+       writing it never takes the icon with it. -->
+  <md-filled-button class="action" id="action" trailing-icon hidden>
+    <span id="action-label"></span>
+    <md-icon slot="icon" data-icon="open_in_new"></md-icon>
+  </md-filled-button>
+
+  <!-- How much relisting has gone on lately: the number Vinted acts on. -->
   <section class="card" id="volume">
-    <h2 class="card__title">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 6v6l4 2"/>
-        <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/>
-      </svg>
-      <span data-i18n="popup.volume.title">Relisting volume</span>
-    </h2>
+    <div class="card__head">
+      <span class="card__badge"><md-icon data-icon="schedule"></md-icon></span>
+      <h2 class="card__title md-typescale-title-medium" data-i18n="popup.volume.title">Relisting volume</h2>
+    </div>
     <div class="stats">
       <div class="stat">
-        <span class="stat__value" id="volume-hour">0</span>
-        <span class="stat__label" data-i18n="popup.volume.hour">this hour</span>
+        <span class="stat__value md-typescale-headline-medium" id="volume-hour">0</span>
+        <span class="stat__label md-typescale-label-medium" data-i18n="popup.volume.hour">this hour</span>
       </div>
       <div class="stat">
-        <span class="stat__value" id="volume-day">0</span>
-        <span class="stat__label" data-i18n="popup.volume.today">today</span>
+        <span class="stat__value md-typescale-headline-medium" id="volume-day">0</span>
+        <span class="stat__label md-typescale-label-medium" data-i18n="popup.volume.today">today</span>
       </div>
     </div>
-    <!-- The bar repeats what the numbers and the note already say, so it is
-         hidden from a screen reader rather than read out twice. -->
-    <div class="meter" aria-hidden="true"><span class="meter__fill" id="volume-fill"></span></div>
-    <p class="card__note" id="volume-detail"></p>
+    <!-- The bar repeats what the numbers and the note say, so a screen reader
+         skips it rather than reading it out twice. -->
+    <md-linear-progress class="meter" id="volume-meter" value="0" aria-hidden="true"></md-linear-progress>
+    <p class="card__note md-typescale-body-medium" id="volume-detail"></p>
   </section>
 
-  <!-- Every switch here but the last is on by default and every label says what
-       it does at its own number, so the row reads the same way in all of them:
-       on is the cautious position and the hint says what off costs. The last
-       one, under "Relist as draft", is off by default so the button keeps
-       doing what it always did; on is still its cautious position. The two that raise
-       the odds of a block used to argue their case in this section, where it
-       was read by everyone and acted on by nobody; that argument now appears in
-       the warning at the moment the setting is changed, which is the only
-       moment it can change a mind. -->
+  <!-- Settings, folded. Every switch but the last is on by default, and on is
+       always the cautious position. -->
   <details class="drawer">
     <summary class="drawer__summary">
-      <span data-i18n="popup.settings.title">Settings</span>
-      <!-- What is not at its default, said without opening the section. Four
-           switches all sitting where they were left is the common case, and it
-           should not need reading. -->
-      <span class="drawer__count" id="settings-count"></span>
-      <svg class="icon icon--chevron" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m6 9 6 6 6-6"/>
-      </svg>
+      <md-ripple></md-ripple>
+      <md-focus-ring inward></md-focus-ring>
+      <md-icon class="drawer__icon" data-icon="tune"></md-icon>
+      <span class="md-typescale-title-small" data-i18n="popup.settings.title">Settings</span>
+      <span class="drawer__count md-typescale-label-small" id="settings-count"></span>
+      <md-icon class="drawer__chevron" data-icon="expand_more"></md-icon>
     </summary>
 
-    <!-- The wrapper exists for the open and close animation: it is the box
-         whose height is grown and shrunk, and it has to be one the switches
-         cannot resize on their own. -->
+    <!-- The box the open and close animation resizes. -->
     <div class="drawer__body">
       <div class="setting">
-        <!-- The two that decide how the traffic looks come first. Both are
-             guarded, and both guard the same direction: turning either off is
-             what needs agreeing to. -->
-        <p class="setting__group" data-i18n="popup.settings.group.pacing">Pacing</p>
+        <p class="setting__group md-typescale-title-small" data-i18n="popup.settings.group.pacing">Pacing</p>
 
         <label class="switch">
+          <md-ripple></md-ripple>
           <span class="switch__label">
-            <span data-i18n="popup.settings.cooldown.label">Wait 10 seconds between relists</span>
-            <span class="switch__hint" data-i18n="popup.settings.cooldown.hint">
-              Recommended. Off sends them back to back, the pattern Vinted blocks
-              accounts for.
+            <span class="md-typescale-body-large" data-i18n="popup.settings.cooldown.label">Wait 10 seconds between relists</span>
+            <span class="switch__hint md-typescale-body-medium" data-i18n="popup.settings.cooldown.hint">
+              Recommended. Off sends them back to back, the pattern Vinted blocks accounts for.
             </span>
           </span>
-          <input class="toggle" type="checkbox" id="cooldown-toggle" role="switch" checked>
+          <md-switch id="cooldown-toggle" icons show-only-selected-icon selected></md-switch>
         </label>
 
         <label class="switch">
+          <md-ripple></md-ripple>
           <span class="switch__label">
-            <span data-i18n="popup.settings.pace.label">Pause 0.9 to 2.4s between requests</span>
-            <span class="switch__hint" data-i18n="popup.settings.pace.hint">
-              Recommended. Off shortens it to 0.25 to 0.7s, fast enough to read as
-              an automated script.
+            <span class="md-typescale-body-large" data-i18n="popup.settings.pace.label">Pause 0.9 to 2.4s between requests</span>
+            <span class="switch__hint md-typescale-body-medium" data-i18n="popup.settings.pace.hint">
+              Recommended. Off shortens it to 0.25 to 0.7s, fast enough to read as an automated script.
             </span>
           </span>
-          <input class="toggle" type="checkbox" id="pace-toggle" role="switch" checked>
+          <md-switch id="pace-toggle" icons show-only-selected-icon selected></md-switch>
         </label>
 
-        <p class="setting__group" data-i18n="popup.settings.group.afterRelist">After a relist</p>
+        <md-divider class="setting__rule"></md-divider>
+        <p class="setting__group md-typescale-title-small" data-i18n="popup.settings.group.afterRelist">After a relist</p>
 
         <label class="switch">
+          <md-ripple></md-ripple>
           <span class="switch__label">
-            <span data-i18n="popup.settings.reload.label">Reload the page</span>
-            <span class="switch__hint" data-i18n="popup.settings.reload.hint">
-              Off keeps your place on the page; the relisted copy appears at
-              your next reload.
+            <span class="md-typescale-body-large" data-i18n="popup.settings.reload.label">Reload the page</span>
+            <span class="switch__hint md-typescale-body-medium" data-i18n="popup.settings.reload.hint">
+              Off keeps your place on the page; the relisted copy appears at your next reload.
             </span>
           </span>
-          <input class="toggle" type="checkbox" id="reload-toggle" role="switch" checked>
+          <md-switch id="reload-toggle" icons show-only-selected-icon selected></md-switch>
         </label>
 
-        <!-- Out of sight, not out of the build. The switch is still wired and the
-             stored value is still what the page reads on every relist; only the
-             row is hidden. Take the hidden attribute off to bring it back. -->
+        <!-- Out of sight, not out of the build: still wired, only the row is
+             hidden. Take the hidden attribute off to bring it back. -->
         <label class="switch" hidden>
+          <md-ripple></md-ripple>
           <span class="switch__label">
-            <span data-i18n="popup.settings.localDrafts.label">Keep the copy on this device</span>
-            <span class="switch__hint" data-i18n="popup.settings.localDrafts.hint">
-              Relist button only. Off saves a draft to your Vinted account
-              first, as in versions before 1.0.1.
+            <span class="md-typescale-body-large" data-i18n="popup.settings.localDrafts.label">Keep the copy on this device</span>
+            <span class="switch__hint md-typescale-body-medium" data-i18n="popup.settings.localDrafts.hint">
+              Relist button only. Off saves a draft to your Vinted account first, as in versions before 1.0.1.
             </span>
           </span>
-          <input class="toggle" type="checkbox" id="local-drafts-toggle" role="switch" checked>
+          <md-switch id="local-drafts-toggle" icons show-only-selected-icon selected></md-switch>
         </label>
-        <!-- The one switch that is off by default, and the one where on is the
-             cautious position: the draft button has always deleted the
-             original, and a seller who relies on that keeps it. On, the button
-             only copies the listing into the drafts, for a seller who wants to
-             publish the copy later, from a phone, at a better hour. Nothing is
-             deleted that way, so it needs no warning. -->
-        <p class="setting__group" data-i18n="button.draft">Relist as draft</p>
+
+        <md-divider class="setting__rule"></md-divider>
+        <p class="setting__group md-typescale-title-small" data-i18n="button.draft">Relist as draft</p>
+
         <label class="switch">
+          <md-ripple></md-ripple>
           <span class="switch__label">
-            <span data-i18n="popup.settings.keepOriginal.label">Keep the original online</span>
-            <span class="switch__hint" data-i18n="popup.settings.keepOriginal.hint">
-              Off deletes the original. On saves only a copy to your drafts;
-              delete the original yourself before publishing the copy, as Vinted
-              won't accept two identical listings.
+            <span class="md-typescale-body-large" data-i18n="popup.settings.keepOriginal.label">Keep the original online</span>
+            <span class="switch__hint md-typescale-body-medium" data-i18n="popup.settings.keepOriginal.hint">
+              Off deletes the original. On saves only a copy to your drafts; delete the original yourself before
+              publishing the copy, as Vinted won't accept two identical listings.
             </span>
           </span>
-          <input class="toggle" type="checkbox" id="keep-original-toggle" role="switch">
+          <md-switch id="keep-original-toggle" icons show-only-selected-icon></md-switch>
         </label>
       </div>
     </div>
   </details>
 </main>
 
-<!-- The guarded settings put their warning here rather than flipping quietly.
-     The switch stays where it was until the second, deliberate click.
-
-     A modal rather than a card in the flow, because a card is something the eye
-     can move past: it appeared below the switch that opened it, and on a panel
-     tall enough to scroll it could be answered without ever having been read.
-     <dialog> is what makes it a stop — the focus goes into it, the tab key
-     cannot leave it, Escape answers it as a no, and the panel behind it is
-     blurred through the backdrop so there is visibly nothing else to do. -->
-<dialog class="modal card card--alert" id="risk"
-        aria-labelledby="risk-title" aria-describedby="risk-detail">
-  <h2 class="card__title">
-    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
-    </svg>
-    <span id="risk-title"></span>
-  </h2>
-  <p class="card__note" id="risk-detail"></p>
-  <!-- Stacked, and each on the full width, because side by side the two labels
-       had to be short enough to fit rather than clear enough to read. -->
-  <div class="risk__actions">
-    <button class="button button--quiet" id="risk-cancel" type="button" data-i18n="popup.risk.keep">Keep this setting</button>
-    <button class="button" id="risk-accept" type="button" data-i18n="popup.risk.change">Change it anyway</button>
+<!-- The guarded settings warn here rather than flipping quietly. An alert
+     dialog is a stop: focus goes into it, Escape and the scrim answer it as a
+     no, and the safe answer is the one that holds the focus. -->
+<md-dialog class="risk" id="risk" type="alert">
+  <md-icon slot="icon" data-icon="warning"></md-icon>
+  <span slot="headline" id="risk-title"></span>
+  <div slot="content" class="risk__detail" id="risk-detail"></div>
+  <div slot="actions" class="risk__actions">
+    <md-text-button class="risk__accept" id="risk-accept" data-i18n="popup.risk.change">Change it anyway</md-text-button>
+    <md-filled-tonal-button id="risk-cancel" autofocus data-i18n="popup.risk.keep">Keep this setting</md-filled-tonal-button>
   </div>
-</dialog>
+</md-dialog>
 
-<!-- For a seller who has found Bumpline worth something and wants to say so.
-     Outside <main>, so it stays with the footer when the switch is off, and an
-     anchor rather than a button for the same reason as the rating: the browser
-     closes the panel itself as it opens the tab. The label is a span of its
-     own because paint() writes textContent, which would take the cup with it. -->
-<a class="button donate" href="https://ko-fi.com/bumpline" target="_blank" rel="noreferrer">
-  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M10 2v2"/>
-    <path d="M14 2v2"/>
-    <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>
-    <path d="M6 2v2"/>
-  </svg>
+<!-- Outside <main>, so it stays with the footer when the switch is off. A link
+     rather than a click handler: the browser closes the panel as it opens the tab. -->
+<md-filled-tonal-button class="donate" href="https://ko-fi.com/bumpline" target="_blank">
+  <md-icon slot="icon" data-icon="coffee"></md-icon>
   <span data-i18n="popup.donate">Support Bumpline on Ko-fi</span>
-</a>
+</md-filled-tonal-button>
 
 <footer class="foot">
-  <a class="foot__link" href="https://bumpline.giampy.tech/en/#how" data-site="#how" target="_blank" rel="noreferrer" data-i18n="footer.howItWorks">How it works</a>
+  <md-text-button class="foot__link" href="https://bumpline.giampy.tech/en/#how" data-site="#how" target="_blank" data-i18n="footer.howItWorks">How it works</md-text-button>
   <!-- The website's report form, which needs no GitHub account. popup.js
        fills in the language, the version, this tab's Vinted site and the log;
        this address is what a panel whose script never ran still offers. -->
-  <a class="foot__link" id="report" href="https://bumpline.giampy.tech/en/report/" target="_blank" rel="noreferrer" data-i18n="footer.reportProblem">Report a problem</a>
-  <!-- The version is the question "what changed?" as often as it is the answer
-       to "which one do I have?", so it leads to the changelog: the top of it,
-       where the newest version is. GitHub builds each section's anchor from
-       its date as well as its number, so a link to this version's own section
-       would have to guess. The tooltip says where it goes, which the number
-       alone does not. -->
-  <a class="foot__link foot__version" id="version" href="https://github.com/g1ampy/Bumpline/blob/main/CHANGELOG.md" target="_blank" rel="noreferrer" data-i18n-title="footer.changelog"></a>
-
-  <!-- A rating is the one thing an extension cannot write for itself, and the
-       panel being open is the only moment its user is near a store page. Which
-       store that is gets asked at runtime, in popup.js: one package ships to
-       both, so the address cannot be baked in at build time.
-
-       On a line of its own below the other two, which is what buys it the room
-       to say the whole name: the two links above are where you go when
-       something is unclear or broken, and this is not that. -->
-  <a class="foot__link foot__rate" id="review" href="#" target="_blank" rel="noreferrer" data-i18n="footer.rate">Rate Bumpline</a>
+  <md-text-button class="foot__link" id="report" href="https://bumpline.giampy.tech/en/report/" target="_blank" data-i18n="footer.reportProblem">Report a problem</md-text-button>
+  <span class="foot__break" aria-hidden="true"></span>
+  <md-text-button class="foot__link foot__rate" id="review" href="#" target="_blank" data-i18n="footer.rate">Rate Bumpline</md-text-button>
+  <md-text-button class="foot__link foot__version" id="version" href="https://github.com/g1ampy/Bumpline/blob/main/CHANGELOG.md" target="_blank" data-i18n-title="footer.changelog"></md-text-button>
 </footer>
 
-<!-- The words, every language, read by paint() below and by popup.js. Loaded
-     before store.js only because everything this page shows is text. -->
+<script src="icons.js"></script>
 <script src="strings.js"></script>
-<!-- Which store this copy came from, and so where a rating would go. Loaded
-     first because popup.js reads it, and kept out of popup.js so the store ids
-     live in a file of their own. -->
 <script src="store.js"></script>
-<!-- The notices' rules, shared with the background. After store.js, which it
-     asks which browser this is. -->
 <script src="broadcast.js"></script>
 <!-- The extension's own log, which the report link carries. -->
 <script src="diagnostics.js"></script>

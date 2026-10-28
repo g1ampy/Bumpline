@@ -1,239 +1,291 @@
-/* Bumpline — toolbar popup.
+/* Bumpline — toolbar popup, on Material Web (Material 3).
  *
  * The extension does its real work inside the Vinted page; this panel only
  * answers "is it on?", "does it work on this tab?", "did a relist get stuck?"
  * and "how much have I relisted lately?".
  *
- * This is shadcn/ui preset b1tepwVzU — style base-luma, base colour neutral,
- * Lucide icons, Inter — rebuilt in plain CSS. Every measurement below was read
- * off the components that
+ * Every colour below is a Material 3 system token, generated with
+ * @material/material-color-utilities (SchemeTonalSpot) from the logo's teal,
+ * #007580: `node tools/material/build.mjs --theme` prints them again. The md-*
+ * components read the same tokens, so a switch, a button and a card drawn by
+ * this file all come out of one palette.
  *
- *   npx shadcn@latest init --preset b1tepwVzU --template next
+ * Material has no success or amber role. Those two are custom colours,
+ * harmonised towards the teal the way Material's own custom-colour tooling
+ * does, with the same four tones every role gets: the colour, its ink, a
+ * container and the container's ink.
  *
- * writes, not off the docs: base-luma is not the new-york style, and it differs
- * where it counts. Buttons and cards are pills, the switch is 44×20 with a
- * rounded rectangle for a thumb, the progress track is --muted rather than the
- * fill at a fifth, cards carry a ring rather than a border, and the destructive
- * button is a tint rather than a fill.
- *
- * None of shadcn's React, Tailwind or Radix comes with it — a popup with no
- * build step is not going to carry them — and none of it is needed: the
- * switches are real checkboxes and the settings section is a real <details>.
- *
- * The theme keeps the preset's shape — the same token names, the same slots,
- * .dark folded into a prefers-color-scheme query because a popup has no app
- * shell to put the class on — and takes its colours from the logo, which is
- * two of them: #007580 on #FBFBFB. In oklch the teal is 0.5 0.115 203, and
- * that hue is what every token below is built on.
- *
- * That value is --primary itself, and the two are meant to stay equal. The
- * logo used to sit at #00ADB8, a lighter teal that reads 2.7:1 against white
- * and could carry neither a label nor a filled button, so --primary held its
- * hue and moved its lightness — darkened for the light scheme, lightened for
- * the dark one. When the mark was redrawn it was drawn at the darker value
- * instead, which is what a 16px toolbar icon wanted anyway: one teal now
- * rather than two. It keeps that value in icons/logo.svg — and #FBFBFB, its
- * second colour, is what the filled button writes its label in.
- *
- * The rest follows from that hue:
- *
- *   - Every neutral carries a little of it. A grey at chroma 0 next to a
- *     saturated teal looks dead; the same grey at chroma 0.01 on the teal's
- *     hue looks like it belongs to it.
- *   - The page is a tinted off-white and the cards are pure white, rather than
- *     both being #fff and the cards relying on a shadow to exist.
- *   - Dark mode lightens the accent instead of darkening it. The preset had
- *     its dark blue darker than its light one, which is backwards on a dark
- *     surface.
- *   - --success is pushed to 148 rather than sitting at 160, where a green and
- *     a teal that close together stop reading as two different answers.
- *   - --destructive stays at 25. Against a teal that is very nearly the
- *     opposite hue, which is why the pair looks deliberate.
- *   - --ring follows the accent. The preset's neutral ring at 30% opacity is a
- *     focus ring you have to look for.
- *
- * Every pair is measured off a rendered screenshot rather than derived, light
- * then dark: --foreground on the card 17.6:1 and 15.7:1, --muted-foreground
- * 4.9:1 and 6.9:1, --primary 5.5:1 and 7.3:1, --destructive 5.6:1 and 6.1:1,
- * --success 4.9:1 and 8.1:1, the folded restriction's softened ink 10.1:1 and
- * 9.6:1, the filled button's own label on it 5.3:1 and 7.8:1, and the
- * destructive button's label on its own tint 4.7:1 and 5.4:1 — that last one
- * is 3.7:1 in the preset, and --destructive sits at 0.54 rather than 0.577 to
- * clear it. --success sits at 0.53 for the same reason; at 0.55 it was 4.5:1
- * on the card and under it on the page behind.
- *
- * The website's notices are the exception: each level's ink, and its body
- * text, on that level's own tint is computed from this file rather than read
- * off a screenshot, by tests/contrast.test.mjs, which holds all of them to
- * 4.5:1 in both schemes.
- *
- * Two pairs are still deliberately short of 4.5:1, both the preset's own: the
- * switch's off track against the panel, at 1.2:1 and 1.5:1, where the thumb's
- * position and its own contrast say the same thing again, and --ring at 30%,
- * at 1.6:1 and 1.9:1, which is a focus ring you have to look for.
+ * tests/contrast.test.mjs reads this file and holds every text pair to 4.5:1
+ * and every icon on its badge to 3:1, light and dark.
  */
 
-/* Inter, subsetted by Google Fonts, because the preset's own layout.tsx loads
-   Inter for --font-sans. Manifest v3 will not load a remote font — font-src is
-   'self' — so the subsets ship inside the extension. Latin Extended is here
-   and not in the preset because Vinted runs in twenty-eight countries and a
-   stuck relist is listed by its own title. */
+/* Google Sans Flex, the face Material 3 is drawn in, shipped inside the
+   extension because Manifest v3 will not load a remote font (font-src is
+   'self'). The cut with the weight and roundness axes: 71 KB for Latin and
+   37 KB for Latin Extended, which Vinted's twenty-eight countries need. OFL. */
 @font-face {
-  font-family: Inter;
+  font-family: "Google Sans Flex";
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 1 1000;
   font-display: swap;
-  src: url("fonts/inter-latin.woff2") format("woff2");
+  src: url("fonts/google-sans-flex-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: Inter;
+  font-family: "Google Sans Flex";
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 1 1000;
   font-display: swap;
-  src: url("fonts/inter-latin-ext.woff2") format("woff2");
+  src: url("fonts/google-sans-flex-latin-ext.woff2") format("woff2");
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
     U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
     U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* --- the theme, as the preset writes it ---------------------------------- */
+/* --- the scheme ---------------------------------------------------------- */
 
 :root {
-  /* 203 is the logo's hue, and every neutral below borrows a little of it. */
-  --background: oklch(0.985 0.005 203);
-  --foreground: oklch(0.21 0.022 213);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.022 213);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.022 213);
-  --primary: oklch(0.5 0.115 203);
-  --primary-foreground: #fbfbfb;          /* the logo's own second colour */
-  --secondary: oklch(0.962 0.015 203);
-  --secondary-foreground: oklch(0.26 0.028 213);
-  --muted: oklch(0.965 0.011 203);
-  --muted-foreground: oklch(0.545 0.032 210);
-  --accent: oklch(0.955 0.024 203);
-  --accent-foreground: oklch(0.26 0.028 213);
-  --destructive: oklch(0.54 0.225 25);
-  --border: oklch(0.918 0.015 203);
-  --input: oklch(0.918 0.015 203);
-  --ring: oklch(0.5 0.115 203);
-  --chart-1: oklch(0.5 0.115 203);
-  --chart-2: oklch(0.62 0.115 190);
-  --chart-3: oklch(0.68 0.116 203);        /* the logo, at its own value */
-  --chart-4: oklch(0.6 0.13 240);
-  --chart-5: oklch(0.66 0.14 165);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.005 203);
-  --sidebar-foreground: oklch(0.21 0.022 213);
-  --sidebar-primary: oklch(0.5 0.115 203);
-  --sidebar-primary-foreground: #fbfbfb;
-  --sidebar-accent: oklch(0.955 0.024 203);
-  --sidebar-accent-foreground: oklch(0.26 0.028 213);
-  --sidebar-border: oklch(0.918 0.015 203);
-  --sidebar-ring: oklch(0.5 0.115 203);
+  --md-sys-color-primary: #006973;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #9df0fb;
+  --md-sys-color-on-primary-container: #004f57;
+  --md-sys-color-secondary: #4a6366;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #cde7eb;
+  --md-sys-color-on-secondary-container: #324b4e;
+  --md-sys-color-tertiary: #515e7d;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #d9e2ff;
+  --md-sys-color-on-tertiary-container: #3a4664;
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #93000a;
+  --md-sys-color-background: #f5fafb;
+  --md-sys-color-on-background: #171d1e;
+  --md-sys-color-surface: #f5fafb;
+  --md-sys-color-on-surface: #171d1e;
+  --md-sys-color-surface-variant: #dbe4e6;
+  --md-sys-color-on-surface-variant: #3f484a;
+  --md-sys-color-outline: #6f797a;
+  --md-sys-color-outline-variant: #bec8ca;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #2b3132;
+  --md-sys-color-inverse-on-surface: #ecf2f3;
+  --md-sys-color-inverse-primary: #81d3df;
+  --md-sys-color-surface-dim: #d5dbdc;
+  --md-sys-color-surface-bright: #f5fafb;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #eff5f5;
+  --md-sys-color-surface-container: #e9eff0;
+  --md-sys-color-surface-container-high: #e3e9ea;
+  --md-sys-color-surface-container-highest: #dee4e4;
+  --md-sys-color-surface-tint: #006973;
+  --bl-success: #006c46;
+  --bl-on-success: #ffffff;
+  --bl-success-container: #8af8bf;
+  --bl-on-success-container: #002112;
+  --bl-attention: #7d5700;
+  --bl-on-attention: #ffffff;
+  --bl-attention-container: #ffdeaa;
+  --bl-on-attention-container: #271900;
+
+  /* Alerts by role rather than by palette slot. Light, they are Material's
+     error and amber containers as generated. Dark, those containers are a
+     saturated block that shouts across the whole panel, so each is redrawn at
+     the same hue with a fifth of the chroma: a dark surface that is plainly
+     red or amber, with the colour itself kept for the title, the icon and the
+     bar. */
+  --bl-alert-surface: var(--md-sys-color-error-container);
+  --bl-alert-ink: var(--md-sys-color-on-error-container);
+  --bl-alert-text: var(--md-sys-color-on-error-container);
+  --bl-alert-badge: var(--md-sys-color-error);
+  --bl-alert-on-badge: var(--md-sys-color-on-error);
+  --bl-alert-outline: transparent;
+  --bl-alert-line: var(--md-sys-color-error);
+  --bl-alert-track: color-mix(in srgb, var(--md-sys-color-error) 18%, transparent);
+  --bl-attn-surface: var(--bl-attention-container);
+  --bl-attn-ink: var(--bl-on-attention-container);
+  --bl-attn-text: var(--bl-on-attention-container);
+  --bl-attn-icon: var(--bl-attention);
+
+  --md-ref-typeface-brand: "Google Sans Flex", "Google Sans", Roboto, ui-sans-serif, system-ui, sans-serif;
+  --md-ref-typeface-plain: "Google Sans Flex", "Google Sans", Roboto, ui-sans-serif, system-ui, sans-serif;
+
+  /* Shape: Material's large corner for cards, full for everything that is a pill. */
+  --bl-card-shape: 16px;
+  --bl-gap: 12px;
 }
 
+/* A popup has no app shell to carry a class, so dark follows the system. The
+   two data-theme blocks let a page that mounts this panel override it. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.175 0.015 215);
-    --foreground: oklch(0.97 0.007 203);
-    --card: oklch(0.225 0.018 215);
-    --card-foreground: oklch(0.97 0.007 203);
-    --popover: oklch(0.225 0.018 215);
-    --popover-foreground: oklch(0.97 0.007 203);
-    --primary: oklch(0.72 0.13 203);
-    --primary-foreground: oklch(0.2 0.028 215);
-    --secondary: oklch(0.285 0.021 215);
-    --secondary-foreground: oklch(0.97 0.007 203);
-    --muted: oklch(0.285 0.021 215);
-    --muted-foreground: oklch(0.72 0.026 210);
-    --accent: oklch(0.3 0.025 215);
-    --accent-foreground: oklch(0.97 0.007 203);
-    --destructive: oklch(0.71 0.185 25);
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 16%);
-    --ring: oklch(0.72 0.13 203);
-    --chart-1: oklch(0.72 0.13 203);
-    --chart-2: oklch(0.72 0.12 190);
-    --chart-3: oklch(0.681 0.116 203);      /* the logo, at its own value */
-    --chart-4: oklch(0.7 0.13 240);
-    --chart-5: oklch(0.75 0.14 165);
-    --sidebar: oklch(0.225 0.018 215);
-    --sidebar-foreground: oklch(0.97 0.007 203);
-    --sidebar-primary: oklch(0.72 0.13 203);
-    --sidebar-primary-foreground: oklch(0.2 0.028 215);
-    --sidebar-accent: oklch(0.3 0.025 215);
-    --sidebar-accent-foreground: oklch(0.97 0.007 203);
-    --sidebar-border: oklch(1 0 0 / 12%);
-    --sidebar-ring: oklch(0.72 0.13 203);
+  :root:not([data-theme="light"]) {
+    --md-sys-color-primary: #81d3df;
+    --md-sys-color-on-primary: #00363c;
+    --md-sys-color-primary-container: #004f57;
+    --md-sys-color-on-primary-container: #9df0fb;
+    --md-sys-color-secondary: #b1cbcf;
+    --md-sys-color-on-secondary: #1c3438;
+    --md-sys-color-secondary-container: #324b4e;
+    --md-sys-color-on-secondary-container: #cde7eb;
+    --md-sys-color-tertiary: #b9c6ea;
+    --md-sys-color-on-tertiary: #23304d;
+    --md-sys-color-tertiary-container: #3a4664;
+    --md-sys-color-on-tertiary-container: #d9e2ff;
+    --md-sys-color-error: #ffb4ab;
+    --md-sys-color-on-error: #690005;
+    --md-sys-color-error-container: #93000a;
+    --md-sys-color-on-error-container: #ffdad6;
+    --md-sys-color-background: #0e1415;
+    --md-sys-color-on-background: #dee4e4;
+    --md-sys-color-surface: #0e1415;
+    --md-sys-color-on-surface: #dee4e4;
+    --md-sys-color-surface-variant: #3f484a;
+    --md-sys-color-on-surface-variant: #bec8ca;
+    --md-sys-color-outline: #899294;
+    --md-sys-color-outline-variant: #3f484a;
+    --md-sys-color-shadow: #000000;
+    --md-sys-color-scrim: #000000;
+    --md-sys-color-inverse-surface: #dee4e4;
+    --md-sys-color-inverse-on-surface: #2b3132;
+    --md-sys-color-inverse-primary: #006973;
+    --md-sys-color-surface-dim: #0e1415;
+    --md-sys-color-surface-bright: #343a3b;
+    --md-sys-color-surface-container-lowest: #090f10;
+    --md-sys-color-surface-container-low: #171d1e;
+    --md-sys-color-surface-container: #1b2122;
+    --md-sys-color-surface-container-high: #252b2c;
+    --md-sys-color-surface-container-highest: #303637;
+    --md-sys-color-surface-tint: #81d3df;
+    --bl-success: #6ddba4;
+    --bl-on-success: #003822;
+    --bl-success-container: #005234;
+    --bl-on-success-container: #8af8bf;
+    --bl-attention: #f7bd51;
+    --bl-on-attention: #422c00;
+    --bl-attention-container: #5f4100;
+    --bl-on-attention-container: #ffdeaa;
+
+    /* HCT hue 25 and 81 at chroma 16, tone 15 for the surfaces; tone 85 for
+       the running text. */
+    --bl-alert-surface: #381f1c;
+    --bl-alert-ink: #ffb4ab;
+    --bl-alert-text: #f6cac5;
+    --bl-alert-badge: #6d3731;
+    --bl-alert-on-badge: #ffdad6;
+    --bl-alert-outline: #613632;
+    --bl-alert-line: #ffb4ab;
+    --bl-alert-track: #613632;
+    --bl-attn-surface: #31240c;
+    --bl-attn-ink: #f7bd51;
+    --bl-attn-text: #e9d1ae;
+    --bl-attn-icon: #f7bd51;
+    color-scheme: dark;
   }
 }
 
-/* The preset's own @theme inline block derives these from --radius. base-luma
-   scales the radius rather than adding to it, which is why its buttons and
-   cards are pills and not rounded rectangles: 0.625rem × 2.6 is 26px. */
+:root[data-theme="dark"] {
+  --md-sys-color-primary: #81d3df;
+  --md-sys-color-on-primary: #00363c;
+  --md-sys-color-primary-container: #004f57;
+  --md-sys-color-on-primary-container: #9df0fb;
+  --md-sys-color-secondary: #b1cbcf;
+  --md-sys-color-on-secondary: #1c3438;
+  --md-sys-color-secondary-container: #324b4e;
+  --md-sys-color-on-secondary-container: #cde7eb;
+  --md-sys-color-tertiary: #b9c6ea;
+  --md-sys-color-on-tertiary: #23304d;
+  --md-sys-color-tertiary-container: #3a4664;
+  --md-sys-color-on-tertiary-container: #d9e2ff;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+  --md-sys-color-background: #0e1415;
+  --md-sys-color-on-background: #dee4e4;
+  --md-sys-color-surface: #0e1415;
+  --md-sys-color-on-surface: #dee4e4;
+  --md-sys-color-surface-variant: #3f484a;
+  --md-sys-color-on-surface-variant: #bec8ca;
+  --md-sys-color-outline: #899294;
+  --md-sys-color-outline-variant: #3f484a;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-inverse-surface: #dee4e4;
+  --md-sys-color-inverse-on-surface: #2b3132;
+  --md-sys-color-inverse-primary: #006973;
+  --md-sys-color-surface-dim: #0e1415;
+  --md-sys-color-surface-bright: #343a3b;
+  --md-sys-color-surface-container-lowest: #090f10;
+  --md-sys-color-surface-container-low: #171d1e;
+  --md-sys-color-surface-container: #1b2122;
+  --md-sys-color-surface-container-high: #252b2c;
+  --md-sys-color-surface-container-highest: #303637;
+  --md-sys-color-surface-tint: #81d3df;
+  --bl-success: #6ddba4;
+  --bl-on-success: #003822;
+  --bl-success-container: #005234;
+  --bl-on-success-container: #8af8bf;
+  --bl-attention: #f7bd51;
+  --bl-on-attention: #422c00;
+  --bl-attention-container: #5f4100;
+  --bl-on-attention-container: #ffdeaa;
+
+  /* HCT hue 25 and 81 at chroma 16, tone 15 for the surfaces; tone 85 for
+     the running text. */
+  --bl-alert-surface: #381f1c;
+  --bl-alert-ink: #ffb4ab;
+  --bl-alert-text: #f6cac5;
+  --bl-alert-badge: #6d3731;
+  --bl-alert-on-badge: #ffdad6;
+  --bl-alert-outline: #613632;
+  --bl-alert-line: #ffb4ab;
+  --bl-alert-track: #613632;
+  --bl-attn-surface: #31240c;
+  --bl-attn-ink: #f7bd51;
+  --bl-attn-text: #e9d1ae;
+  --bl-attn-icon: #f7bd51;
+  color-scheme: dark;
+}
+
+/* --- the components, tuned ---------------------------------------------- */
+
 :root {
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* The progress bar as Material 3 draws it today: thicker, with round ends. */
+  --md-linear-progress-track-height: 8px;
+  --md-linear-progress-active-indicator-height: 8px;
+  --md-linear-progress-track-shape: 9999px;
+  --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
 
-  /* card.tsx names this one itself and spends it on padding and on the gap
-     between a card's header and its content. */
-  --card-spacing: 24px;
-
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-}
-
-/* --- what the preset does not carry -------------------------------------- */
-
-/* No shadcn theme has a success colour; the component set has no success
-   variant to spend one on. This panel does: "Ready on this page" is the whole
-   reason it is worth opening. It sits at the lightness and the chroma of the
-   theme's own --destructive, so the two read as one pair rather than two
-   borrowed greens and reds. */
-:root { --success: oklch(0.53 0.155 148); }
-
-@media (prefers-color-scheme: dark) {
-  :root { --success: oklch(0.75 0.155 148); }
-}
-
-/* Nor an amber. The website's notices have three levels and the middle one,
-   "attention", needs a colour between the logo's teal and the destructive
-   red: a warm amber. Light, it sits at 0.52: at 0.6, the lightness the other
-   inks have, an amber title on its own tint read 3.4:1. tests/contrast.test.mjs
-   measures every strip in both schemes. */
-:root { --news-attention: oklch(0.52 0.14 65); }
-
-@media (prefers-color-scheme: dark) {
-  :root { --news-attention: oklch(0.8 0.14 75); }
+  /* Menus and dialogs sit on the container tones, not on white. */
+  --md-menu-container-color: var(--md-sys-color-surface-container);
+  --md-dialog-container-color: var(--md-sys-color-surface-container-high);
 }
 
 * { box-sizing: border-box; }
 
-/* .button sets display, which would otherwise beat the user-agent rule for the
-   hidden attribute and leave an empty button on screen. */
+/* md-* hosts set their own display, which would otherwise beat the user-agent
+   rule for the hidden attribute and leave an empty button on screen. */
 [hidden] { display: none !important; }
 
-body {
+.panel {
   width: 360px;
   margin: 0;
   padding: 16px;
-  background: var(--background);
-  color: var(--foreground);
-  font: 14px/1.4285 Inter, ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-ref-typeface-plain);
+  font-size: 14px;
+  line-height: 20px;
   -webkit-font-smoothing: antialiased;
 }
+
+.panel p { margin: 0; }
 
 /* --- header ------------------------------------------------------------- */
 
@@ -241,802 +293,528 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
+  min-height: 48px;
+  margin-bottom: 4px;
 }
 
-.head__logo { display: block; border-radius: var(--radius-sm); }
+.head__logo { display: block; border-radius: 6px; }
 
-/* Not flex: 1. The name is as wide as the word, so the language sits against it
-   rather than across the header from it; the gap is pushed onto the power pair
-   instead, further down. */
 .head__name {
-  margin: 0;
-  font-size: 16px;
+  margin: 0 0 0 4px;
+  font-size: 20px;
+  line-height: 28px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
-/* A link that still reads as the name: the underline on hover, as on the
-   footer's links, is the only thing that says it goes somewhere. */
 .head__home {
   color: inherit;
   text-decoration: none;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
 }
 
 .head__home:hover {
   text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* The state in a word, for anyone who reads the panel rather than the switch.
-   A screen reader gets the same from the switch role and skips this. */
-/* The header's only spacer, now that the name is no wider than the word: this
-   is where the empty middle goes, which leaves the language beside the name and
-   the switch and its word together on the right edge. */
-.power__state {
-  margin-left: auto;
-  color: var(--muted-foreground);
-  font-size: 14px;
+  text-underline-offset: 4px;
 }
 
 /* --- the language ------------------------------------------------------- */
 
-/* The globe and the code are what you see; the <select> is a real one, laid
-   over both at zero opacity. Styling a select's closed state down to two
-   letters while its options stay full language names is not something CSS can
-   do, and the alternative — shortening the options to "IT" — would take away
-   the one word on that list a reader is scanning for. So the native control
-   keeps its menu and its keyboard, and gives up only its appearance. */
-.lang {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
-  border-radius: var(--radius-sm);
-  color: var(--muted-foreground);
+.lang { position: relative; }
+
+/* A compact text button: the globe and two letters, in the muted ink while the
+   language is the browser's own, in the accent once the seller has picked one. */
+.lang__button {
+  --md-text-button-leading-space: 8px;
+  --md-text-button-trailing-space: 10px;
+  --md-text-button-with-leading-icon-leading-space: 8px;
+  --md-text-button-with-leading-icon-trailing-space: 10px;
+  --md-text-button-container-height: 32px;
+  --md-text-button-icon-size: 18px;
+  --md-text-button-label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-text-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-text-button-hover-label-text-color: var(--md-sys-color-on-surface);
+  --md-text-button-hover-icon-color: var(--md-sys-color-on-surface);
+  min-width: 0;
 }
 
-.lang:hover { color: var(--foreground); }
-
-/* The select is invisible, so the ring it would have drawn has to be drawn by
-   the box around it, or a keyboard reaches this control and nothing says so. */
-.lang:has(.lang__select:focus-visible) {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+.lang--picked .lang__button {
+  --md-text-button-label-text-color: var(--md-sys-color-primary);
+  --md-text-button-icon-color: var(--md-sys-color-primary);
+  --md-text-button-hover-label-text-color: var(--md-sys-color-primary);
+  --md-text-button-hover-icon-color: var(--md-sys-color-primary);
 }
 
-/* .icon nudges itself down two pixels to sit level with a line of card text.
-   This row is centred, so the nudge is two pixels of error. */
-.lang .icon { margin-top: 0; }
-
-/* Two letters in every language, so the switch beside it never moves. Uppercase
-   is a display choice and not the value: `lang` is stored as the subtag the
-   catalogue uses, and text-transform leaves that alone. */
+/* Two letters in every language. Uppercase is display, not the stored value. */
 .lang__code {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  display: inline-block;
+  min-width: 2ch;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Left on Automatic the code is the language the browser resolved to, which is
-   a report rather than a choice, and it stays the muted colour the row already
-   carries. An explicit pick is the seller's own and reads at full strength. */
-.lang--picked { color: var(--foreground); }
+.lang__menu { --md-menu-item-one-line-container-height: 48px; }
 
-.lang__select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  opacity: 0;
-  cursor: pointer;
-  /* Safari and Firefox both draw their own control inside the box even at zero
-     opacity, which on some builds is enough to change the box's size. */
-  appearance: none;
-}
+/* The check marks the language in use; every other row keeps its space so the
+   names line up. */
+.lang__check { visibility: hidden; color: var(--md-sys-color-primary); }
+md-menu-item[selected] .lang__check { visibility: visible; }
 
-/* --- switch ------------------------------------------------------------- */
-
-/* switch.tsx: h-5 w-11 with a two-pixel border, and a thumb that is h-4 w-6 —
-   a rounded rectangle, not a circle — travelling its own width less eight
-   pixels. Checked, the border joins the fill; unchecked it is transparent and
-   the track is --input at nine tenths. */
-.toggle {
-  position: relative;
-  flex: none;
-  width: 44px;
-  height: 20px;
-  margin: 0;
-  padding: 0;
-  border: 2px solid transparent;
-  border-radius: 9999px;
-  background: color-mix(in oklab, var(--input) 90%, transparent);
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease;
-}
-
-.toggle::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 24px;
-  height: 16px;
-  border-radius: 9999px;
-  background: var(--background);
-  background-clip: padding-box;
-  box-shadow: var(--shadow-sm);
-  transition: transform 150ms ease;
-}
-
-.toggle:checked {
-  border-color: var(--primary);
-  background: var(--primary);
-}
-
-.toggle:checked::after { transform: translateX(16px); }
-
-/* Dark takes the thumb off the page colour, which there is darker than either
-   track it sits on. */
-@media (prefers-color-scheme: dark) {
-  .toggle::after { background: var(--foreground); background-clip: border-box; }
-  .toggle:checked::after { background: var(--primary-foreground); }
+.power__state {
+  margin-left: auto;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 /* --- the website's notices ---------------------------------------------- */
 
-/* A strip right under the header, edge to edge: the negative margins give back
-   the body's 16px on either side, so it reads as a band across the panel
-   rather than one more card in the stack below. Each level brings its own ink,
-   and its background is that ink at a tenth. */
-.news { margin: 12px -16px 0; }
+/* A band right under the header, edge to edge: the negative margins give back
+   the panel's 16px on either side. Each level brings its own container. */
+.news { margin: 4px -16px 12px; }
 
 .news__item {
-  --ink: var(--primary);
-  position: relative;
+  --news-bg: var(--md-sys-color-surface-container-high);
+  --news-ink: var(--md-sys-color-on-surface);
+  --news-soft: var(--md-sys-color-on-surface-variant);
+  --news-icon: var(--md-sys-color-primary);
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px 44px 12px 16px;
-  background: color-mix(in oklab, var(--ink) 10%, transparent);
-  color: var(--ink);
-  font-size: 13px;
-  line-height: 1.4;
+  gap: 12px;
+  padding: 12px 8px 12px 16px;
+  background: var(--news-bg);
+  color: var(--news-ink);
 }
 
 .news__item + .news__item { margin-top: 1px; }
 
 .news__item--attention {
-  --ink: var(--news-attention);
-  /* Amber at a tenth is too faint to tell from the page in the light scheme. */
-  background: color-mix(in oklab, var(--ink) 12%, transparent);
+  --news-bg: var(--bl-attn-surface);
+  --news-ink: var(--bl-attn-ink);
+  --news-soft: var(--bl-attn-text);
+  --news-icon: var(--bl-attn-icon);
 }
 
-/* A shade lighter than a tenth: at 10% the red title on its own red read
-   4.47:1, just short. */
 .news__item--warning {
-  --ink: var(--destructive);
-  background: color-mix(in oklab, var(--ink) 8%, transparent);
+  --news-bg: var(--bl-alert-surface);
+  --news-ink: var(--bl-alert-ink);
+  --news-soft: var(--bl-alert-text);
+  --news-icon: var(--bl-alert-line);
 }
 
-.news__title {
-  display: block;
-  font-weight: 600;
+.news__item > md-icon {
+  --md-icon-size: 20px;
+  margin-top: 2px;
+  color: var(--news-icon);
 }
 
-/* The same walk back towards the page's ink as a red card's note: still the
-   notice's colour, no longer shouting a paragraph of it. */
-.news__body { color: color-mix(in oklab, var(--ink) 60%, var(--foreground)); }
+/* The words come from a file on the website; one long token in them must not
+   push the band wider than the panel. */
+.news__words {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.news__title { display: block; }
+.news__body { color: var(--news-soft); }
 
 .news__link {
   margin-left: 4px;
-  color: var(--ink);
+  color: var(--news-ink);
   font-weight: 500;
   text-decoration: underline;
   text-underline-offset: 3px;
   white-space: nowrap;
 }
 
-/* The words come from a file on the website, and one long token in them, an
-   address written out in full, would otherwise push the strip wider than the
-   panel or run it under the close button. */
-.news__words {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
 .news__close {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 9999px;
-  background: transparent;
-  color: var(--muted-foreground);
-  cursor: pointer;
+  --md-icon-button-icon-color: var(--news-soft);
+  --md-icon-button-hover-icon-color: var(--news-ink);
+  --md-icon-button-state-layer-height: 32px;
+  --md-icon-button-state-layer-width: 32px;
+  --md-icon-button-icon-size: 20px;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin-top: -4px;
 }
 
-.news__close:hover { background: color-mix(in oklab, var(--ink) 15%, transparent); }
+/* --- the stack ---------------------------------------------------------- */
 
-.news__close .icon { margin: 0; }
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bl-gap);
+}
 
 /* --- card --------------------------------------------------------------- */
 
-/* card.tsx: rounded-4xl, no border — a one-pixel ring of the foreground at 5%
-   and a medium shadow — with --card-spacing for padding and for the gap
-   between the header and whatever follows it. */
+/* Material's elevated card: the low container tone, one level of shadow. */
 .card {
-  margin-top: 12px;
-  padding: var(--card-spacing);
-  border-radius: var(--radius-4xl);
-  background: var(--card);
-  box-shadow: var(--shadow-md),
-    0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
-  color: var(--card-foreground);
-  overflow: hidden;
-}
-
-@media (prefers-color-scheme: dark) {
-  .card {
-    box-shadow: var(--shadow-md),
-      0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
-  }
-}
-
-/* alert.tsx's variants change the ink, not the shape: the destructive alert is
-   still a card on the card colour, with everything inside it turned red. */
-.card--alert { color: var(--destructive); }
-.card--ok { color: var(--success); }
-
-/* CardTitle is text-base font-medium; the header's own gap is 1.5, and the
-   icon sits 2.5 from the text it belongs to. */
-.card__title {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--bl-card-shape);
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
+}
+
+/* An alert fills the whole card rather than tinting a word in it. Dark, a
+   hairline in the alert's own hue keeps the card's edge, which the shadow
+   no longer draws on a dark page. */
+.card--alert {
+  background: var(--bl-alert-surface);
+  color: var(--bl-alert-ink);
+  box-shadow: inset 0 0 0 1px var(--bl-alert-outline);
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The icon in its own tonal circle, the way a Material list item leads. */
+.card__badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.card__badge md-icon { --md-icon-size: 22px; }
+
+.card--alert .card__badge {
+  background: var(--bl-alert-badge);
+  color: var(--bl-alert-on-badge);
+}
+
+.card--ok .card__badge {
+  background: var(--bl-success-container);
+  color: var(--bl-on-success-container);
+}
+
+.card__title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.35;
+  min-width: 0;
+  text-wrap: balance;
 }
 
-.card__note {
-  margin: 6px 0 0;
-  color: var(--muted-foreground);
-  font-size: 14px;
-  line-height: 1.4285;
-}
+.card__note { color: var(--md-sys-color-on-surface-variant); }
 
-/* The title and the icon carry the alarm at full strength. Everything under
-   them is the same red walked most of the way back towards the page's own ink:
-   still unmistakably part of the warning, no longer shouting a paragraph of it. */
 .card--alert .card__note,
 .card--alert .card__list,
-.card--alert .stat__label,
-.card--alert .reveal {
-  color: color-mix(in oklab, var(--destructive) 55%, var(--foreground));
+.card--alert .stat__label { color: var(--bl-alert-text); }
+
+/* The status card is a list item: icon on the left, two lines beside it. */
+.card--row {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
 }
 
-.card--ok .card__note,
-/* Folded to two lines until asked. The restriction note is the one thing in the
-   panel that says more than it needs to at a glance and less than it should when
-   read, so it does both. Cut with a mask rather than an ellipsis: three dots
-   after a full stop read as a typo, and a line that fades out says "there is
-   more of this" without spending a character on it. Two lines of 14px at
-   1.4285 is 40px exactly. */
-/* Registered, so that it can be transitioned: to the engine an unregistered
-   custom property is a string, and a string jumps. This is the point the fade
-   starts from, and moving it to the bottom is what puts the text back. */
+.card__words {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.card--ok .card__title { color: var(--bl-success); }
+
+.card__list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.card__list li + li { margin-top: 8px; }
+
+.card__why {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  overflow-wrap: anywhere;
+  opacity: 0.85;
+}
+
+.card__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.card--alert md-outlined-button {
+  --md-outlined-button-label-text-color: var(--bl-alert-ink);
+  --md-outlined-button-hover-label-text-color: var(--bl-alert-ink);
+  --md-outlined-button-focus-label-text-color: var(--bl-alert-ink);
+  --md-outlined-button-pressed-label-text-color: var(--bl-alert-ink);
+  --md-outlined-button-outline-color: color-mix(in srgb, var(--bl-alert-ink) 45%, transparent);
+  --md-outlined-button-hover-state-layer-color: var(--bl-alert-ink);
+  --md-outlined-button-pressed-state-layer-color: var(--bl-alert-ink);
+}
+
+/* --- the fold ----------------------------------------------------------- */
+
+/* Folded to two lines until asked, cut with a mask rather than an ellipsis.
+   Registered so the fade can transition: an unregistered property jumps. */
 @property --fade {
   syntax: "<percentage>";
   inherits: false;
   initial-value: 100%;
 }
 
-/* The mask stays on whether the fold is open or shut, because a mask that
-   appears at the moment the text closes would be a second thing happening. At
-   100% it covers the paragraph and does nothing. */
+.fold { position: relative; }
+
 .fold .card__note {
   -webkit-mask-image: linear-gradient(to bottom, #000 var(--fade), transparent);
   mask-image: linear-gradient(to bottom, #000 var(--fade), transparent);
-  transition: --fade 200ms ease-out;
+  transition: --fade 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* Two lines of 14px on 20px is 40px exactly. */
 .card__note--clamped {
-  --fade: 50%;
+  --fade: 30%;
   max-height: 40px;
   overflow: hidden;
-  /* The folded text opens the fold as well as the chevron does, so the chevron
-     is free to be quiet without being the only way in. */
+  padding-right: 40px;
   cursor: pointer;
 }
-
-/* The fold and its handle. The chevron sits in the bottom corner the text fades
-   into: no fill, no border, no label — the direction it points is the whole
-   message, and it turns over when the text is open. */
-.fold { position: relative; }
 
 .reveal {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  border-radius: 9999px;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  transition: opacity 150ms ease;
+  right: -8px;
+  bottom: -8px;
+  --md-icon-button-icon-color: var(--bl-alert-ink);
+  --md-icon-button-hover-icon-color: var(--bl-alert-ink);
 }
 
-/* Faded with the line it sits in, and brought back by the pointer or by the
-   keyboard: at rest it is 2.3:1 against the card, which is under the 3:1 a
-   control is meant to hold, and it is not the only way to open the fold. */
-.reveal[aria-expanded="false"] { opacity: 0.6; }
-
-.reveal:hover,
-.reveal:focus-visible { opacity: 1; }
-
-.reveal .icon {
-  margin: 0;
-  transition: transform 200ms ease;
-}
-
-.reveal[aria-expanded="true"] .icon { transform: rotate(180deg); }
-
-.card__list {
-  margin: 6px 0 0;
-  padding-left: 18px;
-  font-size: 14px;
-}
-
-.card__list li + li { margin-top: 6px; }
-
-.card__why {
-  display: block;
-  margin-top: 2px;
-  font-size: 13px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  opacity: 0.9;
-}
-
-/* size-4, nudged down half a step, exactly as the alert nudges its icon. */
-.icon {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  margin-top: 2px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
+.reveal md-icon { transition: transform 200ms cubic-bezier(0.2, 0, 0, 1); }
+.reveal[aria-expanded="true"] md-icon { transform: rotate(180deg); }
 
 /* --- the volume figures ------------------------------------------------- */
 
-/* A card puts --card-spacing between its header and its content. */
 .stats {
   display: flex;
-  gap: 24px;
-  margin-top: var(--card-spacing);
+  gap: 32px;
 }
 
-.stat { display: flex; flex-direction: column; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
 
 .stat__value {
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  /* The two figures sit side by side and must not jitter as they change. */
   font-variant-numeric: tabular-nums;
+  color: var(--md-sys-color-on-surface);
 }
 
-.stat__label {
-  margin-top: 6px;
-  color: var(--muted-foreground);
-  font-size: 14px;
+.card--alert .stat__value { color: var(--bl-alert-ink); }
+
+.stat__label { color: var(--md-sys-color-on-surface-variant); }
+
+.meter { width: 100%; }
+
+.card--alert .meter {
+  --md-linear-progress-active-indicator-color: var(--bl-alert-line);
+  --md-linear-progress-track-color: var(--bl-alert-track);
 }
 
-/* progress.tsx: an h-3 track on --muted, which is where base-luma parts
-   company with the fill-at-a-fifth track of the other styles. */
-.meter {
-  height: 12px;
-  margin-top: 16px;
-  border-radius: 9999px;
-  background: var(--muted);
-  overflow: hidden;
-}
+/* Nothing relisted is nothing to say: the note collapses rather than leaving a
+   gap in the card. */
+.card__note:empty { display: none; }
 
-.meter__fill {
-  display: block;
-  width: 0;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--primary);
-  transition: width 200ms ease;
-}
+/* --- the action --------------------------------------------------------- */
 
-.card--alert .meter__fill { background: var(--destructive); }
+.action { width: 100%; --md-filled-button-container-height: 48px; }
 
-/* --- button ------------------------------------------------------------- */
+/* --- switched off ------------------------------------------------------- */
 
-/* button.tsx at the default size: h-9, px-3, rounded-4xl — which at this
-   height is a pill — a transparent border clipped to the padding box, a hover
-   that fades the fill to four fifths, and a press that moves it down a pixel. */
-.button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  /* base-luma's lg size. The one action the panel ever offers should not be the
-     smallest thing in it, and the margin below adds to the next card's own 12px
-     so the button sits with 16px of air on both sides. */
-  height: 40px;
-  margin: 16px 0 4px;
-  padding: 0 16px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-4xl);
-  background: var(--primary);
-  background-clip: padding-box;
-  color: var(--primary-foreground);
-  font: inherit;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
-}
-
-.button:hover { background: color-mix(in oklab, var(--primary) 80%, transparent); }
-.button:active { transform: translateY(1px); }
-
-/* The outline variant: the page colour inside the theme's own border, filling
-   with --muted on hover. Dark drops the fill and hovers on --input instead. */
-.button--quiet {
-  border-color: var(--border);
-  background: var(--background);
-  color: var(--foreground);
-}
-
-.button--quiet:hover {
-  background: var(--muted);
-  color: var(--foreground);
-}
-
-@media (prefers-color-scheme: dark) {
-  .button--quiet { background: transparent; }
-  .button--quiet:hover { background: color-mix(in oklab, var(--input) 30%, transparent); }
-}
-
-/* --- switched off -------------------------------------------------------- */
-
-/* Two lines where the panel was. Everything else in main is an answer about
-   relisting, and with the switch off there is no relisting to answer for; the
-   header stays because the switch is the way back, and the footer stays because
-   a version number, a bug report and a rating are all still worth reaching with
-   the extension switched off. */
-.is-off main > :not(.offline) { display: none; }
+.panel.is-off .stack > :not(.offline) { display: none !important; }
 
 .offline {
-  margin: 0;
-  padding: 28px 0 24px;
-  color: var(--foreground);
-  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 24px 8px 28px;
   text-align: center;
 }
 
-/* The instruction, a step quieter than the state above it: it is only worth
-   reading once, and only by someone who did not mean to switch it off. */
-.offline__hint {
-  display: block;
-  margin-top: 6px;
-  color: var(--muted-foreground);
-  font-weight: 400;
+.offline__badge {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
-/* The mark loses its colour with everything else. The toolbar icon does the
-   same, from icons/off*.png, so the two agree whether or not the panel is
-   open. */
-.is-off .head__logo {
+.offline__badge md-icon { --md-icon-size: 28px; }
+
+.offline__hint { color: var(--md-sys-color-on-surface-variant); }
+
+.panel.is-off .head__logo {
   filter: grayscale(1);
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
 /* --- settings ----------------------------------------------------------- */
 
 .drawer {
-  margin-top: 12px;
-  border-top: 1px solid var(--border);
+  margin: 0 -8px;
+  border-radius: var(--bl-card-shape);
 }
 
 .drawer__summary {
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 16px 0;
-  font-size: 14px;
-  font-weight: 500;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: var(--bl-card-shape);
   list-style: none;
   cursor: pointer;
+  outline: none;
+  --md-focus-ring-shape: var(--bl-card-shape);
 }
 
-/* The marker is replaced by the chevron on the right, which turns with the
-   section — shadcn's accordion, without the accordion. */
 .drawer__summary::-webkit-details-marker { display: none; }
 
-.icon--chevron {
-  margin: 0 0 0 auto;
-  color: var(--muted-foreground);
-  transition: transform 200ms ease;
+.drawer__icon { --md-icon-size: 20px; color: var(--md-sys-color-on-surface-variant); }
+
+/* What is not at its default, said without opening the section. */
+.drawer__count {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--bl-attn-surface);
+  color: var(--bl-attn-ink);
+}
+
+.drawer__count:empty { display: none; }
+
+.drawer__chevron {
+  margin-left: auto;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* The chevron follows the direction, not the attribute: on a close the
-   attribute stays on until the body has finished shrinking, and a chevron that
-   turned back only then would be reporting the animation rather than leading
-   it. */
-.drawer[open]:not(.drawer--closing) .icon--chevron { transform: rotate(180deg); }
+   attribute stays until the body has finished shrinking. */
+.drawer[open]:not(.drawer--closing) .drawer__chevron { transform: rotate(180deg); }
 
-/* The box the open and close animation resizes. Its content has to be clipped
-   while it is shorter than the switches inside it. */
 .drawer__body { overflow: hidden; }
 
-/* Matches the summary's own padding, so the divider under the section sits the
-   same distance from the last switch as it does from the word Settings when the
-   section is shut. */
-.setting { padding-bottom: 16px; }
+.setting { padding: 4px 0 8px; }
 
-/* Three switches in a row is a list; two headings make it a decision about
-   pace and a decision about what happens afterwards. */
+/* Material's list subheader: the accent, at title-small. */
 .setting__group {
-  margin: 0 0 12px;
-  color: var(--muted-foreground);
-  font-size: 13px;
-  font-weight: 500;
+  padding: 12px 12px 4px;
+  color: var(--md-sys-color-primary);
 }
 
-.switch + .setting__group {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
+.setting__rule { margin: 8px 12px 0; }
 
-
-/* Sits between the word "Settings" and the chevron, which keeps its auto
-   margin and stays on the right. */
-.drawer__count {
-  margin-left: 8px;
-  color: var(--muted-foreground);
-  font-size: 13px;
-  font-weight: 400;
-}
-
-/* Text on the left, control on the right: the row reads as a sentence with its
-   answer at the end, and the whole row is the hit area. */
+/* A list item with a switch at its end; the whole row is the hit area. */
 .switch {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 16px;
+  padding: 12px;
+  border-radius: 12px;
   cursor: pointer;
 }
 
+.switch md-switch { margin-top: 2px; }
+
 .switch__label {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4285;
 }
 
-/* A field description: the size of the label it belongs to, in the muted ink. */
-.switch__hint {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted-foreground);
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.4285;
-}
+.switch__hint { color: var(--md-sys-color-on-surface-variant); }
 
-/* Inside a group the rows are separated by air rather than a rule: two of
-   them, each a bold label over muted ink, already read as two things, and a
-   line between every pair turned a three-item list into six bands. The rule
-   above a group heading stays, because that is where the subject changes. */
-.switch + .switch { margin-top: 20px; }
-
-/* The language row's control is a <select>, not a checkbox, so it needs its
-   own look rather than .toggle's. Same tokens as .button--quiet: the panel's
-   own border and background, so it reads as part of this drawer rather than
-   as a browser-default control dropped into it. */
-/* --- the risk gate ------------------------------------------------------ */
-
-/* Two buttons side by side, and the safe one first: the reading order is the
-   tab order, so the answer reached by reflex is the one that changes nothing. */
 /* --- the warning -------------------------------------------------------- */
 
-/* A <dialog> centres itself on the viewport with auto margins, so .card's own
-   top margin has to come off or the box sits low by exactly that much. The
-   width is the panel's content column: the warning reads as this panel stopping
-   rather than as a second, narrower window opening on top of it. */
-.modal {
-  width: calc(100% - 32px);
-  max-width: 328px;
-  max-height: calc(100vh - 32px);
-  margin: auto;
-  padding: var(--card-spacing);
-  border: 0;
-  /* .card hides its overflow to keep its corners; a warning taller than a short
-     panel has to be readable, so this one scrolls instead. */
-  overflow: auto;
+.risk {
+  --md-dialog-icon-color: var(--md-sys-color-error);
+  max-width: calc(100% - 32px);
 }
 
-/* The panel is still there and still says what the switch was, so it is blurred
-   rather than covered: the background at just over half strength, which in both
-   schemes is a veil the layout reads through and the text does not. */
-.modal::backdrop {
-  background: color-mix(in oklab, var(--background) 55%, transparent);
-  backdrop-filter: blur(6px);
-}
+.risk__detail { color: var(--md-sys-color-on-surface-variant); }
 
-/* The same 200ms ease-out the drawer and the fold open on. Nothing animates the
-   close: the answer has been given and the panel underneath is the thing to
-   look at. The reduced-motion rule at the foot of this file zeroes both. */
-@keyframes modal-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-}
-
-@keyframes backdrop-in {
-  from { opacity: 0; }
-}
-
-.modal[open] { animation: modal-in 200ms ease-out; }
-.modal[open]::backdrop { animation: backdrop-in 200ms ease-out; }
-
-/* Stacked and full width. Side by side inside 296px, the two labels had to be
-   kept short enough to fit rather than clear enough to read, and the longest of
-   them — "Turn the cooldown off" — ran out of its own button. The margin the
-   .button rule carries is the gap from the note above, applied once here rather
-   than once per button. */
+/* The risky answer is a text button in the error ink: the quieter of the two to
+   look at, and still the only one that changes anything. The safe answer is
+   the filled one, on the right, holding the focus. */
 .risk__actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
 }
 
-.risk__actions .button {
-  height: 36px;
-  margin: 0;
-}
-
-/* base-luma's destructive button is a tint carrying the destructive ink, not a
-   filled red block. It is the quieter of the two buttons to look at and still
-   the only one that changes anything. */
-.card--alert .button:not(.button--quiet) {
-  background: color-mix(in oklab, var(--destructive) 10%, transparent);
-  color: var(--destructive);
-}
-
-.card--alert .button:not(.button--quiet):hover {
-  background: color-mix(in oklab, var(--destructive) 20%, transparent);
-}
-
-@media (prefers-color-scheme: dark) {
-  .card--alert .button:not(.button--quiet) {
-    background: color-mix(in oklab, var(--destructive) 20%, transparent);
-  }
-  .card--alert .button:not(.button--quiet):hover {
-    background: color-mix(in oklab, var(--destructive) 30%, transparent);
-  }
+.risk__accept {
+  --md-text-button-label-text-color: var(--md-sys-color-error);
+  --md-text-button-hover-label-text-color: var(--md-sys-color-error);
+  --md-text-button-focus-label-text-color: var(--md-sys-color-error);
+  --md-text-button-pressed-label-text-color: var(--md-sys-color-error);
+  --md-text-button-hover-state-layer-color: var(--md-sys-color-error);
+  --md-text-button-pressed-state-layer-color: var(--md-sys-color-error);
 }
 
 /* --- donation ----------------------------------------------------------- */
 
-/* button.tsx's secondary variant: a fill, so it reads as a button, but in
-   --secondary rather than --primary, so it never outweighs #action, the one
-   thing the panel asks the seller to do. No margin above: the drawer's own
-   16px of padding is the gap there, and the 16px below matches it. */
 .donate {
-  margin: 0 0 16px;
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  text-decoration: none;
+  width: 100%;
+  margin: 12px 0 8px;
 }
-
-.donate:hover { background: color-mix(in oklab, var(--secondary) 80%, transparent); }
-
-/* The half step every other icon is nudged down sits it on a line of text;
-   here the button's own flex centres it, and the nudge would only lower it. */
-.donate .icon { margin-top: 0; }
 
 /* --- footer ------------------------------------------------------------- */
 
-/* No margin above the rule: the drawer's own 16px of padding is the whole gap,
-   which is what puts the word Settings midway between the two dividers. */
-/* Two rows: where to go when something is unclear or broken, and the version
-   they would quote, on the first; the rating on the second. The wrap is the
-   layout rather than a fallback — .foot__rate takes a whole line and pushes
-   itself onto one — so the row gap is set shorter than the column gap, which
-   is what keeps the two lines reading as one footer. */
+/* Ends the first row, so the rating starts the second one on its own. */
+.foot__break { flex-basis: 100%; height: 0; }
+
 .foot {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  font-size: 14px;
+  gap: 0 4px;
+  margin: 0 -8px;
 }
 
 .foot__link {
-  color: var(--muted-foreground);
-  text-decoration: none;
-  /* A label broken across two lines would read as two links. */
-  white-space: nowrap;
-  border-radius: var(--radius-sm);
-  transition: color 150ms ease;
+  --md-text-button-leading-space: 8px;
+  --md-text-button-trailing-space: 8px;
+  --md-text-button-container-height: 36px;
+  --md-text-button-label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-text-button-hover-label-text-color: var(--md-sys-color-on-surface);
+  --md-text-button-label-text-weight: 400;
 }
 
-.foot__link:hover {
-  color: var(--foreground);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* A whole line to itself, which is what a flex item asks for by claiming the
-   full width of the row it lands on. Left, so its edge lines up with the two
-   links above rather than floating in the middle of the panel. */
-.foot__rate { flex-basis: 100%; }
-
-/* Pushed to the end of the first row: it is there for a bug report, not for
-   reading. The rating below it starts the second row, so the auto margin only
-   ever has the two links to push away from. */
-/* A link like the two beside it, and it underlines on hover the same way; it
-   only keeps its smaller, tabular figures, which is what makes it read as the
-   version rather than as a third label. */
 .foot__version {
   margin-left: auto;
-  color: var(--muted-foreground);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
+  --md-text-button-label-text-size: 12px;
 }
 
-/* --- focus -------------------------------------------------------------- */
-
-/* focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30.
-   The ring is drawn as an outline so it costs no layout and never clips inside
-   a card; the border half only shows on the controls that keep one. */
-:focus-visible {
-  outline: 3px solid color-mix(in oklab, var(--ring) 30%, transparent);
-  outline-offset: 0;
+/* The rating on its own line, in the accent: it is the one link here that is
+   not about something being unclear or broken. */
+.foot__rate {
+  --md-text-button-label-text-color: var(--md-sys-color-primary);
+  --md-text-button-hover-label-text-color: var(--md-sys-color-primary);
+  --md-text-button-label-text-weight: 500;
 }
 
-.button:focus-visible,
-.toggle:focus-visible { border-color: var(--ring); }
-
-/* Script asks the same question before it animates anything; this covers the
-   stylesheet's own half. */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0ms !important;

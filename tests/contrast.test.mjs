@@ -1,9 +1,14 @@
-// The notices' strips against the 4.5:1 the rest of the panel holds to (the
-// list at the top of popup.css). Read from popup.css itself: each level's ink,
-// light and dark, on its own tint over the page, for the title and link in the
-// ink and for the body mixed towards the page's ink.
+// Every pair of text and ground the panel draws, held to 4.5:1 in both
+// schemes, and every icon on its own badge to 3:1. Read from popup.css itself,
+// so a token changed there is measured here before it ships.
 //
 //   node --test "tests/*.test.mjs"
+//
+// The colours are Material 3 system tokens generated from the logo's teal
+// (tools/material/build.mjs --theme), plus the panel's own alert roles. The
+// light values are on the first :root block, the dark ones twice: once under
+// prefers-color-scheme and once under [data-theme="dark"]. The two dark blocks
+// have to agree, and the first test says so.
 
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
@@ -11,39 +16,35 @@ import assert from 'node:assert/strict';
 
 const css = readFileSync(new URL('../popup.css', import.meta.url), 'utf8');
 
-// [light, dark]: the first declaration is the light scheme, the next one the
-// dark scheme's override.
-function token(name) {
-  const found = [...css.matchAll(new RegExp(`(?<![\\w-])--${name}:\\s*oklch\\(([^)]+)\\)`, 'g'))]
-    .map(match => match[1].trim().split(/\s+/).map(Number));
-  assert.ok(found.length >= 2, `--${name} has a light and a dark value`);
-  return found.slice(0, 2);
+// The declarations of the first block that opens with `opener`.
+function block(opener) {
+  const at = css.indexOf(opener);
+  assert.ok(at >= 0, `popup.css has ${opener}`);
+  const open = css.indexOf('{', at + opener.length - 1);
+  const close = css.indexOf('}', open);
+  return Object.fromEntries(
+    [...css.slice(open + 1, close).matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]),
+  );
 }
 
-// The percentage a rule gives its ink in a color-mix, falling back to the base
-// strip's for a level that does not set its own.
-function share(selector, pattern) {
-  const block = css.match(new RegExp(`${selector.replace(/[.-]/g, '\\$&')}\\s*\\{([^}]*)\\}`));
-  const hit = block && block[1].match(pattern);
-  return hit ? Number(hit[1]) / 100 : null;
+const LIGHT = block(':root {');
+const DARK = block(':root[data-theme="dark"] {');
+const DARK_MEDIA = block(':root:not([data-theme="light"]) {');
+
+// A token is a hex colour, a reference to another token, or transparent.
+function resolve(scheme, name, seen = new Set()) {
+  assert.ok(!seen.has(name), `${name} refers to itself`);
+  seen.add(name);
+  const value = scheme[name] ?? LIGHT[name];
+  assert.ok(value, `${name} is defined`);
+  const ref = value.match(/^var\((--[\w-]+)\)$/);
+  if (ref) return resolve(scheme, ref[1], seen);
+  const hex = value.match(/^#([0-9a-f]{6})$/i);
+  assert.ok(hex, `${name} is a colour this test can read (${value})`);
+  return [0, 2, 4].map(i => parseInt(hex[1].slice(i, i + 2), 16) / 255);
 }
 
-const oklabOf = ([L, C, h]) => [L, C * Math.cos((h * Math.PI) / 180), C * Math.sin((h * Math.PI) / 180)];
-
-function linearOf([L, a, b]) {
-  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  return [
-    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
-  ].map(x => Math.min(1, Math.max(0, x)));
-}
-
-const encode = x => (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055);
 const decode = x => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
-const srgbOf = lab => linearOf(lab).map(encode);
 const luminance = rgb => {
   const [r, g, b] = rgb.map(decode);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -53,39 +54,57 @@ const ratio = (x, y) => {
   return (hi + 0.05) / (lo + 0.05);
 };
 
-// color-mix(in oklab, ink p%, transparent) painted over the page: the ink at
-// alpha p, composited in sRGB.
-const tint = (ink, page, p) => srgbOf(ink).map((c, i) => c * p + srgbOf(page)[i] * (1 - p));
-// color-mix(in oklab, ink p%, foreground): mixed in oklab.
-const mix = (ink, other, p) => srgbOf(ink.map((c, i) => c * p + other[i] * (1 - p)));
+// [what it is, ink, ground]. Text first, at 4.5:1.
+const TEXT = [
+  ['page text', 'on-surface', 'surface'],
+  ['the power word and the footer links', 'on-surface-variant', 'surface'],
+  ['a picked language and the rating link', 'primary', 'surface'],
+  ['setting group headings', 'primary', 'surface'],
+  ['card titles', 'on-surface', 'surface-container-low'],
+  ['card notes and stat labels', 'on-surface-variant', 'surface-container-low'],
+  ['"Ready on this page"', 'bl-success', 'surface-container-low'],
+  ['the filled button', 'on-primary', 'primary'],
+  ['the tonal buttons', 'on-secondary-container', 'secondary-container'],
+  ['the risky answer in the warning', 'error', 'surface-container-high'],
+  ['the warning\'s text', 'on-surface-variant', 'surface-container-high'],
+  ['info notice title', 'on-surface', 'surface-container-high'],
+  ['info notice body', 'on-surface-variant', 'surface-container-high'],
+  ['attention notice title and link', 'bl-attn-ink', 'bl-attn-surface'],
+  ['attention notice body', 'bl-attn-text', 'bl-attn-surface'],
+  ['"N changed" in Settings', 'bl-attn-ink', 'bl-attn-surface'],
+  ['alert card title and figures', 'bl-alert-ink', 'bl-alert-surface'],
+  ['alert card note and list, warning notice body', 'bl-alert-text', 'bl-alert-surface'],
+];
 
-const LEVELS = {
-  info: 'primary',
-  attention: 'news-attention',
-  warning: 'destructive',
-};
+// Icons on a badge are graphics, held to 3:1.
+const ICONS = [
+  ['a card\'s icon', 'on-secondary-container', 'secondary-container'],
+  ['an alert card\'s icon', 'bl-alert-on-badge', 'bl-alert-badge'],
+  ['the ready icon', 'bl-on-success-container', 'bl-success-container'],
+  ['the alert bar on its track', 'bl-alert-line', 'bl-alert-surface'],
+  ['the warning notice\'s icon', 'bl-alert-line', 'bl-alert-surface'],
+  ['the attention notice\'s icon', 'bl-attn-icon', 'bl-attn-surface'],
+];
 
-const base = share('.news__item', /var\(--ink\) (\d+)%, transparent/);
-const bodyShare = share('.news__body', /var\(--ink\) (\d+)%/);
+describe('popup.css', () => {
+  it('declares the same dark scheme under prefers-color-scheme and [data-theme="dark"]', () => {
+    assert.deepEqual(DARK_MEDIA, DARK);
+  });
 
-describe('notice strips', () => {
-  for (const [scheme, at] of [['light', 0], ['dark', 1]]) {
-    const page = oklabOf(token('background')[at]);
-    const text = oklabOf(token('foreground')[at]);
+  for (const [scheme, tokens] of [['light', LIGHT], ['dark', DARK]]) {
+    const at = name => resolve(tokens, `--${name.startsWith('bl-') ? name : `md-sys-color-${name}`}`);
 
-    for (const [level, name] of Object.entries(LEVELS)) {
-      const ink = oklabOf(token(name)[at]);
-      const p = share(`.news__item--${level}`, /var\(--ink\) (\d+)%, transparent/) ?? base;
-      const ground = tint(ink, page, p);
-
-      it(`${level} title and link read at 4.5:1 or better (${scheme})`, () => {
-        const measured = ratio(srgbOf(ink), ground);
-        assert.ok(measured >= 4.5, `${measured.toFixed(2)}:1`);
+    for (const [what, ink, ground] of TEXT) {
+      it(`${what} reads at 4.5:1 or better (${scheme})`, () => {
+        const measured = ratio(at(ink), at(ground));
+        assert.ok(measured >= 4.5, `${ink} on ${ground}: ${measured.toFixed(2)}:1`);
       });
+    }
 
-      it(`${level} body reads at 4.5:1 or better (${scheme})`, () => {
-        const measured = ratio(mix(ink, text, bodyShare), ground);
-        assert.ok(measured >= 4.5, `${measured.toFixed(2)}:1`);
+    for (const [what, ink, ground] of ICONS) {
+      it(`${what} stands out at 3:1 or better (${scheme})`, () => {
+        const measured = ratio(at(ink), at(ground));
+        assert.ok(measured >= 3, `${ink} on ${ground}: ${measured.toFixed(2)}:1`);
       });
     }
   }
