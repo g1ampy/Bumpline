@@ -757,6 +757,9 @@ md-menu-item[selected] .lang__check { visibility: visible; }
   max-width: calc(100% - 32px);
 }
 
+/* Inherited into the dialog's own scroller, which no selector here can reach. */
+.risk[data-opening] { scrollbar-color: transparent transparent; }
+
 .risk__detail { color: var(--md-sys-color-on-surface-variant); }
 
 /* The risky answer is a text button in the error ink: the quieter of the two to

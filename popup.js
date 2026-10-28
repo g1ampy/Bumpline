@@ -722,7 +722,18 @@ function askRisk({ title, detail, accept, cancel }) {
     // The safe answer carries autofocus in the markup, so md-dialog hands it the
     // focus as it opens: Enter on a warning nobody read keeps the setting where
     // it was.
-    if (!modal.open) modal.show();
+    //
+    // md-dialog counts itself as scrolling until an IntersectionObserver says
+    // otherwise, a frame after it opens, and in that frame draws a scrollbar
+    // on a warning that fits. The bar is see-through while it opens; one that
+    // really scrolls has its bar back once it is open.
+    if (!modal.open) {
+      modal.setAttribute('data-opening', '');
+      const settled = () => modal.removeAttribute('data-opening');
+      modal.addEventListener('opened', settled, { once: true });
+      modal.addEventListener('closed', settled, { once: true });
+      modal.show();
+    }
   });
 }
 
