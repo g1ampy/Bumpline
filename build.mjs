@@ -58,9 +58,9 @@ const PAYLOAD = [
   // not ship and the extension would load without a word in it.
   'strings.js',
   '_locales',
-  // Google Sans Flex, the typeface Material 3 is drawn in. Manifest v3 refuses
-  // a remote font, so the two Latin subsets ship with the extension, and
-  // OFL.txt is the licence they ship under.
+  // Roboto Flex, Material's own typeface. Manifest v3 refuses a remote font,
+  // so the two Latin subsets ship with the extension, and OFL.txt is the
+  // licence they ship under.
   'fonts',
   'LICENSE',
 ];

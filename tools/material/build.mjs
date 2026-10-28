@@ -21,7 +21,7 @@
 //   vendor/material.js     the md-* components, bundled from entry.js
 //   vendor/LICENSE-*       the licences that bundle ships under
 //   icons.js               Material Symbols, as path data md-icon can draw
-//   fonts/google-sans-*    Google Sans Flex, Latin and Latin Extended
+//   fonts/roboto-flex-*    Roboto Flex, Latin and Latin Extended
 //   fonts/OFL.txt          the licence the font ships under
 //
 //   cd tools/material
@@ -178,15 +178,15 @@ function icons() {
 
 // --- the font ----------------------------------------------------------------
 
-// The cut with the weight and roundness axes: everything the panel sets, at a
+// The cut with the weight axis alone: everything the panel sets, at a
 // fraction of the full variable font.
 function fonts() {
-  const files = join(MODULES, '@fontsource-variable/google-sans-flex/files');
+  const files = join(MODULES, '@fontsource-variable/roboto-flex/files');
   for (const subset of ['latin', 'latin-ext']) {
-    copyFileSync(join(files, `google-sans-flex-${subset}-rond-normal.woff2`),
-      join(ROOT, 'fonts', `google-sans-flex-${subset}.woff2`));
+    copyFileSync(join(files, `roboto-flex-${subset}-wght-normal.woff2`),
+      join(ROOT, 'fonts', `roboto-flex-${subset}.woff2`));
   }
-  copyFileSync(join(MODULES, '@fontsource-variable/google-sans-flex/LICENSE'), join(ROOT, 'fonts', 'OFL.txt'));
+  copyFileSync(join(MODULES, '@fontsource-variable/roboto-flex/LICENSE'), join(ROOT, 'fonts', 'OFL.txt'));
 }
 
 if (process.argv.includes('--theme')) {

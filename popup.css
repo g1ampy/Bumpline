@@ -19,27 +19,27 @@
  * and every icon on its badge to 3:1, light and dark.
  */
 
-/* Google Sans Flex, the face Material 3 is drawn in, shipped inside the
-   extension because Manifest v3 will not load a remote font (font-src is
-   'self'). The cut with the weight and roundness axes: 71 KB for Latin and
-   37 KB for Latin Extended, which Vinted's twenty-eight countries need. OFL. */
+/* Roboto Flex, Material's own face, shipped inside the extension because
+   Manifest v3 will not load a remote font (font-src is 'self'). The cut with
+   the weight axis alone: 34 KB for Latin and 23 KB for Latin Extended, which
+   Vinted's twenty-eight countries need. OFL. */
 @font-face {
-  font-family: "Google Sans Flex";
+  font-family: "Roboto Flex";
   font-style: normal;
-  font-weight: 1 1000;
+  font-weight: 100 1000;
   font-display: swap;
-  src: url("fonts/google-sans-flex-latin.woff2") format("woff2");
+  src: url("fonts/roboto-flex-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: "Google Sans Flex";
+  font-family: "Roboto Flex";
   font-style: normal;
-  font-weight: 1 1000;
+  font-weight: 100 1000;
   font-display: swap;
-  src: url("fonts/google-sans-flex-latin-ext.woff2") format("woff2");
+  src: url("fonts/roboto-flex-latin-ext.woff2") format("woff2");
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
     U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
     U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
@@ -113,8 +113,8 @@
   --bl-attn-text: var(--bl-on-attention-container);
   --bl-attn-icon: var(--bl-attention);
 
-  --md-ref-typeface-brand: "Google Sans Flex", "Google Sans", Roboto, ui-sans-serif, system-ui, sans-serif;
-  --md-ref-typeface-plain: "Google Sans Flex", "Google Sans", Roboto, ui-sans-serif, system-ui, sans-serif;
+  --md-ref-typeface-brand: "Roboto Flex", Roboto, ui-sans-serif, system-ui, sans-serif;
+  --md-ref-typeface-plain: "Roboto Flex", Roboto, ui-sans-serif, system-ui, sans-serif;
 
   /* Shape: Material's large corner for cards, full for everything that is a pill. */
   --bl-card-shape: 16px;
