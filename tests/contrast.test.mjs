@@ -9,36 +9,55 @@
 // light values are on the first :root block, the dark ones twice: once under
 // prefers-color-scheme and once under [data-theme="dark"]. The two dark blocks
 // have to agree, and the first test says so.
+//
+// content.js draws the cards and dialogs on Vinted's page from tokens of its
+// own, declared on them, and those have to be popup.css's, value for value.
 
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 const css = readFileSync(new URL('../popup.css', import.meta.url), 'utf8');
+const content = readFileSync(new URL('../content.js', import.meta.url), 'utf8');
+
+// The declarations of every block in `text` that opens with `opener`.
+function blocks(text, opener) {
+  const found = [];
+  for (let at = text.indexOf(opener); at >= 0; at = text.indexOf(opener, at + opener.length)) {
+    const open = text.indexOf('{', at + opener.length - 1);
+    const close = text.indexOf('}', open);
+    found.push(Object.fromEntries(
+      [...text.slice(open + 1, close).matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]),
+    ));
+  }
+  return found;
+}
 
 // The declarations of the first block that opens with `opener`.
 function block(opener) {
-  const at = css.indexOf(opener);
-  assert.ok(at >= 0, `popup.css has ${opener}`);
-  const open = css.indexOf('{', at + opener.length - 1);
-  const close = css.indexOf('}', open);
-  return Object.fromEntries(
-    [...css.slice(open + 1, close).matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]),
-  );
+  const [first] = blocks(css, opener);
+  assert.ok(first, `popup.css has ${opener}`);
+  return first;
 }
 
 const LIGHT = block(':root {');
 const DARK = block(':root[data-theme="dark"] {');
 const DARK_MEDIA = block(':root:not([data-theme="light"]) {');
 
-// A token is a hex colour, a reference to another token, or transparent.
-function resolve(scheme, name, seen = new Set()) {
+// What a token finally says, following references. A scheme's missing names
+// are its light scheme's.
+function valueOf(scheme, base, name, seen = new Set()) {
   assert.ok(!seen.has(name), `${name} refers to itself`);
   seen.add(name);
-  const value = scheme[name] ?? LIGHT[name];
+  const value = scheme[name] ?? base[name];
   assert.ok(value, `${name} is defined`);
   const ref = value.match(/^var\((--[\w-]+)\)$/);
-  if (ref) return resolve(scheme, ref[1], seen);
+  return ref ? valueOf(scheme, base, ref[1], seen) : value.toLowerCase();
+}
+
+// A token is a hex colour, a reference to another token, or transparent.
+function resolve(scheme, name) {
+  const value = valueOf(scheme, LIGHT, name);
   const hex = value.match(/^#([0-9a-f]{6})$/i);
   assert.ok(hex, `${name} is a colour this test can read (${value})`);
   return [0, 2, 4].map(i => parseInt(hex[1].slice(i, i + 2), 16) / 255);
@@ -74,6 +93,7 @@ const TEXT = [
   ['"N changed" in Settings', 'bl-attn-ink', 'bl-attn-surface'],
   ['alert card title and figures', 'bl-alert-ink', 'bl-alert-surface'],
   ['alert card note and list, warning notice body', 'bl-alert-text', 'bl-alert-surface'],
+  ['the quiet answer in a dialog on the page', 'primary', 'surface-container-high'],
 ];
 
 // Icons on a badge are graphics, held to 3:1.
@@ -84,6 +104,8 @@ const ICONS = [
   ['the alert bar on its track', 'bl-alert-line', 'bl-alert-surface'],
   ['the warning notice\'s icon', 'bl-alert-line', 'bl-alert-surface'],
   ['the attention notice\'s icon', 'bl-attn-icon', 'bl-attn-surface'],
+  ['a dialog\'s icon on the page', 'secondary', 'surface-container-high'],
+  ['a warning\'s icon on the page', 'error', 'surface-container-high'],
 ];
 
 describe('popup.css', () => {
@@ -107,5 +129,30 @@ describe('popup.css', () => {
         assert.ok(measured >= 3, `${ink} on ${ground}: ${measured.toFixed(2)}:1`);
       });
     }
+  }
+});
+
+describe('content.js', () => {
+  // Light first, then the dark one under prefers-color-scheme.
+  const [PAGE_LIGHT, PAGE_DARK, ...more] = blocks(content, '.bumpline-card, .bumpline-modal {');
+
+  it('declares the page\'s tokens once light and once dark', () => {
+    assert.ok(PAGE_LIGHT && PAGE_DARK, 'content.js has both blocks');
+    assert.equal(more.length, 0);
+  });
+
+  for (const [scheme, page, panel] of [['light', PAGE_LIGHT, LIGHT], ['dark', PAGE_DARK, DARK]]) {
+    it(`draws the page in the panel's colours (${scheme})`, () => {
+      // A Material role the panel has no value for is a typo, not a choice.
+      for (const name of Object.keys(page)) {
+        if (name.startsWith('--md-sys-color-')) assert.ok(name in LIGHT, `popup.css has ${name}`);
+      }
+      // The page's own tokens, like the dark hairline, are not the panel's.
+      const shared = Object.keys(page).filter(name => name in LIGHT);
+      assert.ok(shared.length > 0, 'the page shares tokens with the panel');
+      for (const name of shared) {
+        assert.equal(valueOf(page, PAGE_LIGHT, name), valueOf(panel, LIGHT, name), name);
+      }
+    });
   }
 });

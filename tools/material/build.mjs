@@ -139,7 +139,7 @@ async function components() {
 
 // --- the icons ---------------------------------------------------------------
 
-// The name popup.js and popup.html use, and the Material Symbol it draws.
+// The name the panel and content.js use, and the Material Symbol it draws.
 // Rounded, weight 400; -fill is the filled form of the same symbol.
 const ICONS = {
   check: 'check',
@@ -148,12 +148,15 @@ const ICONS = {
   coffee: 'coffee',
   error: 'error-fill',
   expand_more: 'keyboard_arrow_down',
+  favorite: 'favorite-fill',
   info: 'info-fill',
   language: 'language',
+  lightbulb: 'lightbulb-fill',
   open_in_new: 'open_in_new',
   pause_circle: 'pause_circle-fill',
   power_settings_new: 'power_settings_new',
   schedule: 'schedule',
+  straighten: 'straighten-fill',
   tune: 'tune',
   warning: 'warning-fill',
 };

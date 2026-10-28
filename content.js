@@ -1080,8 +1080,51 @@
 
   const STYLE_ID = 'bumpline-style';
 
+  // Roboto Flex, the panel's face, for the cards and dialogs on the page. The
+  // page's stylesheet cannot point at a font inside the extension unless the
+  // file is listed in web_accessible_resources, which lets any page find out
+  // the extension is installed, and what the page may load as a font is up to
+  // Vinted's CSP. So the worker reads the two subsets out of the package and
+  // they become FontFaces here: a face built from bytes is not fetched, and no
+  // CSP has a say in it. Under a family of its own, so it can never stand in
+  // for a Roboto Flex of Vinted's. The ranges are popup.css's.
+  const FONT_FAMILY = 'Bumpline Roboto Flex';
+  const FONT_FILES = [
+    ['fonts/roboto-flex-latin.woff2',
+      'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, ' +
+      'U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, ' +
+      'U+2212, U+2215, U+FEFF, U+FFFD'],
+    ['fonts/roboto-flex-latin-ext.woff2',
+      'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, ' +
+      'U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, ' +
+      'U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF'],
+  ];
+
+  // A face that does not arrive leaves the cards in the next font on the list,
+  // which is a look, not a fault, so it is only traced.
+  async function installFont() {
+    for (const [file, unicodeRange] of FONT_FILES) {
+      const reply = await askWorker({ type: 'bumpline:fetchBinary', url: ext.runtime.getURL(file) });
+      if (!reply.ok || typeof reply.data !== 'string') {
+        trace('font did not arrive', file, reply.status || reply.error || 'no response');
+        continue;
+      }
+      try {
+        const face = new FontFace(FONT_FAMILY, bytesOf(reply.data), {
+          weight: '100 1000',
+          unicodeRange,
+          display: 'swap',
+        });
+        document.fonts.add(await face.load());
+      } catch (err) {
+        trace('font did not load', file, err);
+      }
+    }
+  }
+
   function installStyles() {
     if (document.getElementById(STYLE_ID)) return;
+    installFont();
     const sheet = document.createElement('style');
     sheet.id = STYLE_ID;
     sheet.textContent = `
@@ -1099,86 +1142,141 @@
       .${CLASS.draftButton} { margin-top: 6px !important; }
 
       /* The three things this extension puts on the page — a toast, the pause,
-         a stuck relist — are one card in three places. Their colours are fixed
-         rather than following the page: a card with its own background reads on
-         a light Vinted and on a dark one. */
-      .bumpline-card,
-      .bumpline-modal {
-        /* The toolbar popup's own tokens, value for value — shadcn preset
-           b1tepwVzU, style base-luma, on the logo's hue — so the two halves of
-           the extension are one thing. They are declared on the card and the
-           modal rather than on :root: Vinted has its own custom properties and
-           this must not reach them. The 26px corner is base-luma's
-           rounded-4xl, the same one the popup's cards use. */
-        --bl-page: oklch(0.985 0.005 203);
-        --bl-card: oklch(1 0 0);
-        --bl-ink: oklch(0.21 0.022 213);
-        --bl-muted-ink: oklch(0.545 0.032 210);
-        --bl-muted: oklch(0.965 0.011 203);
-        --bl-border: oklch(0.918 0.015 203);
-        --bl-primary: oklch(0.5 0.115 203);
-        --bl-primary-ink: #fbfbfb;
-        --bl-destructive: oklch(0.54 0.225 25);
-        --bl-success: oklch(0.53 0.155 148);
-        --bl-ring: oklch(0.21 0.022 213 / 5%);
+         a stuck relist — are one card in three places, and every question it
+         asks there is one dialog. Both are drawn as the toolbar panel draws
+         its own: its Material 3 tokens, value for value (tests/contrast.test.mjs
+         holds the two files to the same numbers), its face and its shapes, so
+         the two halves of the extension are one thing. The tokens are declared
+         on the card and the modal rather than on :root: Vinted has its own
+         custom properties and this must not reach them. Their colours are
+         fixed rather than following the page: a card with its own background
+         reads on a light Vinted and on a dark one. */
+      .bumpline-card, .bumpline-modal {
+        --md-sys-color-primary: #006973;
+        --md-sys-color-secondary: #4a6366;
+        --md-sys-color-secondary-container: #cde7eb;
+        --md-sys-color-on-secondary-container: #324b4e;
+        --md-sys-color-error: #ba1a1a;
+        --md-sys-color-on-surface: #171d1e;
+        --md-sys-color-on-surface-variant: #3f484a;
+        --md-sys-color-outline: #6f797a;
+        --md-sys-color-outline-variant: #bec8ca;
+        --md-sys-color-surface-container-low: #eff5f5;
+        --md-sys-color-surface-container-high: #e3e9ea;
+        --bl-success-container: #8af8bf;
+        --bl-on-success-container: #002112;
+        --bl-alert-surface: #ffdad6;
+        --bl-alert-text: #93000a;
+        --bl-alert-badge: #ba1a1a;
+        --bl-alert-on-badge: #ffffff;
+        --bl-alert-outline: transparent;
+        --bl-card-edge: transparent;
         color-scheme: light;
       }
 
+      /* Vinted follows the system theme and so does the panel, so this does
+         too rather than sitting on the page as a white slab. Dark, a shadow no
+         longer draws a card's edge, so a hairline does, as it does for the
+         panel's alerts. */
+      @media (prefers-color-scheme: dark) {
+        .bumpline-card, .bumpline-modal {
+          --md-sys-color-primary: #81d3df;
+          --md-sys-color-secondary: #b1cbcf;
+          --md-sys-color-secondary-container: #324b4e;
+          --md-sys-color-on-secondary-container: #cde7eb;
+          --md-sys-color-error: #ffb4ab;
+          --md-sys-color-on-surface: #dee4e4;
+          --md-sys-color-on-surface-variant: #bec8ca;
+          --md-sys-color-outline: #899294;
+          --md-sys-color-outline-variant: #3f484a;
+          --md-sys-color-surface-container-low: #171d1e;
+          --md-sys-color-surface-container-high: #252b2c;
+          --bl-success-container: #005234;
+          --bl-on-success-container: #8af8bf;
+          --bl-alert-surface: #381f1c;
+          --bl-alert-text: #f6cac5;
+          --bl-alert-badge: #6d3731;
+          --bl-alert-on-badge: #ffdad6;
+          --bl-alert-outline: #613632;
+          --bl-card-edge: #3f484a;
+          color-scheme: dark;
+        }
+      }
+
+      /* Roboto Flex, as installFont hands it to the page, then the Roboto a
+         system may have, then whatever it does have. */
+      .bumpline-card,
+      .bumpline-modal__panel {
+        font-family: "${FONT_FAMILY}", Roboto, ui-sans-serif, system-ui, sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+        letter-spacing: .25px;
+        text-align: left;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* The panel's card: the low container tone, the large corner, and the
+         icon in its own tonal circle. Raised to elevation 3, the level Material
+         gives what floats over a page. */
       .bumpline-card {
         position: fixed;
         z-index: 2147483647;
         box-sizing: border-box;
         display: flex;
-        align-items: flex-start;
-        gap: 10px;
+        align-items: center;
+        gap: 16px;
         max-width: 320px;
-        padding: 14px 16px;
-        border-radius: 26px;
-        background: var(--bl-card);
-        color: var(--bl-ink);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1),
-                    0 0 0 1px var(--bl-ring);
-        font: 14px/1.4285 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-              Helvetica, Arial, sans-serif;
-        animation: bumpline-card-in 180ms cubic-bezier(.16,1,.3,1);
-      }
-
-      /* Vinted follows the system theme and so does the popup, so this does
-         too rather than sitting on the page as a white slab. */
-      @media (prefers-color-scheme: dark) {
-        .bumpline-card,
-        .bumpline-modal {
-          --bl-page: oklch(0.175 0.015 215);
-          --bl-card: oklch(0.225 0.018 215);
-          --bl-ink: oklch(0.97 0.007 203);
-          --bl-muted-ink: oklch(0.72 0.026 210);
-          --bl-muted: oklch(0.285 0.021 215);
-          --bl-border: oklch(1 0 0 / 12%);
-          --bl-primary: oklch(0.72 0.13 203);
-          --bl-primary-ink: oklch(0.2 0.028 215);
-          --bl-destructive: oklch(0.71 0.185 25);
-          --bl-success: oklch(0.75 0.155 148);
-          --bl-ring: oklch(1 0 0 / 10%);
-          color-scheme: dark;
-        }
+        padding: 16px;
+        border-radius: 16px;
+        background: var(--md-sys-color-surface-container-low);
+        color: var(--md-sys-color-on-surface);
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / .3), 0 4px 8px 3px rgb(0 0 0 / .15),
+                    inset 0 0 0 1px var(--bl-card-edge);
+        animation: bumpline-card-in 180ms cubic-bezier(.2,0,0,1);
       }
       .bumpline-card[data-leaving] {
         animation: bumpline-card-out 180ms ease forwards;
       }
-      .bumpline-card__icon {
+
+      /* An alert fills the whole card rather than tinting a word in it. */
+      .bumpline-card--bad {
+        background: var(--bl-alert-surface);
+        color: var(--bl-alert-text);
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / .3), 0 4px 8px 3px rgb(0 0 0 / .15),
+                    inset 0 0 0 1px var(--bl-alert-outline);
+      }
+
+      .bumpline-card__badge {
+        display: grid;
         flex: none;
-        width: 16px;
-        height: 16px;
-        margin-top: 1px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--md-sys-color-secondary-container);
+        color: var(--md-sys-color-on-secondary-container);
+      }
+      .bumpline-card--ok .bumpline-card__badge {
+        background: var(--bl-success-container);
+        color: var(--bl-on-success-container);
+      }
+      .bumpline-card--bad .bumpline-card__badge {
+        background: var(--bl-alert-badge);
+        color: var(--bl-alert-on-badge);
+      }
+      .bumpline-card__icon {
+        display: block;
+        flex: none;
+        width: 24px;
+        height: 24px;
+        fill: currentColor;
+      }
+      .bumpline-card__badge .bumpline-card__icon {
+        width: 22px;
+        height: 22px;
       }
       .bumpline-card__body { min-width: 0; }
-      .bumpline-card--ok  .bumpline-card__icon { color: var(--bl-success); }
-      .bumpline-card--bad .bumpline-card__icon { color: var(--bl-destructive); }
 
       @keyframes bumpline-card-in {
         from { opacity: 0; transform: translateY(8px) scale(.98); }
@@ -1193,25 +1291,25 @@
 
       /* Two corners, so neither can cover the other. */
       .${CLASS.toast}  { right: 16px; bottom: 16px; font-weight: 500; }
-      .${CLASS.banner} { right: 16px; top: 16px; max-width: 340px; }
+      .${CLASS.banner} { right: 16px; top: 16px; max-width: 340px; align-items: flex-start; }
       .bumpline-card__why {
-        margin-top: 8px;
-        font-size: 13px;
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 16px;
         overflow-wrap: anywhere;
-        color: var(--bl-muted-ink);
+        opacity: .85;
       }
       .bumpline-banner__actions {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 10px;
+        margin-top: 12px;
       }
 
-      /* The popup's warning dialog, brought onto the page: the same card, a
-         title with its icon over a muted note, and the buttons stacked full
-         width with the safe one first. The page behind is veiled in its own
-         colour and blurred rather than blacked out, as the popup does to the
-         panel under its dialog. Every property a button or a select can carry
+      /* The panel's warning dialog, brought onto the page: md-dialog's high
+         container tone and extra-large corner, the headline with its icon over
+         the supporting text, the answers on the right, and the page behind
+         under Material's scrim. Every property a button or a select can carry
          is set here, because Vinted's stylesheet reaches them too. */
       .bumpline-modal {
         position: fixed;
@@ -1221,146 +1319,172 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 16px;
-        background: color-mix(in oklab, var(--bl-page) 55%, transparent);
-        backdrop-filter: blur(6px);
+        padding: 24px;
+        background: rgb(0 0 0 / .32);
         animation: bumpline-veil-in 200ms ease-out;
       }
       .bumpline-modal__panel {
         box-sizing: border-box;
         width: 100%;
-        max-width: 360px;
+        max-width: 440px;
         max-height: 100%;
         overflow: auto;
         padding: 24px;
-        border-radius: 26px;
-        background: var(--bl-card);
-        color: var(--bl-ink);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1),
-                    0 0 0 1px var(--bl-ring);
-        font: 14px/1.4285 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-              Helvetica, Arial, sans-serif;
-        text-align: left;
-        animation: bumpline-card-in 200ms ease-out;
+        border-radius: 28px;
+        background: var(--md-sys-color-surface-container-high);
+        color: var(--md-sys-color-on-surface);
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / .3), 0 4px 8px 3px rgb(0 0 0 / .15);
+        animation: bumpline-card-in 200ms cubic-bezier(.2,0,0,1);
       }
-      /* The popup's header in small: the mark and the name, in the muted ink,
-         over the question, so a box on Vinted's page says whose it is. */
+      /* The panel's header in small: the mark and the name, in the variant
+         ink, over the question, so a box on Vinted's page says whose it is. */
       .bumpline-modal__brand {
         display: flex;
         align-items: center;
         gap: 8px;
         margin-bottom: 16px;
-        color: var(--bl-muted-ink);
-        font-size: 13px;
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 12px;
         font-weight: 500;
+        line-height: 16px;
+        letter-spacing: .5px;
       }
       .bumpline-modal__logo {
         flex: none;
         width: 18px;
         height: 18px;
       }
+      /* Headline small, with the icon md-dialog puts in the secondary colour,
+         or in the error colour when the question is a warning. */
       .bumpline-modal__title {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
-        font-size: 16px;
-        font-weight: 500;
-        line-height: 1.35;
+        gap: 12px;
+        font-size: 24px;
+        font-weight: 400;
+        line-height: 32px;
+        letter-spacing: 0;
       }
-      .bumpline-modal__title .bumpline-card__icon { margin-top: 2px; }
+      .bumpline-modal__title .bumpline-card__icon {
+        margin-top: 4px;
+        color: var(--md-sys-color-secondary);
+      }
+      .bumpline-modal--alert .bumpline-modal__title .bumpline-card__icon {
+        color: var(--md-sys-color-error);
+      }
       .bumpline-modal__body {
-        margin-top: 6px;
-        color: var(--bl-muted-ink);
+        margin-top: 16px;
+        color: var(--md-sys-color-on-surface-variant);
       }
 
-      /* alert.tsx's destructive variant, as the popup has it: the title and
-         its icon in red, the note in the same red walked most of the way back
-         to the ink, and the button that goes ahead a red tint, not a fill. */
-      .bumpline-modal--alert .bumpline-modal__title { color: var(--bl-destructive); }
-      .bumpline-modal--alert .bumpline-modal__body {
-        color: color-mix(in oklab, var(--bl-destructive) 55%, var(--bl-ink));
-      }
-
+      /* An outlined text field's frame around the browser's own select. */
       .bumpline-modal__picker {
         box-sizing: border-box;
         width: 100%;
-        height: 36px;
+        height: 56px;
         margin: 16px 0 0;
-        padding: 0 12px;
-        border: 1px solid var(--bl-border);
-        border-radius: 26px;
-        background: var(--bl-card);
-        color: var(--bl-ink);
+        padding: 0 12px 0 16px;
+        border: 1px solid var(--md-sys-color-outline);
+        border-radius: 4px;
+        background: transparent;
+        box-shadow: none;
+        color: var(--md-sys-color-on-surface);
         font: inherit;
+        font-size: 16px;
+        line-height: 24px;
+        letter-spacing: .5px;
+      }
+      .bumpline-modal__picker:hover { border-color: var(--md-sys-color-on-surface); }
+      .bumpline-modal__picker:focus {
+        outline: none;
+        border-color: var(--md-sys-color-primary);
+        box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
       }
 
       .bumpline-modal__actions {
         display: flex;
-        flex-direction: column;
+        flex-wrap: wrap;
+        justify-content: flex-end;
         gap: 8px;
-        margin-top: 16px;
+        margin-top: 24px;
       }
+
+      /* md-filled-tonal-button, and with quiet md-text-button. The state layer
+         is the label's own colour, 8% on hover and 10% pressed. */
       .bumpline-modal__button {
         box-sizing: border-box;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        width: 100%;
-        height: 36px;
+        gap: 8px;
+        width: auto;
+        min-width: 0;
+        height: 40px;
         margin: 0;
-        padding: 0 16px;
-        border: 1px solid transparent;
-        border-radius: 26px;
-        background: var(--bl-primary);
-        background-clip: padding-box;
-        color: var(--bl-primary-ink);
+        padding: 0 24px;
+        border: none;
+        border-radius: 20px;
+        background: var(--md-sys-color-secondary-container);
+        box-shadow: none;
+        color: var(--md-sys-color-on-secondary-container);
         font: inherit;
+        font-size: 14px;
         font-weight: 500;
+        line-height: 20px;
+        letter-spacing: .1px;
+        text-align: center;
         text-transform: none;
         white-space: nowrap;
         cursor: pointer;
         appearance: none;
-        transition: background-color 150ms ease;
+        transition: background-color 150ms cubic-bezier(.2,0,0,1),
+                    box-shadow 150ms cubic-bezier(.2,0,0,1);
+      }
+      .bumpline-modal__button:has(.bumpline-card__icon) { padding-left: 16px; }
+      .bumpline-modal__button .bumpline-card__icon {
+        width: 18px;
+        height: 18px;
       }
       .bumpline-modal__button:hover {
-        background: color-mix(in oklab, var(--bl-primary) 80%, transparent);
+        background: color-mix(in srgb, currentColor 8%, var(--md-sys-color-secondary-container));
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / .3), 0 1px 3px 1px rgb(0 0 0 / .15);
       }
-      .bumpline-modal__button:active { transform: translateY(1px); }
+      .bumpline-modal__button:active {
+        background: color-mix(in srgb, currentColor 10%, var(--md-sys-color-secondary-container));
+        box-shadow: none;
+      }
+      .bumpline-modal__button--quiet {
+        padding: 0 12px;
+        background: transparent;
+        color: var(--md-sys-color-primary);
+      }
+      .bumpline-modal__button--quiet:has(.bumpline-card__icon) { padding: 0 16px 0 12px; }
+      .bumpline-modal__button--quiet:hover {
+        background: color-mix(in srgb, currentColor 8%, transparent);
+        box-shadow: none;
+      }
+      .bumpline-modal__button--quiet:active {
+        background: color-mix(in srgb, currentColor 10%, transparent);
+      }
+      /* In a warning, going ahead is the quiet answer, in the error ink: the
+         quieter of the two to look at, and still the only one that does
+         anything. */
+      .bumpline-modal--alert .bumpline-modal__button--quiet {
+        color: var(--md-sys-color-error);
+      }
       .bumpline-modal__button:disabled {
-        opacity: .5;
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+        box-shadow: none;
+        color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+        cursor: default;
         pointer-events: none;
       }
-      .bumpline-modal__button .bumpline-card__icon { margin-top: 0; }
-      .bumpline-modal__button--quiet {
-        border-color: var(--bl-border);
-        background: var(--bl-card);
-        color: var(--bl-ink);
-      }
-      .bumpline-modal__button--quiet:hover { background: var(--bl-muted); }
-      .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet) {
-        background: color-mix(in oklab, var(--bl-destructive) 10%, transparent);
-        color: var(--bl-destructive);
-      }
-      .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet):hover {
-        background: color-mix(in oklab, var(--bl-destructive) 20%, transparent);
-      }
-      @media (prefers-color-scheme: dark) {
-        .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet) {
-          background: color-mix(in oklab, var(--bl-destructive) 20%, transparent);
-        }
-        .bumpline-modal--alert .bumpline-modal__button:not(.bumpline-modal__button--quiet):hover {
-          background: color-mix(in oklab, var(--bl-destructive) 30%, transparent);
-        }
-      }
+      .bumpline-modal__button--quiet:disabled { background: transparent; }
 
-      /* focus-visible:ring-3 ring-ring/30, drawn as an outline as the popup
-         draws it, with the border taking the full colour. */
-      .bumpline-modal__button:focus-visible,
-      .bumpline-modal__picker:focus-visible {
-        outline: 3px solid color-mix(in oklab, var(--bl-primary) 30%, transparent);
-        outline-offset: 0;
-        border-color: var(--bl-primary);
+      /* md-focus-ring: three pixels of the secondary colour, two pixels out. */
+      .bumpline-modal__button:focus-visible {
+        outline: 3px solid var(--md-sys-color-secondary);
+        outline-offset: 2px;
       }
 
       @keyframes bumpline-veil-in {
@@ -1402,69 +1526,50 @@
 
   const TOAST_ID = 'bumpline-toast';
 
-  // Lucide check, triangle-alert and circle-pause. The tone is in the glyph as
-  // well as in the colour, so a card survives a greyscale screen.
+  // The panel's check and warning. The tone is in the glyph as well as in the
+  // colour, so a card survives a greyscale screen.
   const CARD_GLYPH = {
-    ok: ['M20 6 9 17l-5-5'],
-    bad: [
-      'M12 9v4',
-      'M12 17h.01',
-      'M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
-    ],
+    ok: 'check',
+    bad: 'warning',
   };
 
-  // Lucide heart, coffee, ruler and lightbulb, for the titles and buttons of
-  // the modals.
+  // Heart, coffee, ruler and lightbulb, for the titles and buttons of the
+  // modals.
   const MODAL_GLYPH = {
-    lightbulb: [
-      'M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5',
-      'M9 18h6',
-      'M10 22h4',
-    ],
-    heart: [
-      'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z',
-    ],
-    coffee: [
-      'M10 2v2',
-      'M14 2v2',
-      'M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1',
-      'M6 2v2',
-    ],
-    ruler: [
-      'M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z',
-      'm14.5 12.5 2-2',
-      'm11.5 9.5 2-2',
-      'm8.5 6.5 2-2',
-      'm17.5 15.5 2-2',
-    ],
+    lightbulb: 'lightbulb',
+    heart: 'favorite',
+    coffee: 'coffee',
+    ruler: 'straighten',
   };
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
+  // A Material Symbol, from the path data icons.js carries for the panel too,
+  // drawn in the text's colour on Material's 960-unit box.
   function glyphIcon(glyph) {
     const icon = document.createElementNS(SVG_NS, 'svg');
-    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('viewBox', '0 -960 960 960');
     icon.setAttribute('aria-hidden', 'true');
     icon.setAttribute('class', 'bumpline-card__icon');
-    for (const d of glyph) {
-      const path = document.createElementNS(SVG_NS, 'path');
-      path.setAttribute('d', d);
-      icon.appendChild(path);
-    }
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', BumplineIcons[glyph] || '');
+    icon.appendChild(path);
     return icon;
   }
 
-  // Empties a card, gives it its icon, and hands back the body to fill. One
-  // builder, so the three cards cannot drift apart.
+  // Empties a card, gives it its icon on a tonal circle, and hands back the
+  // body to fill. One builder, so the three cards cannot drift apart.
   function paintCard(node, place, tone, glyph) {
     node.className = `bumpline-card bumpline-card--${tone} ${place}`;
     node.textContent = '';
 
-    const icon = glyphIcon(glyph);
+    const badge = document.createElement('span');
+    badge.className = 'bumpline-card__badge';
+    badge.appendChild(glyphIcon(glyph));
 
     const body = document.createElement('div');
     body.className = 'bumpline-card__body';
-    node.append(icon, body);
+    node.append(badge, body);
     return body;
   }
 
@@ -2297,10 +2402,10 @@
     return { panel, close };
   }
 
-  // The popup's .button, and with quiet its outline variant. Its own markup
+  // The panel's tonal button, and with quiet its text button. Its own markup
   // rather than Vinted's, which buildButton borrows for the buttons that sit
-  // among Vinted's own: inside the card it would be the one thing not in the
-  // popup's style.
+  // among Vinted's own: inside the dialog it would be the one thing not in the
+  // panel's style.
   function modalButton(label, { quiet = false, glyph = null } = {}) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -2331,21 +2436,28 @@
       const actions = document.createElement('div');
       actions.className = 'bumpline-modal__actions';
 
-      const stop = modalButton(cancel, { quiet: true });
+      // A warning hands the weight to the answer that changes nothing, as the
+      // panel's own does: the safe answer is the tonal one, on the right, and
+      // going ahead is the quiet one beside it. Anything else asks with the
+      // going ahead on the right and the no-thanks quiet.
+      const alert = tone === 'alert';
+
+      const stop = modalButton(cancel, { quiet: !alert });
       stop.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
         answer(false);
       });
 
-      const go = modalButton(proceed, { glyph: proceedGlyph });
+      const go = modalButton(proceed, { quiet: alert, glyph: proceedGlyph });
       go.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();
         answer(true);
       });
 
-      actions.append(stop, go);
+      if (alert) actions.append(go, stop);
+      else actions.append(stop, go);
       panel.appendChild(actions);
       stop.focus();
     });
