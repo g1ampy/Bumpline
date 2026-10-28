@@ -951,6 +951,29 @@ function wireLanguage(stored, repaint, paintCount) {
   menu.addEventListener('opened', () => button.setAttribute('aria-expanded', 'true'));
   menu.addEventListener('closed', () => button.setAttribute('aria-expanded', 'false'));
 
+  // md-menu closes by rolling itself up, the rows going one after another,
+  // which reads as a list being put away rather than as the panel coming back.
+  // So it fades instead: the wrapper goes to nothing a little ahead of the
+  // roll-up, which then runs where nobody can see it. Through the menu's own
+  // events, so nothing here reaches inside it.
+  const veil = menu.parentElement;
+  let fade = null;
+  const unveil = () => {
+    if (fade) fade.cancel();
+    fade = null;
+  };
+  menu.addEventListener('closing', () => {
+    unveil();
+    fade = veil.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: 150,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      fill: 'forwards',
+    });
+  });
+  // Gone by then, so the wrapper can be whole again for the next opening.
+  menu.addEventListener('closed', unveil);
+  menu.addEventListener('opening', unveil);
+
   // md-menu closes itself on a pick; the item that was picked rides along on
   // the event, which is the whole of what the old <select>'s change carried.
   menu.addEventListener('close-menu', async event => {
@@ -959,12 +982,19 @@ function wireLanguage(stored, repaint, paintCount) {
     if (reason && reason.kind === 'keydown' && !['Enter', 'Space'].includes(reason.key)) return;
     const wanted = item && item.dataset.value;
     if (!wanted || wanted === stored.lang) return;
+    // The panel changes language once the menu has faded out, not underneath
+    // it: a list that rewrites itself on its way out reads as a flicker. The
+    // pick is stored at once all the same, so it holds even if the panel is
+    // shut before the fade is over. Listened for now, before anything is
+    // awaited, because the menu is already on its way out.
+    const gone = new Promise(resolve => menu.addEventListener('closed', resolve, { once: true }));
     try {
       await ext.storage.local.set({ [LANG_KEY]: wanted });
     } catch (_) {
       return;
     }
     stored.lang = wanted;
+    await gone;
     // The panel is the one page that does not hear its own storage change.
     BumplineText.use(wanted);
     BumplineText.paint();

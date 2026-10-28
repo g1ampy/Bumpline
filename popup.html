@@ -28,12 +28,16 @@
       <md-icon slot="icon" data-icon="language"></md-icon>
       <span class="lang__code" id="lang-code"></span>
     </md-text-button>
-    <md-menu class="lang__menu" id="lang-menu" anchor="lang-button" positioning="fixed" anchor-corner="end-start" menu-corner="start-start">
-      <md-menu-item data-value="auto">
-        <md-icon slot="start" class="lang__check" data-icon="check"></md-icon>
-        <div slot="headline" data-i18n="popup.lang.auto">Automatic (browser language)</div>
-      </md-menu-item>
-    </md-menu>
+    <!-- What the menu fades out in when it closes: md-menu's own host draws no
+         box, so an opacity on it would reach nothing. -->
+    <span class="lang__fade">
+      <md-menu class="lang__menu" id="lang-menu" anchor="lang-button" positioning="fixed" anchor-corner="end-start" menu-corner="start-start">
+        <md-menu-item data-value="auto">
+          <md-icon slot="start" class="lang__check" data-icon="check"></md-icon>
+          <div slot="headline" data-i18n="popup.lang.auto">Automatic (browser language)</div>
+        </md-menu-item>
+      </md-menu>
+    </span>
   </span>
 
   <!-- The state in a word as well as in the switch, for anyone who reads the

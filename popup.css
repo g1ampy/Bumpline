@@ -356,6 +356,11 @@
 
 .lang__menu { --md-menu-item-one-line-container-height: 48px; }
 
+/* The wrapper the menu fades out in. An opacity below 1 makes it a stacking
+   context of its own, which would drop the menu under the cards for the length
+   of the fade; raised, it stays over them throughout. */
+.lang__fade { position: relative; z-index: 20; }
+
 /* The check marks the language in use; every other row keeps its space so the
    names line up. */
 .lang__check { visibility: hidden; color: var(--md-sys-color-primary); }
