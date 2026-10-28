@@ -1,19 +1,21 @@
 # Bumpline — Privacy Policy
 
-Last updated: 23 October 2026
+Last updated: 28 October 2026
 
 Bumpline is a browser extension that relists your own Vinted listings. This
 policy explains exactly what it touches.
 
 ## The short version
 
-Bumpline sends nothing about you anywhere. It talks to Vinted, which you are
-already logged into, and apart from that it only downloads a short public file
-of notices from its own website, about once an hour. There is no server that
-collects anything, no account, no analytics and no telemetry. The developer
-receives no data about you and cannot see what you do with the extension. The
-only other place it takes you is its own website, twice: once after you install
-it and once after you remove it.
+Bumpline sends nothing about you anywhere by itself. It talks to Vinted, which
+you are already logged into, and apart from that it only downloads a short
+public file of notices from its own website, about once an hour. There is no
+account, no analytics and no telemetry. The developer receives no data about
+you and cannot see what you do with the extension. The only other place it
+takes you is its own website: once after you install it, once after you remove
+it, and when you click "Report a problem". A problem report leaves your browser
+only if you fill in that form and press its send button, and then it becomes a
+public issue on GitHub.
 
 ## What the extension reads
 
@@ -39,6 +41,8 @@ Everything is stored locally in your own browser.
 | An unfinished relist: the photo files | IndexedDB, on the Vinted domain | Same reason. Photos are too large for extension storage | Deleted at the same time |
 | The website's notices, the ones you closed, and when the file was last checked | Extension storage | So the panel can show them without waiting for the website, and a closed notice stays closed | Replaced at each check; a closed notice is forgotten once the website drops it |
 | How many items you have relisted, as a single number | Extension storage | So the request to support Bumpline on Ko-fi comes after the 5th relist and every 25th after it | Until you uninstall |
+| The extension's own log: its last 200 lines, cleaned of links, item numbers, email addresses and access tokens before they are stored | Extension storage | So a problem report can show what went wrong, if you choose to send one | Older lines make way for newer ones; until you uninstall |
+| The last Vinted site you used it on, such as vinted.it | Extension storage | So the goodbye page can say which site, if you choose to send its form | Until overwritten or you uninstall |
 
 Uninstalling the extension removes all of it.
 
@@ -75,20 +79,25 @@ from (see below).
 
 ### The pages it opens
 
-The extension opens two pages on its website, <https://bumpline.giampy.tech>,
+The extension opens three pages on its website, <https://bumpline.giampy.tech>,
 and no others:
 
 - **A welcome page, once, right after you install it.** It shows how to pin the
   icon to your toolbar and where the buttons appear.
 - **A goodbye page, after you remove it.** Your browser opens it by itself,
   because by then the extension is gone.
+- **A report page, when you click "Report a problem" in the toolbar panel.**
 
 The toolbar panel also links to the site's explanation of how Bumpline works,
 from the name at the top and from "How it works" at the bottom. That page opens
 only when you click one of the two.
 
-Neither address carries anything about you, your listings or the extension.
-Opening them is an ordinary visit to a website. The site is static: it runs no
+The welcome address carries nothing. The goodbye and report addresses carry,
+after a `#`, the extension's version and the last Vinted site you used it on,
+and the report address also carries the cleaned log described above. The part
+of an address after the `#` stays in your browser: it is not sent to the
+website when the page opens, so opening any of these pages is an ordinary visit
+that tells the website nothing about you, your listings or the extension. The site is static: it runs no
 analytics, sets no cookies of its own and loads nothing from anyone else. Your
 choice of language and theme on the site is remembered in your own browser and
 nowhere else.
@@ -101,9 +110,19 @@ served from the site's own address, and keeps the result in a cookie named
 only to tell people from bots. Cloudflare's own handling of it is described in
 its [privacy policy](https://www.cloudflare.com/privacypolicy/).
 
-The goodbye page asks why you left. Nothing you type is sent from the page:
-its button opens a GitHub issue with your answers filled in, which you can
-read, change or abandon before posting. A posted issue is public.
+The goodbye page and the report page show the same form, which asks what went
+wrong. Nothing is sent until you press its send button. The report page shows
+the log first, line by line, behind an "Error log" button. When you send the
+form, the website receives what you picked and wrote, the Vinted site, your
+browser's name and major version (for example "Chrome 141"), the extension's
+version and, from the report page, the cleaned log, and posts them as a public
+issue on the project's GitHub repository. That is the whole report: it carries
+no name, email or account. To hold back spam, the website counts reports per
+sender for one hour using a salted hash of the IP address, never the address
+itself, and keeps a total for the day; both counts delete themselves. If the
+website cannot take the report, the form offers GitHub's own form filled in
+instead, which needs a GitHub account and which you can read, change or
+abandon before posting.
 
 The toolbar panel also has a "Support Bumpline on Ko-fi" button, and after the
 5th relist and every 25th after it a box on the Vinted page asks the same.
@@ -116,7 +135,9 @@ there is made to Ko-fi, not through Bumpline, and is covered by Ko-fi's own
 
 None. No data is shared with, sold to, or transferred to any third party. No
 data is used for advertising, profiling, creditworthiness or any purpose beyond
-performing the relist you asked for.
+performing the relist you asked for. A problem report you choose to send is
+published on GitHub, where the project's problems are tracked, and holds only
+what is listed above.
 
 ## Permissions
 

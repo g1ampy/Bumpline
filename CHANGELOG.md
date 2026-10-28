@@ -5,6 +5,31 @@ All notable changes to Bumpline are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-10-28
+
+A problem can be reported without a GitHub account now. *Report a problem* in
+the panel opens a form on Bumpline's website with the extension's version, the
+Vinted site you are on and the extension's own error log already attached,
+cleaned of links, item numbers, emails and access tokens. Nothing leaves the
+browser until the form is sent. Relisting itself works as it did.
+
+### Added
+
+- **An error log for reports.** The lines Bumpline writes to the console are
+  also kept in its own storage, the newest 200, cleaned before they are stored.
+  They stay on the device.
+- **Report a problem opens the website's form.** The panel's link used to open
+  the GitHub issue list. It now opens the report form, in the panel's language,
+  with the version, the tab's Vinted site and the log after the `#`, which the
+  browser does not send when the page opens. The form shows the log behind an
+  *Error log* button and sends everything only when the seller presses send.
+
+### Changed
+
+- **The goodbye page knows the version and the last site.** The uninstall
+  address carries them after the `#`, so the goodbye form can include them
+  without asking, and only if it is sent.
+
 ## [1.1.6] - 2026-10-23
 
 Bumpline can be supported on Ko-fi now: from a button in the panel, from a
@@ -897,6 +922,7 @@ three to five minutes an item, and one distraction can lose the item entirely.
 - Manifest V3, two permissions (`storage`, `webRequest`), zero dependencies, and
   no network calls to anything except Vinted itself.
 
+[1.1.7]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.7
 [1.1.6]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.6
 [1.1.5]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.5
 [1.1.4]: https://github.com/g1ampy/Bumpline/releases/tag/v1.1.4
