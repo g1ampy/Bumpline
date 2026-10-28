@@ -24,6 +24,12 @@ browser until the form is sent. Relisting itself works as it did.
   browser does not send when the page opens. The form shows the log behind an
   *Error log* button and sends everything only when the seller presses send.
 
+- **Technical data is optional on Firefox.** The Firefox package asks for
+  "technical and interaction data" as an optional permission, offered at
+  install and in about:addons. Until it is granted, the report and goodbye
+  links carry no version, site or log, and the seller writes the report
+  without them. Chrome has no such permission and is unchanged.
+
 ### Changed
 
 - **The goodbye page knows the version and the last site.** The uninstall

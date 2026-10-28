@@ -411,20 +411,33 @@ ext.runtime.onInstalled.addListener(details => {
 // the #, which the browser keeps to itself: Firefox counts facts about the
 // add-on as technical data, which may only be collected with the user's
 // consent, so opening the page must tell the website nothing, and the form
-// sends them only with the seller's report. Set on every wake rather than
-// once, and again when the site changes: the call is cheap, and the address
-// is then right however the worker came up.
-function setGoodbye(site) {
-  const url = BumplineLog.goodbyeUrl(SITE, ext.runtime.getManifest().version, site || null);
+// sends them only with the seller's report. On Firefox the address carries
+// them only once the user has allowed technical data (diagnostics.js). Set on
+// every wake rather than once, and again when the site or that choice
+// changes: the call is cheap, and the address is then right however the
+// worker came up.
+async function setGoodbye(site) {
+  const allowed = await BumplineLog.technicalDataAllowed(ext, BumplineStore.isFirefox());
+  const url = BumplineLog.goodbyeUrl(SITE, ext.runtime.getManifest().version, site || null, allowed);
   Promise.resolve(ext.runtime.setUninstallURL(url))
     .catch(err => note('could not set the uninstall page', err));
 }
 
-Promise.resolve(ext.storage.local.get(BumplineLog.LAST_SITE_KEY))
-  .then(bag => setGoodbye(bag && bag[BumplineLog.LAST_SITE_KEY]))
-  .catch(() => setGoodbye(null));
+function setGoodbyeFromStorage() {
+  Promise.resolve(ext.storage.local.get(BumplineLog.LAST_SITE_KEY))
+    .then(bag => setGoodbye(bag && bag[BumplineLog.LAST_SITE_KEY]))
+    .catch(() => setGoodbye(null));
+}
+
+setGoodbyeFromStorage();
 
 ext.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local' || !changes || !(BumplineLog.LAST_SITE_KEY in changes)) return;
   setGoodbye(changes[BumplineLog.LAST_SITE_KEY].newValue);
 });
+
+// The user can grant or withdraw technical data in about:addons at any time.
+if (BumplineStore.isFirefox() && ext.permissions && ext.permissions.onAdded) {
+  ext.permissions.onAdded.addListener(setGoodbyeFromStorage);
+  ext.permissions.onRemoved.addListener(setGoodbyeFromStorage);
+}

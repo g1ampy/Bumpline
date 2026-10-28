@@ -103,6 +103,61 @@ describe('reportUrl', () => {
   });
 });
 
+// Firefox counts the version, the site and an error log as technical data,
+// which may only leave with the user's consent: the optional
+// technicalAndInteraction permission, offered at install and in about:addons.
+// Without it the links carry nothing. Chrome has no such permission.
+describe('technical data', () => {
+  const SITE = 'https://bumpline.giampy.tech';
+  const firefox = data_collection => ({
+    permissions: { getAll: async () => (data_collection ? { permissions: [], data_collection } : { permissions: [] }) },
+  });
+
+  it('is allowed on Chrome, where there is nothing to grant', async () => {
+    assert.equal(await L.technicalDataAllowed(firefox(null), false), true);
+  });
+
+  it('is allowed on Firefox only once the user has granted it', async () => {
+    assert.equal(await L.technicalDataAllowed(firefox(['technicalAndInteraction']), true), true);
+    assert.equal(await L.technicalDataAllowed(firefox([]), true), false);
+    // No data_collection key: a Firefox without the built-in consent.
+    assert.equal(await L.technicalDataAllowed(firefox(null), true), false);
+  });
+
+  it('is refused when Firefox cannot be asked', async () => {
+    const broken = { permissions: { getAll: async () => { throw new Error('no'); } } };
+    assert.equal(await L.technicalDataAllowed(broken, true), false);
+    assert.equal(await L.technicalDataAllowed({}, true), false);
+  });
+
+  it('leaves everything out of the report link when it is not allowed', () => {
+    assert.equal(
+      L.reportUrl(SITE, { lang: 'it', version: '1.1.7', site: 'vinted.it', lines: ['boom'], allowed: false }),
+      `${SITE}/it/report/#from=popup`,
+    );
+  });
+
+  it('leaves everything out of the goodbye address when it is not allowed', () => {
+    assert.equal(L.goodbyeUrl(SITE, '1.1.7', 'vinted.it', false), `${SITE}/goodbye/`);
+  });
+
+  it('is declared as optional in the Firefox package', () => {
+    const build = readFileSync(new URL('../build.mjs', import.meta.url), 'utf8');
+    assert.match(build, /data_collection_permissions: \{ required: \['none'\], optional: \['technicalAndInteraction'\] \}/);
+  });
+
+  it('is asked before the panel and the background build their links', () => {
+    for (const name of ['popup.js', 'background.js']) {
+      const script = readFileSync(new URL(`../${name}`, import.meta.url), 'utf8');
+      assert.match(script, /BumplineLog\.technicalDataAllowed\(ext, BumplineStore\.isFirefox\(\)\)/, name);
+    }
+    const popup = readFileSync(new URL('../popup.js', import.meta.url), 'utf8');
+    assert.match(popup, /allowed: report\.allowed/);
+    const background = readFileSync(new URL('../background.js', import.meta.url), 'utf8');
+    assert.match(background, /goodbyeUrl\(.*, allowed\);/);
+  });
+});
+
 describe('goodbyeUrl', () => {
   it('tells the goodbye page the version and, when known, the site, after the #', () => {
     assert.equal(

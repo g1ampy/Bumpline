@@ -81,8 +81,9 @@ const onVinted = url => !!url && VINTED_HOST.test(url.hostname);
 const SITE = 'https://bumpline.giampy.tech';
 
 // What the report link carries besides the language, filled in by main()
-// once the tab and the log have been read.
-const report = { site: null, lines: [] };
+// once the tab and the log have been read. Until then, and on a Firefox where
+// the user has not allowed technical data, it carries nothing.
+const report = { site: null, lines: [], allowed: false };
 
 function paintSiteLinks() {
   const lang = BumplineText.locale().split('-')[0];
@@ -96,6 +97,7 @@ function paintSiteLinks() {
     version: ext.runtime.getManifest().version,
     site: report.site,
     lines: report.lines,
+    allowed: report.allowed,
   });
 }
 
@@ -1012,6 +1014,7 @@ async function main() {
   BumplineText.paint();
   report.site = BumplineLog.siteOf(url ? url.hostname : '');
   report.lines = await BumplineLog.read(ext.storage.local);
+  report.allowed = await BumplineLog.technicalDataAllowed(ext, BumplineStore.isFirefox());
   paintSiteLinks();
 
   const here = url ? `${url.origin}${url.pathname}` : null;

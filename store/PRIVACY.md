@@ -97,10 +97,19 @@ after a `#`, the extension's version and the last Vinted site you used it on,
 and the report address also carries the cleaned log described above. The part
 of an address after the `#` stays in your browser: it is not sent to the
 website when the page opens, so opening any of these pages is an ordinary visit
-that tells the website nothing about you, your listings or the extension. The site is static: it runs no
-analytics, sets no cookies of its own and loads nothing from anyone else. Your
-choice of language and theme on the site is remembered in your own browser and
-nowhere else.
+that tells the website nothing about you, your listings or the extension.
+
+On Firefox, the version, the Vinted site and the log count as technical data,
+which Bumpline asks for as an optional permission ("technical and interaction
+data"). Firefox offers it when you install the extension, and you can grant or
+withdraw it later from the add-ons page (about:addons). Until you grant it, the
+goodbye and report addresses carry none of the three, and the form sends only
+what you pick and write and your browser's name and version. Chrome has no such
+permission.
+
+The site is static: it runs no analytics, sets no cookies of its own and loads
+nothing from anyone else. Your choice of language and theme on the site is
+remembered in your own browser and nowhere else.
 
 The site is served by Cloudflare, which sees your IP address and browser when a
 page is requested, as any web host does. Cloudflare also screens visits for

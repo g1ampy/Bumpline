@@ -106,16 +106,39 @@ const BumplineLog = (() => {
       .join('&');
   }
 
-  function reportUrl(base, { lang, version, site, lines }) {
+  // On Firefox that consent is a permission of its own: technicalAndInteraction,
+  // declared optional in build.mjs, which the user can grant when installing
+  // or later in about:addons. Without it the links carry nothing, and the
+  // seller can still write the report by hand. Chrome has no such permission,
+  // and there the seller's press of the send button is the consent. A Firefox
+  // that cannot be asked, or that answers without a data_collection list, is
+  // taken as a no.
+  const TECHNICAL = 'technicalAndInteraction';
+
+  async function technicalDataAllowed(ext, firefox) {
+    if (!firefox) return true;
+    try {
+      const granted = await ext.permissions.getAll();
+      return Array.isArray(granted.data_collection) && granted.data_collection.includes(TECHNICAL);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function reportUrl(base, { lang, version, site, lines, allowed = true }) {
     const language = LANGS.includes(lang) ? lang : 'en';
-    const log = lines && lines.length ? encode(lines) : '';
+    const log = allowed && lines && lines.length ? encode(lines) : '';
     return `${base}/${language}/report/#${fragment([
-      ['from', 'popup'], ['v', version], ['site', site], ['log', log],
+      ['from', 'popup'],
+      ['v', allowed && version],
+      ['site', allowed && site],
+      ['log', log],
     ])}`;
   }
 
-  function goodbyeUrl(base, version, site) {
-    return `${base}/goodbye/#${fragment([['v', version], ['site', site]])}`;
+  function goodbyeUrl(base, version, site, allowed = true) {
+    const carried = allowed ? fragment([['v', version], ['site', site]]) : '';
+    return carried ? `${base}/goodbye/#${carried}` : `${base}/goodbye/`;
   }
 
   async function read(storage) {
@@ -149,6 +172,6 @@ const BumplineLog = (() => {
 
   return {
     KEY, LAST_SITE_KEY, MAX_LINES, MAX_BYTES,
-    clean, format, append, encode, siteOf, reportUrl, goodbyeUrl, record, read,
+    clean, format, append, encode, siteOf, technicalDataAllowed, reportUrl, goodbyeUrl, record, read,
   };
 })();

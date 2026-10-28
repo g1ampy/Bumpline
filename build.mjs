@@ -92,20 +92,25 @@ const TARGETS = {
     // Firefox has no service worker to give: an MV3 background there is an
     // event page, woken by the same listeners and torn down the same way.
     //
-    // The three shared scripts come first because an event page has no
+    // The shared scripts come first because an event page has no
     // importScripts, which is how the Chrome worker pulls them in. Here the
     // order of this array is the whole loading mechanism: background.js paints
     // the toolbar tooltip and the notices' badge on the way up, and needs
-    // BumplineText, BumplineStore and BumplineBroadcast to already be there.
+    // BumplineText, BumplineStore, BumplineBroadcast and BumplineLog to
+    // already be there.
     out.background = { scripts: ['strings.js', 'store.js', 'broadcast.js', 'diagnostics.js', 'background.js'] };
 
     out.browser_specific_settings = {
       gecko: {
         id: GECKO_ID,
         strict_min_version: GECKO_MIN,
-        // Nothing leaves the browser, and saying so in the manifest is what
-        // spares the reviewer from having to take it on trust.
-        data_collection_permissions: { required: ['none'] },
+        // Nothing leaves the browser by itself, and saying so in the manifest
+        // is what spares the reviewer from having to take it on trust. The
+        // version, the Vinted site and the cleaned log a problem report can
+        // carry are technical data, so they are optional: the user grants them
+        // at install or in about:addons, diagnostics.js attaches them only
+        // then, and they leave only with a report the user sends.
+        data_collection_permissions: { required: ['none'], optional: ['technicalAndInteraction'] },
       },
       // Android got the same key two releases later. Whether the add-on is
       // offered on phones at all is a switch on the store listing; this only
